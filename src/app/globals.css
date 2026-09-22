@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #fefefe;
+  --paper-raised: #f7f1e8;
+  --cream: #fdf0d1;
+  --ink: #000000;
+  --ink-muted: #5c5c5c;
+  --line: #e2e2df;
+  --highlighter: #fee329;
+  --on-highlighter: #000000;
+  --marker-purple: #c164fc;
+  --purple-text: #8b3fd6;
+  --lavender-dusk: #a27da6;
+  --golden-hour: #f1cf9f;
+  --warm-text: #764b3d;
+  --espresso: #2b1105;
+  --focus-ring: #8b3fd6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a0f0a;
+    --paper-raised: #2b1105;
+    --cream: #2b1105;
+    --ink: #fdf0d1;
+    --ink-muted: #c9b8a6;
+    --line: #3d2a22;
+    --purple-text: #c164fc;
+    --warm-text: #f1cf9f;
+    --focus-ring: #c164fc;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-highlighter: var(--highlighter);
+  --color-on-highlighter: var(--on-highlighter);
+  --color-marker-purple: var(--marker-purple);
+  --color-purple-text: var(--purple-text);
+  --color-lavender-dusk: var(--lavender-dusk);
+  --color-golden-hour: var(--golden-hour);
+  --color-warm-text: var(--warm-text);
+  --color-espresso: var(--espresso);
+  --color-focus-ring: var(--focus-ring);
+
+  --font-display: var(--font-unbounded);
+  --font-sans: var(--font-bricolage);
+  --font-script: var(--font-caveat-brush);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@layer utilities {
+  .text-display-hero {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  .text-headline {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .text-subhead {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .text-body {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .text-label {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    letter-spacing: 0.01em;
+  }
+
+  .text-caption {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--color-ink-muted);
+  }
+
+  .text-script-accent {
+    font-family: var(--font-script);
+    font-weight: 400;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.1;
+  }
+
+  /* The highlighter move: a rotated yellow stroke behind one word. */
+  .highlight {
+    position: relative;
+    display: inline-block;
+    color: var(--color-on-highlighter);
+    white-space: nowrap;
+  }
+
+  .highlight::before {
+    content: "";
+    position: absolute;
+    inset: 0.08em -0.2em;
+    background: var(--color-highlighter);
+    transform: rotate(-2deg);
+    border-radius: 3px;
+    z-index: -1;
+  }
+
+  .focus-brand {
+    outline: none;
+  }
+
+  .focus-brand:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
