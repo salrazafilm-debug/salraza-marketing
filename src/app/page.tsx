@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { HeroVideo } from "@/components/HeroVideo";
@@ -49,9 +50,24 @@ export default function Home() {
       <main>
         <HeroVideo />
 
-        <section className="bg-espresso px-4 py-16 text-center sm:px-6 sm:py-20">
-          <div className="mx-auto max-w-3xl">
-            <h1 className="text-display-hero text-golden-hour">The sky is the limit</h1>
+        <section className="relative overflow-hidden bg-espresso px-4 py-16 text-center sm:px-6 sm:py-20">
+          <Image
+            src="/sky-hero-band.jpg"
+            alt=""
+            aria-hidden
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-espresso/45" />
+          <div className="relative mx-auto max-w-3xl">
+            <h1
+              className="text-display-hero text-golden-hour"
+              style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.45)" }}
+            >
+              The sky is the limit
+            </h1>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <LinkButton href="#quote">Start</LinkButton>
               <LinkButton href="/portfolio" variant="secondary" className="bg-transparent text-golden-hour ring-1 ring-golden-hour/40 hover:bg-white/5">
