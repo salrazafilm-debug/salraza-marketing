@@ -88,17 +88,25 @@ export default function Home() {
               Everything you need to <Highlight>stand out</Highlight>
             </h2>
 
-            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-6">
               {SERVICES.map((service) => (
                 <div
                   key={service.title}
-                  className="flex flex-col items-center rounded-xl bg-paper-raised p-6 text-center"
+                  className="flex flex-col items-center rounded-xl bg-paper-raised p-2 text-center sm:p-6"
                 >
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${service.accent}`}>
-                    {service.icon}
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full sm:h-14 sm:w-14 ${service.accent}`}
+                  >
+                    <span className="[&_svg]:h-4 [&_svg]:w-4 sm:[&_svg]:h-[26px] sm:[&_svg]:w-[26px]">
+                      {service.icon}
+                    </span>
                   </div>
-                  <p className="text-subhead mt-4 text-ink">{service.title}</p>
-                  <p className="mt-2 text-body text-ink-muted">{service.body}</p>
+                  <p className="mt-1.5 text-[11px] font-bold leading-tight text-ink sm:mt-4 sm:text-subhead">
+                    {service.title}
+                  </p>
+                  <p className="mt-1 text-[9.5px] leading-snug text-ink-muted sm:mt-2 sm:text-body">
+                    {service.body}
+                  </p>
                 </div>
               ))}
             </div>
