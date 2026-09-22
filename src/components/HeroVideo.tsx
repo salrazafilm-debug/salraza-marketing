@@ -5,13 +5,15 @@ import { useEffect, useRef, useState } from "react";
 // On phones the video is shown with object-fit: contain (full frame,
 // letterboxed) because a portrait screen is much taller than this 16:9 clip.
 // MOBILE_QUERY gates a scale() zoom that starts tight on the center monitor —
-// where the logo lives — and eases out to the full letterboxed frame as the
-// video plays, landing exactly on the still end frame. 3.0x was measured
-// against the source video's pixel bounds for "SALRAZA Marketing" (safe up
-// to ~3.8x before the text would clip), so it keeps the logo fully in frame
-// at every point in the animation while still meaningfully closing the bars.
+// where the logo lives — and eases down to ZOOM_END (not all the way back to
+// 1) as the video plays, so the still end frame stays fuller/less letterboxed
+// too instead of popping back out to the bars-heavy full frame. 3.0x/1.8x
+// were measured against the source video's pixel bounds for "SALRAZA
+// Marketing" (safe up to ~3.8x before the text would clip), so the logo
+// stays fully in frame at every point, including at rest.
 const MOBILE_QUERY = "(max-width: 767px)";
 const ZOOM_START = 3.0;
+const ZOOM_END = 1.8;
 const ZOOM_ORIGIN = "50% 48%";
 
 // The video's frame proportions (the 3834x2160 source is measured in a
@@ -73,6 +75,17 @@ export function HeroVideo() {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [hotspotRect, setHotspotRect] = useState<Rect | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Tracks the same breakpoint the zoom animation and getContentBox() use, so
+  // the resting poster image can match the video's settled zoom level.
+  useEffect(() => {
+    const query = window.matchMedia(MOBILE_QUERY);
+    setIsMobile(query.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
 
   // Keep the "Marketing" hover hotspot pixel-aligned with the baked-in logo
   // as the viewport resizes, since object-fit's contain/cover math depends
@@ -117,25 +130,27 @@ export function HeroVideo() {
     });
   }, [reducedMotion]);
 
-  // Mobile zoom-out: scale the video from ZOOM_START down to 1 in sync with
-  // actual playback progress (not a fixed-duration CSS animation) so it stays
-  // correct even if playback stalls, is paused, or the intro is replayed.
+  // Mobile zoom: scale the video from ZOOM_START down to ZOOM_END in sync
+  // with actual playback progress (not a fixed-duration CSS animation) so it
+  // stays correct even if playback stalls, is paused, or the intro is
+  // replayed. Settles at ZOOM_END (not 1) so the resting frame stays full.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const mql = window.matchMedia(MOBILE_QUERY);
+
     if (reducedMotion || ended) {
-      video.style.transform = "";
+      video.style.transform = mql.matches ? `scale(${ZOOM_END})` : "";
       return;
     }
 
-    const mql = window.matchMedia(MOBILE_QUERY);
     let raf: number;
 
     const tick = () => {
       if (mql.matches && video.duration) {
         const progress = Math.min(1, video.currentTime / video.duration);
-        const scale = ZOOM_START + (1 - ZOOM_START) * easeOutQuad(progress);
+        const scale = ZOOM_START + (ZOOM_END - ZOOM_START) * easeOutQuad(progress);
         video.style.transform = `scale(${scale})`;
       } else {
         video.style.transform = "";
@@ -216,6 +231,10 @@ export function HeroVideo() {
         className={`absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-700 md:object-cover ${
           showStill ? "opacity-100" : "opacity-0"
         }`}
+        style={{
+          transformOrigin: ZOOM_ORIGIN,
+          transform: isMobile ? `scale(${ZOOM_END})` : undefined,
+        }}
       />
 
       {/*
