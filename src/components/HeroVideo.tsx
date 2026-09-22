@@ -7,14 +7,16 @@ import { useEffect, useRef, useState } from "react";
 // MOBILE_QUERY gates a scale() zoom that starts tight on the center monitor —
 // where the logo lives — and eases down to ZOOM_END (not all the way back to
 // 1) as the video plays, so the still end frame stays fuller/less letterboxed
-// too instead of popping back out to the bars-heavy full frame. 3.0x/1.8x
+// too instead of popping back out to the bars-heavy full frame. 3.0x/2.4x
 // were measured against the source video's pixel bounds for "SALRAZA
 // Marketing" (safe up to ~3.8x before the text would clip), so the logo
 // stays fully in frame at every point, including at rest.
 const MOBILE_QUERY = "(max-width: 767px)";
 const ZOOM_START = 3.0;
-const ZOOM_END = 1.8;
-const ZOOM_ORIGIN = "50% 48%";
+const ZOOM_END = 2.4;
+const ZOOM_ORIGIN_X = 0.5;
+const ZOOM_ORIGIN_Y = 0.48;
+const ZOOM_ORIGIN = `${ZOOM_ORIGIN_X * 100}% ${ZOOM_ORIGIN_Y * 100}%`;
 
 // The video's frame proportions (the 3834x2160 source is measured in a
 // 1916x1080 reference space; only the 16:9 ratio matters) and the desktop
@@ -76,6 +78,7 @@ export function HeroVideo() {
   const [paused, setPaused] = useState(false);
   const [hotspotRect, setHotspotRect] = useState<Rect | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const showStill = reducedMotion || ended;
 
   // Tracks the same breakpoint the zoom animation and getContentBox() use, so
   // the resting poster image can match the video's settled zoom level.
@@ -89,7 +92,10 @@ export function HeroVideo() {
 
   // Keep the "Marketing" hover hotspot pixel-aligned with the baked-in logo
   // as the viewport resizes, since object-fit's contain/cover math depends
-  // on the container's actual size and aspect ratio.
+  // on the container's actual size and aspect ratio. On mobile the resting
+  // video/poster also carries a `scale(ZOOM_END)` transform (see below), so
+  // the hotspot's corners are projected through the same scale-around-origin
+  // math the CSS transform applies, or it'd land in the pre-zoom position.
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -97,11 +103,31 @@ export function HeroVideo() {
     const updateHotspot = () => {
       const { width, height } = section.getBoundingClientRect();
       const contentBox = getContentBox(width, height);
+      const rawLeft = contentBox.left + MARKETING_HOTSPOT.left * contentBox.width;
+      const rawTop = contentBox.top + MARKETING_HOTSPOT.top * contentBox.height;
+      const rawWidth = MARKETING_HOTSPOT.width * contentBox.width;
+      const rawHeight = MARKETING_HOTSPOT.height * contentBox.height;
+
+      const scale = isMobile && showStill ? ZOOM_END : 1;
+      if (scale === 1) {
+        setHotspotRect({ left: rawLeft, top: rawTop, width: rawWidth, height: rawHeight });
+        return;
+      }
+
+      const originX = width * ZOOM_ORIGIN_X;
+      const originY = height * ZOOM_ORIGIN_Y;
+      const project = (x: number, y: number) => ({
+        x: originX + (x - originX) * scale,
+        y: originY + (y - originY) * scale,
+      });
+      const topLeft = project(rawLeft, rawTop);
+      const bottomRight = project(rawLeft + rawWidth, rawTop + rawHeight);
+
       setHotspotRect({
-        left: contentBox.left + MARKETING_HOTSPOT.left * contentBox.width,
-        top: contentBox.top + MARKETING_HOTSPOT.top * contentBox.height,
-        width: MARKETING_HOTSPOT.width * contentBox.width,
-        height: MARKETING_HOTSPOT.height * contentBox.height,
+        left: topLeft.x,
+        top: topLeft.y,
+        width: bottomRight.x - topLeft.x,
+        height: bottomRight.y - topLeft.y,
       });
     };
 
@@ -109,7 +135,7 @@ export function HeroVideo() {
     const observer = new ResizeObserver(updateHotspot);
     observer.observe(section);
     return () => observer.disconnect();
-  }, []);
+  }, [isMobile, showStill]);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -196,8 +222,6 @@ export function HeroVideo() {
     setEnded(true);
   };
 
-  const showStill = reducedMotion || ended;
-
   return (
     <section
       ref={sectionRef}
@@ -263,7 +287,7 @@ export function HeroVideo() {
         <button
           type="button"
           onClick={skipToEnd}
-          className="focus-brand absolute right-4 top-4 z-10 rounded-full bg-espresso/60 px-4 py-2 text-label text-golden-hour backdrop-blur transition hover:bg-espresso/80 sm:right-6 sm:top-6"
+          className="focus-brand absolute right-4 top-20 z-10 rounded-full bg-espresso/60 px-4 py-2 text-label text-golden-hour backdrop-blur transition hover:bg-espresso/80 md:right-6 md:top-6"
         >
           Skip intro
         </button>

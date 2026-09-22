@@ -18,18 +18,41 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
   useEffect(() => {
     if (revealImmediately) return;
 
-    const hero = document.getElementById("hero");
-    if (!hero) {
-      setRevealed(true);
-      return;
-    }
+    // On mobile the header (logo + menu) stays visible from the start rather
+    // than hiding over the cinematic hero — there's no room to spare, and
+    // navigation should always be reachable on a phone. Desktop keeps the
+    // fade-in-on-scroll reveal.
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    let observer: IntersectionObserver | null = null;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => setRevealed(!entry.isIntersecting),
-      { threshold: 0.15 }
-    );
-    observer.observe(hero);
-    return () => observer.disconnect();
+    const setup = () => {
+      observer?.disconnect();
+      observer = null;
+
+      if (mobileQuery.matches) {
+        setRevealed(true);
+        return;
+      }
+
+      const hero = document.getElementById("hero");
+      if (!hero) {
+        setRevealed(true);
+        return;
+      }
+
+      observer = new IntersectionObserver(
+        ([entry]) => setRevealed(!entry.isIntersecting),
+        { threshold: 0.15 }
+      );
+      observer.observe(hero);
+    };
+
+    setup();
+    mobileQuery.addEventListener("change", setup);
+    return () => {
+      observer?.disconnect();
+      mobileQuery.removeEventListener("change", setup);
+    };
   }, [revealImmediately]);
 
   return (
