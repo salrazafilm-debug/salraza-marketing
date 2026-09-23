@@ -2,6 +2,12 @@ export type MediaItem = {
   type: "image" | "video";
   label: string;
   caption?: string;
+  /**
+   * Path under /public to the real photo, or a thumbnail/poster frame for a
+   * video (e.g. "/clients/dmv-marksmen/game-day-01.jpg"). Leave unset for a
+   * placeholder card — useful for listing deliverables that aren't ready yet.
+   */
+  src?: string;
 };
 
 export type Client = {
@@ -14,16 +20,17 @@ export type Client = {
 };
 
 /**
- * Placeholder client workspaces. Replace passwordHash values with your own —
- * run `node scripts/hash-password.mjs "the new password"` to generate one —
- * and swap the media list once real deliverables are ready.
+ * Client workspaces. Replace passwordHash values with your own — run
+ * `node scripts/hash-password.mjs "the new password"` to generate one — and
+ * fill in real deliverables in `media` (see MediaItem.src) once they're ready.
  */
 export const CLIENTS: Client[] = [
   {
     slug: "dmv-marksmen",
     name: "DMV Marksmen",
+    // Password: Marksmen.Salraza
     passwordHash:
-      "f55f3bbea5933f76da28a264f13ce9d0:0c9d164a86f396dd24a41b72db5724828a5de91ed2a2849a7e261d944a620c787cb7a818b7313c692bfb3373b2035c2cce07d8d54a73abc094d5b32736dc836a",
+      "8354387e1679df953bf93266e5a9cd5d:753125e23f262f2d63e3b03bb89c125e68deca8d495bde3c2249f9d25d7ff2832916bc755ec57001d351c7364c3437a303481de77d6ce60c97a8bff0dd3735a4",
     welcomeNote: "So proud of this family. This is just the start.",
     media: [
       { type: "video", label: "Season highlight reel — final cut", caption: "Delivered · 2:14" },

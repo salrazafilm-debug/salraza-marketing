@@ -39,15 +39,29 @@ Paste the printed `salt:hash` string into that client's `passwordHash` in
 `src/lib/clients.ts`, and give the plaintext password to the client directly (not
 over an insecure channel).
 
-**Demo credentials** (placeholders — change before sharing the site):
+**Demo credentials** (`sample-client` is still a placeholder — change before sharing):
 
-- `dmv-marksmen` → password `family2026`
+- `dmv-marksmen` → password `Marksmen.Salraza`
 - `sample-client` → password `sample2026`
 
-To swap in real deliverables, replace the `media` array entries and point them at
-real files (e.g. upload to `public/clients/<slug>/` for small files, or an external
-storage/CDN provider for video — the `public/` folder isn't a great fit for large
-video files in production).
+**To add real photos/videos to a client's workspace:**
+
+1. Drop the image files into `public/clients/<slug>/` (create the folder if it
+   doesn't exist yet), e.g. `public/clients/dmv-marksmen/game-day-01.jpg`. For a
+   video deliverable, add a still frame/thumbnail image here too (an actual video
+   player isn't wired up yet — this just shows a poster with a play icon).
+2. In `src/lib/clients.ts`, add an `src` pointing to that path on the matching
+   `media` entry, e.g. `{ type: "image", label: "Game day gallery", src: "/clients/dmv-marksmen/game-day-01.jpg" }`.
+   Entries without `src` still show as a placeholder card (useful for listing
+   what's coming before it's ready).
+3. Keep images reasonably sized for the web (under ~500KB, ~1800px on the long
+   edge is plenty) — ask your assistant to resize/compress if you're not sure how.
+4. Commit and push; Vercel redeploys automatically.
+
+Large video *files* (not thumbnails) don't belong in `public/` — for an actual
+client-facing video player, that needs an external host (e.g. Mux, Cloudflare
+Stream, or even a plain link to a private YouTube/Vimeo upload) rather than
+self-hosting through this repo.
 
 ## Brand assets
 
