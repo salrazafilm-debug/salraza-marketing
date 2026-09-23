@@ -80,6 +80,14 @@ export function HeroVideo() {
   const [isMobile, setIsMobile] = useState(false);
   const showStill = reducedMotion || ended;
 
+  // Tell the site header (a separate component, so this can't be passed as a
+  // prop) when the intro has settled on its still frame, so it can reveal
+  // itself only once the video is done rather than sitting over it — on both
+  // mobile and desktop.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("hero-settled", { detail: showStill }));
+  }, [showStill]);
+
   // Tracks the same breakpoint the zoom animation and getContentBox() use, so
   // the resting poster image can match the video's settled zoom level.
   useEffect(() => {
@@ -149,11 +157,30 @@ export function HeroVideo() {
     if (reducedMotion) return;
     const video = videoRef.current;
     if (!video) return;
-    video.play().catch(() => {
-      // Autoplay was blocked (e.g. browser policy) — fall back to the still
-      // end frame straight away rather than leaving a frozen first frame.
-      setEnded(true);
-    });
+
+    let retried = false;
+
+    const attemptPlay = () => {
+      video.play().catch(() => {
+        // The first attempt can be rejected simply because the video hasn't
+        // buffered enough yet (common on mobile with a cold cache, right
+        // after a hard refresh) rather than a real autoplay-policy block.
+        // Retry once the browser says it's actually ready to play; only
+        // fall back to the still end frame if that retry also fails.
+        if (retried) {
+          setEnded(true);
+          return;
+        }
+        retried = true;
+        video.addEventListener("canplay", attemptPlay, { once: true });
+      });
+    };
+
+    attemptPlay();
+
+    return () => {
+      video.removeEventListener("canplay", attemptPlay);
+    };
   }, [reducedMotion]);
 
   // Mobile zoom: scale the video from ZOOM_START down to ZOOM_END in sync
@@ -287,7 +314,7 @@ export function HeroVideo() {
         <button
           type="button"
           onClick={skipToEnd}
-          className="focus-brand absolute right-4 top-20 z-10 rounded-full bg-espresso/60 px-4 py-2 text-label text-golden-hour backdrop-blur transition hover:bg-espresso/80 md:right-6 md:top-6"
+          className="focus-brand absolute right-4 top-4 z-10 rounded-full bg-espresso/60 px-4 py-2 text-label text-golden-hour backdrop-blur transition hover:bg-espresso/80 sm:right-6 sm:top-6"
         >
           Skip intro
         </button>

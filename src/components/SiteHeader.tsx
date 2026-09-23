@@ -18,40 +18,40 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
   useEffect(() => {
     if (revealImmediately) return;
 
-    // On mobile the header (logo + menu) stays visible from the start rather
-    // than hiding over the cinematic hero — there's no room to spare, and
-    // navigation should always be reachable on a phone. Desktop keeps the
-    // fade-in-on-scroll reveal.
-    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    // Reveal once the hero video (HeroVideo, a separate component) settles
+    // on its still end frame — on both mobile and desktop — rather than
+    // sitting over the cinematic intro. Scrolling past the hero is kept as a
+    // fallback in case that event is ever missed (e.g. a JS error elsewhere),
+    // so navigation can never get permanently stuck hidden.
+    let settled = false;
+    let scrolledPast = false;
+    const update = () => setRevealed(settled || scrolledPast);
+
+    const onHeroSettled = (event: Event) => {
+      settled = Boolean((event as CustomEvent<boolean>).detail);
+      update();
+    };
+    window.addEventListener("hero-settled", onHeroSettled);
+
+    const hero = document.getElementById("hero");
     let observer: IntersectionObserver | null = null;
-
-    const setup = () => {
-      observer?.disconnect();
-      observer = null;
-
-      if (mobileQuery.matches) {
-        setRevealed(true);
-        return;
-      }
-
-      const hero = document.getElementById("hero");
-      if (!hero) {
-        setRevealed(true);
-        return;
-      }
-
+    if (hero) {
       observer = new IntersectionObserver(
-        ([entry]) => setRevealed(!entry.isIntersecting),
+        ([entry]) => {
+          scrolledPast = !entry.isIntersecting;
+          update();
+        },
         { threshold: 0.15 }
       );
       observer.observe(hero);
-    };
+    } else {
+      scrolledPast = true;
+      update();
+    }
 
-    setup();
-    mobileQuery.addEventListener("change", setup);
     return () => {
+      window.removeEventListener("hero-settled", onHeroSettled);
       observer?.disconnect();
-      mobileQuery.removeEventListener("change", setup);
     };
   }, [revealImmediately]);
 
