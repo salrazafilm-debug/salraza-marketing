@@ -11,14 +11,6 @@ import { useEffect, useRef, useState } from "react";
 // were measured against the source video's pixel bounds for "SALRAZA
 // Marketing" (safe up to ~3.8x before the text would clip), so the logo
 // stays fully in frame at every point, including at rest.
-//
-// ZOOM_ORIGIN_Y (48%, roughly centered) is what the animation uses while
-// playing — tuned for that safety margin. Once settled, the site header
-// reveals and sits flush against the top of the viewport, so the resting
-// frame instead uses a *different*, dynamically-computed origin
-// (getFlushTopOriginY / restingOriginY below) that pushes the letterbox
-// bar's fixed budget entirely to the bottom, landing the content's top edge
-// at 0 — no visible gap between the header and the video/poster beneath it.
 const MOBILE_QUERY = "(max-width: 767px)";
 const ZOOM_START = 3.0;
 const ZOOM_END = 2.4;
@@ -50,19 +42,6 @@ type Rect = { left: number; top: number; width: number; height: number };
 
 function easeOutQuad(progress: number) {
   return 1 - (1 - progress) ** 2;
-}
-
-/**
- * The letterbox budget at a given zoom level is fixed (scaling changes the
- * content's size, not the total leftover space) — so the top and bottom bars
- * can only be traded off against each other, not both shrunk to zero at
- * once. This solves for the transform-origin Y that pushes ALL of that
- * budget to the bottom, landing the content's top edge exactly at 0 so it
- * sits flush against the header once it reveals (no visible gap), at
- * whatever scale is currently applied.
- */
-function getFlushTopOriginY(contentBoxTop: number, scale: number): number {
-  return (scale * contentBoxTop) / (scale - 1);
 }
 
 /** Replicates CSS object-fit contain/cover math to find where the video's
@@ -99,9 +78,7 @@ export function HeroVideo() {
   const [paused, setPaused] = useState(false);
   const [hotspotRect, setHotspotRect] = useState<Rect | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [restingOriginY, setRestingOriginY] = useState(ZOOM_ORIGIN_Y);
   const showStill = reducedMotion || ended;
-  const restingOrigin = `${ZOOM_ORIGIN_X * 100}% ${restingOriginY * 100}%`;
 
   // Tell the site header (a separate component, so this can't be passed as a
   // prop) when the intro has settled on its still frame, so it can reveal
@@ -134,12 +111,6 @@ export function HeroVideo() {
     const updateHotspot = () => {
       const { width, height } = section.getBoundingClientRect();
       const contentBox = getContentBox(width, height);
-
-      // Recompute the flush-top origin for the current container size, so it
-      // stays pixel-exact across viewport/orientation changes.
-      const originYFraction = getFlushTopOriginY(contentBox.top, ZOOM_END) / height;
-      setRestingOriginY(originYFraction);
-
       const rawLeft = contentBox.left + MARKETING_HOTSPOT.left * contentBox.width;
       const rawTop = contentBox.top + MARKETING_HOTSPOT.top * contentBox.height;
       const rawWidth = MARKETING_HOTSPOT.width * contentBox.width;
@@ -152,7 +123,7 @@ export function HeroVideo() {
       }
 
       const originX = width * ZOOM_ORIGIN_X;
-      const originY = height * originYFraction;
+      const originY = height * ZOOM_ORIGIN_Y;
       const project = (x: number, y: number) => ({
         x: originX + (x - originX) * scale,
         y: originY + (y - originY) * scale,
@@ -290,7 +261,7 @@ export function HeroVideo() {
           className={`absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-700 md:object-cover ${
             ended ? "opacity-0" : "opacity-100"
           }`}
-          style={{ transformOrigin: showStill ? restingOrigin : ZOOM_ORIGIN }}
+          style={{ transformOrigin: ZOOM_ORIGIN }}
           muted={muted}
           playsInline
           autoPlay
@@ -312,7 +283,7 @@ export function HeroVideo() {
           showStill ? "opacity-100" : "opacity-0"
         }`}
         style={{
-          transformOrigin: restingOrigin,
+          transformOrigin: ZOOM_ORIGIN,
           transform: isMobile ? `scale(${ZOOM_END})` : undefined,
         }}
       />
