@@ -23,8 +23,8 @@ export default async function ClientsPage({
           <p className="text-caption uppercase tracking-wide text-warm-text">Client work</p>
           <h1 className="text-headline mt-3 text-ink">Visit your vault</h1>
           <p className="mx-auto mt-4 max-w-xl text-body text-ink-muted">
-            Every family gets their own space — finished edits, galleries and clips, all in one
-            place. Type your password below to step inside.
+            Every family gets a private safe deposit for finished galleries, edits, photos and
+            videos. Type your password here to access.
           </p>
 
           <div className="mt-10">
