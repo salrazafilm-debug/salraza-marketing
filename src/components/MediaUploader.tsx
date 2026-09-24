@@ -97,10 +97,20 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve(JSON.parse(xhr.responseText));
             } else {
-              reject(new Error("Cloudinary upload failed."));
+              // Surface Cloudinary's own reason (e.g. "Invalid Signature",
+              // "File size too large") instead of a generic failure message,
+              // since that's the only way to tell what actually went wrong.
+              let reason = `Cloudinary upload failed (${xhr.status}).`;
+              try {
+                const parsed = JSON.parse(xhr.responseText);
+                if (parsed?.error?.message) reason = `Cloudinary: ${parsed.error.message}`;
+              } catch {
+                // Response wasn't JSON — stick with the generic reason above.
+              }
+              reject(new Error(reason));
             }
           };
-          xhr.onerror = () => reject(new Error("Cloudinary upload failed."));
+          xhr.onerror = () => reject(new Error("Cloudinary upload failed — check your connection."));
           xhr.send(formData);
         }
       );
