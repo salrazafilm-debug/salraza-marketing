@@ -8,6 +8,12 @@ export type MediaItem = {
   caption: string | null;
   src: string;
   cloudinaryPublicId: string;
+  folderId: string | null;
+};
+
+export type Folder = {
+  id: string;
+  name: string;
 };
 
 export type Client = {
@@ -18,6 +24,7 @@ export type Client = {
   passwordHash: string;
   welcomeNote: string;
   media: MediaItem[];
+  folders: Folder[];
 };
 
 export type ClientSummary = Pick<Client, "id" | "slug" | "name" | "welcomeNote"> & {
@@ -41,6 +48,14 @@ type MediaRow = {
   src: string;
   cloudinary_public_id: string;
   position: number;
+  folder_id: string | null;
+};
+
+type FolderRow = {
+  id: string;
+  client_id: string;
+  name: string;
+  position: number;
 };
 
 function toMediaItem(row: MediaRow): MediaItem {
@@ -51,6 +66,7 @@ function toMediaItem(row: MediaRow): MediaItem {
     caption: row.caption,
     src: row.src,
     cloudinaryPublicId: row.cloudinary_public_id,
+    folderId: row.folder_id,
   };
 }
 
@@ -76,6 +92,16 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
 
   if (mediaError) throw new Error(mediaError.message);
 
+  const { data: folderRows, error: folderError } = await supabase
+    .from("folders")
+    .select("*")
+    .eq("client_id", clientRow.id)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+    .returns<FolderRow[]>();
+
+  if (folderError) throw new Error(folderError.message);
+
   return {
     id: clientRow.id,
     slug: clientRow.slug,
@@ -83,6 +109,7 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
     passwordHash: clientRow.password_hash,
     welcomeNote: clientRow.welcome_note,
     media: (mediaRows ?? []).map(toMediaItem),
+    folders: (folderRows ?? []).map((row) => ({ id: row.id, name: row.name })),
   };
 }
 
@@ -169,7 +196,7 @@ export async function deleteClient(slug: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Adds a media item (already uploaded to Cloudinary) to a client's gallery. */
+/** Adds a media item (already uploaded to Cloudinary) to a client's gallery, optionally inside a folder. */
 export async function addMediaItem(
   clientSlug: string,
   item: {
@@ -178,6 +205,7 @@ export async function addMediaItem(
     caption?: string;
     src: string;
     cloudinaryPublicId: string;
+    folderId?: string | null;
   }
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -202,9 +230,58 @@ export async function addMediaItem(
     src: item.src,
     cloudinary_public_id: item.cloudinaryPublicId,
     position: count ?? 0,
+    folder_id: item.folderId || null,
   });
 
   if (error) throw new Error(error.message);
+}
+
+/** Creates a new (initially empty) folder in a client's gallery. */
+export async function createFolder(clientSlug: string, name: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data: clientRow, error: clientError } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("slug", clientSlug)
+    .maybeSingle<{ id: string }>();
+
+  if (clientError || !clientRow) throw new Error("Family not found.");
+
+  const { count } = await supabase
+    .from("folders")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", clientRow.id);
+
+  const { error } = await supabase
+    .from("folders")
+    .insert({ client_id: clientRow.id, name, position: count ?? 0 });
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Deletes a folder and everything in it (the DB rows cascade automatically).
+ * Returns the deleted items' Cloudinary info so the caller can also remove
+ * those files from Cloudinary, which the database has no way to do itself.
+ */
+export async function deleteFolder(
+  id: string
+): Promise<{ cloudinaryPublicId: string; type: "image" | "video" }[]> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: mediaRows } = await supabase
+    .from("media_items")
+    .select("cloudinary_public_id, type")
+    .eq("folder_id", id)
+    .returns<Pick<MediaRow, "cloudinary_public_id" | "type">[]>();
+
+  const { error } = await supabase.from("folders").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  return (mediaRows ?? []).map((row) => ({
+    cloudinaryPublicId: row.cloudinary_public_id,
+    type: row.type,
+  }));
 }
 
 /** Updates a media item's label and/or caption. */

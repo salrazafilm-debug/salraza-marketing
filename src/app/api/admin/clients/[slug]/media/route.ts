@@ -21,13 +21,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const caption = typeof body.caption === "string" ? body.caption.trim() : undefined;
   const src = String(body.src ?? "").trim();
   const cloudinaryPublicId = String(body.cloudinaryPublicId ?? "").trim();
+  const folderId = typeof body.folderId === "string" && body.folderId ? body.folderId : null;
 
   if (!type || !label || !src || !cloudinaryPublicId) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 
   try {
-    await addMediaItem(slug, { type, label, caption, src, cloudinaryPublicId });
+    await addMediaItem(slug, { type, label, caption, src, cloudinaryPublicId, folderId });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not save media item." },

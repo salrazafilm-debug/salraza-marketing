@@ -2,8 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import type { Folder } from "@/lib/clients";
 
 type UploadState = { fileName: string; progress: number; error?: string } | null;
+
+const NEW_FOLDER_VALUE = "__new__";
 
 /**
  * Uploads a file straight from the browser to Cloudinary (not through our
@@ -11,12 +14,46 @@ type UploadState = { fileName: string; progress: number; error?: string } | null
  * request-size limit. Our server only ever sees a small signature request
  * beforehand and a small metadata request afterward.
  */
-export function MediaUploader({ clientSlug }: { clientSlug: string }) {
+export function MediaUploader({ clientSlug, folders }: { clientSlug: string; folders: Folder[] }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState("");
   const [caption, setCaption] = useState("");
+  const [folderId, setFolderId] = useState<string>("");
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderError, setFolderError] = useState<string | undefined>();
   const [upload, setUpload] = useState<UploadState>(null);
+
+  function handleFolderSelect(value: string) {
+    if (value === NEW_FOLDER_VALUE) {
+      setCreatingFolder(true);
+      return;
+    }
+    setFolderId(value);
+  }
+
+  async function handleCreateFolder() {
+    const name = newFolderName.trim();
+    if (!name) return;
+    setFolderError(undefined);
+
+    const res = await fetch(`/api/admin/clients/${clientSlug}/folders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setFolderError(data.error || "Could not create folder.");
+      return;
+    }
+
+    setCreatingFolder(false);
+    setNewFolderName("");
+    router.refresh();
+  }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -77,6 +114,7 @@ export function MediaUploader({ clientSlug }: { clientSlug: string }) {
           caption,
           src: uploadResult.secure_url,
           cloudinaryPublicId: uploadResult.public_id,
+          folderId: folderId || null,
         }),
       });
       const saveData = await saveRes.json();
@@ -99,6 +137,56 @@ export function MediaUploader({ clientSlug }: { clientSlug: string }) {
   return (
     <div className="flex flex-col gap-4 rounded-xl bg-paper-raised p-6">
       <p className="text-subhead text-ink">Upload finished work</p>
+
+      <label className="flex flex-col gap-2">
+        <span className="text-label text-ink">Folder</span>
+        <select
+          value={folderId}
+          onChange={(event) => handleFolderSelect(event.target.value)}
+          className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
+        >
+          <option value="">No folder (individual upload)</option>
+          {folders.map((folder) => (
+            <option key={folder.id} value={folder.id}>
+              {folder.name}
+            </option>
+          ))}
+          <option value={NEW_FOLDER_VALUE}>+ Create new folder…</option>
+        </select>
+      </label>
+
+      {creatingFolder && (
+        <div className="flex flex-col gap-2 rounded border border-line bg-paper p-4">
+          <span className="text-label text-ink">New folder name</span>
+          <div className="flex gap-2">
+            <input
+              autoFocus
+              value={newFolderName}
+              onChange={(event) => setNewFolderName(event.target.value)}
+              placeholder="e.g. Game Day Gallery"
+              className="focus-brand flex-1 rounded border border-line bg-paper-raised px-4 py-2 text-body text-ink"
+            />
+            <button
+              type="button"
+              onClick={handleCreateFolder}
+              className="focus-brand rounded-full bg-highlighter px-4 py-2 text-label text-on-highlighter transition hover:brightness-95"
+            >
+              Create
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCreatingFolder(false);
+                setNewFolderName("");
+              }}
+              className="focus-brand text-label text-ink-muted underline"
+            >
+              Cancel
+            </button>
+          </div>
+          {folderError && <p className="text-caption text-red-700">{folderError}</p>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2">

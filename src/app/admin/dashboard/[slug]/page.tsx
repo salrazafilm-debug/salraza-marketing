@@ -47,8 +47,8 @@ export default async function AdminClientPage({
 
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
             <div className="flex flex-col gap-8">
-              <MediaUploader clientSlug={client.slug} />
-              <MediaManager items={client.media} />
+              <MediaUploader clientSlug={client.slug} folders={client.folders} />
+              <MediaManager items={client.media} folders={client.folders} />
             </div>
 
             <ClientSettingsForm slug={client.slug} name={client.name} welcomeNote={client.welcomeNote} />
