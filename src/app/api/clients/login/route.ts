@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { CLIENTS } from "@/lib/clients";
-import { verifyPassword } from "@/lib/password";
+import { findClientSlugByPassword } from "@/lib/clients";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 
 export async function POST(request: Request) {
@@ -16,14 +15,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Password is required" }, { status: 400 });
   }
 
-  const match = CLIENTS.find((client) => verifyPassword(password, client.passwordHash));
+  const slug = await findClientSlugByPassword(password);
 
-  if (!match) {
+  if (!slug) {
     return NextResponse.json({ error: "That password didn't match a workspace." }, { status: 401 });
   }
 
-  const response = NextResponse.json({ ok: true, slug: match.slug });
-  response.cookies.set(SESSION_COOKIE, signSession(match.slug), {
+  const response = NextResponse.json({ ok: true, slug });
+  response.cookies.set(SESSION_COOKIE, signSession(slug), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { findClientBySlug } from "@/lib/clients";
+import { getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
@@ -13,7 +14,7 @@ export default async function WorkspacePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const client = findClientBySlug(slug);
+  const client = await findClientBySlug(slug);
   if (!client) notFound();
 
   const cookieStore = await cookies();
@@ -37,67 +38,60 @@ export default async function WorkspacePage({
             <LogoutButton />
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {client.media.map((item) =>
-              item.src ? (
-                <div
-                  key={item.label}
-                  className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl"
-                >
-                  <Image
-                    src={item.src}
-                    alt={item.label}
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/10 to-transparent" />
-                  {item.type === "video" && (
-                    <svg
-                      width="40"
-                      height="40"
-                      viewBox="0 0 40 40"
-                      fill="none"
-                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-paper drop-shadow"
+          {client.media.length === 0 ? (
+            <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
+              <p className="text-subhead text-ink">Nothing here yet</p>
+              <p className="max-w-sm text-body text-ink-muted">
+                We&apos;re still finishing your gallery — check back soon.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {client.media.map((item) =>
+                item.type === "video" ? (
+                  <div
+                    key={item.id}
+                    className="flex flex-col overflow-hidden rounded-xl bg-espresso"
+                  >
+                    <video
+                      controls
+                      preload="none"
+                      poster={getVideoThumbnailUrl(item.cloudinaryPublicId)}
+                      className="aspect-[4/5] w-full bg-black object-contain"
                     >
-                      <circle cx="20" cy="20" r="19" fill="black" fillOpacity="0.35" />
-                      <path d="M16 13l12 7-12 7z" fill="currentColor" />
-                    </svg>
-                  )}
-                  <div className="relative p-4 sm:p-6">
-                    <p className="text-subhead text-paper">{item.label}</p>
-                    {item.caption && (
-                      <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>
-                    )}
+                      <source src={item.src} />
+                    </video>
+                    <div className="p-4 sm:p-6">
+                      <p className="text-subhead text-paper">{item.label}</p>
+                      {item.caption && (
+                        <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div
-                  key={item.label}
-                  className="flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl bg-lavender-dusk p-6"
-                >
-                  <span className="text-on-highlighter/80">
-                    {item.type === "video" ? (
-                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="6" width="24" height="16" rx="3" />
-                        <path d="M11 11l6 3-6 3z" fill="currentColor" stroke="none" />
-                      </svg>
-                    ) : (
-                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="4" width="24" height="20" rx="3" />
-                        <circle cx="9" cy="11" r="2.5" />
-                        <path d="M4 21l7-7 4 4 5-6 4 5" />
-                      </svg>
-                    )}
-                  </span>
-                  <p className="text-subhead mt-4 text-on-highlighter">{item.label}</p>
-                  {item.caption && (
-                    <p className="text-caption mt-1 text-on-highlighter/70">{item.caption}</p>
-                  )}
-                </div>
-              )
-            )}
-          </div>
+                ) : (
+                  <div
+                    key={item.id}
+                    className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl"
+                  >
+                    <Image
+                      src={item.src}
+                      alt={item.label}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/10 to-transparent" />
+                    <div className="relative p-4 sm:p-6">
+                      <p className="text-subhead text-paper">{item.label}</p>
+                      {item.caption && (
+                        <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
 
           <p className="mt-10 text-caption">
             Don&apos;t see something you were expecting? Email us at{" "}

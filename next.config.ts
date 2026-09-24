@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // cross-origin dev requests by default, hydration never finishes, and
   // client components (like the hero video's autoplay) silently never run.
   allowedDevOrigins: ["192.168.1.179"],
+  // Client deliverables (photos/videos uploaded through /admin) are served
+  // from Cloudinary, not /public, so next/image needs this domain allowed.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }],
+  },
 };
 
 export default nextConfig;
