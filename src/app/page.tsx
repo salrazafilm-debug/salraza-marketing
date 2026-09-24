@@ -179,7 +179,6 @@ export default function Home() {
         </section>
 
         <section className="px-4 py-20 sm:px-6">
-          <h2 className="text-headline mb-8 text-center text-ink">Family work</h2>
           <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-xl">
             <Image
               src="/client-work-vault.webp"
