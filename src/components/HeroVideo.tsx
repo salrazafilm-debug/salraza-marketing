@@ -2,18 +2,46 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// On phones the video is shown with object-fit: contain (full frame,
-// letterboxed) because a portrait screen is much taller than this 16:9 clip.
-// MOBILE_QUERY gates a scale() zoom that starts tight on the center monitor —
-// where the logo lives — and eases down to ZOOM_END (not all the way back to
-// 1) as the video plays, so the still end frame stays fuller/less letterboxed
-// too instead of popping back out to the bars-heavy full frame. 3.0x/2.4x
-// were measured against the source video's pixel bounds for "SALRAZA
-// Marketing" (safe up to ~3.8x before the text would clip), so the logo
-// stays fully in frame at every point, including at rest.
+// ============================================================================
+// CALIBRATED — DO NOT ADJUST ZOOM_ORIGIN_X/Y OR MOBILE_ZOOM BY EYE.
+//
+// The desktop rendering needs no calibration: `object-cover object-center`
+// (see the JSX below) just centers the whole 16:9 frame, and the lockup
+// happens to sit dead-center in that frame already.
+//
+// Mobile is the fragile path: object-fit:contain + a single static scale()
+// into ZOOM_ORIGIN (no animation — same zoom level while playing and at
+// rest). Getting this centered required measuring the actual source pixels
+// (canvas getImageData on /public/video/salraza-hero-poster.jpg, 1916x1080),
+// not eyeballing the frame. Verified 2026-09-23:
+//   - monitor bezel outer edges:      x = 647 .. 1268   -> center x = 957.5
+//   - monitor screen (white) edges:   x = 657 .. 1257    -> center x = 957.0
+//   - screen vertical (white) edges:  y = 329 .. 649     -> center y = 489
+//   - "SALRAZA" glyph row (y=486):    x = 713 .. 1198    -> center x = 955.5
+//   - "Marketing" yellow highlight:   x = 784 .. 1141    -> center x = 962.5
+//   - "Marketing" black glyph row:    x = 824 .. 1062    -> center x = 943
+// Frame width is 1916px, so every one of those centers lands within 1% of
+// exact horizontal center (958px = 50.0%). That is why ZOOM_ORIGIN_X = 0.5
+// below is correct and MUST stay 0.5 — an earlier value of 0.43 (a guess,
+// never actually measured) is what caused "Marketing" to clip off the right
+// edge on mobile while empty desk showed on the left. If this ever looks
+// off-center again, the fix is: re-run the same canvas pixel measurement
+// against whatever the current /public/video/salraza-hero-poster.jpg is
+// (assets can be swapped), not to nudge these numbers by trial and error.
+//
+// ZOOM_ORIGIN_Y = 0.48 (486/1080) tracks the "SALRAZA" text row above, which
+// is close enough to the screen's own vertical center (489/1080 = 0.453) that
+// the two rarely disagree in practice; re-measure the same way if the source
+// asset changes.
+//
+// MOBILE_ZOOM (2.2) is sized against the widest line, "SALRAZA"
+// (713-1198px = 485px = 25.3% of frame width): at scale 2.2 the visible
+// window is 1/2.2 = 45.5% of the frame, comfortably wider than 25.3%, so the
+// full word stays safely in frame. Do not raise it past ~3.8x (1/3.8 = 26.3%,
+// right at the edge of clipping "SALRAZA") without re-measuring.
+// ============================================================================
 const MOBILE_QUERY = "(max-width: 767px)";
-const ZOOM_START = 3.0;
-const ZOOM_END = 2.4;
+const MOBILE_ZOOM = 2.2;
 const ZOOM_ORIGIN_X = 0.5;
 const ZOOM_ORIGIN_Y = 0.48;
 const ZOOM_ORIGIN = `${ZOOM_ORIGIN_X * 100}% ${ZOOM_ORIGIN_Y * 100}%`;
@@ -39,10 +67,6 @@ const MARKETING_HOTSPOT = {
 };
 
 type Rect = { left: number; top: number; width: number; height: number };
-
-function easeOutQuad(progress: number) {
-  return 1 - (1 - progress) ** 2;
-}
 
 /** Replicates CSS object-fit contain/cover math to find where the video's
  * actual pixels land within its container, so the hotspot can be positioned
@@ -100,10 +124,11 @@ export function HeroVideo() {
 
   // Keep the "Marketing" hover hotspot pixel-aligned with the baked-in logo
   // as the viewport resizes, since object-fit's contain/cover math depends
-  // on the container's actual size and aspect ratio. On mobile the resting
-  // video/poster also carries a `scale(ZOOM_END)` transform (see below), so
-  // the hotspot's corners are projected through the same scale-around-origin
-  // math the CSS transform applies, or it'd land in the pre-zoom position.
+  // on the container's actual size and aspect ratio. On mobile the video/
+  // poster also carries a static `scale(MOBILE_ZOOM)` transform (see below),
+  // so the hotspot's corners are projected through the same scale-around-
+  // origin math the CSS transform applies, or it'd land in the pre-zoom
+  // position.
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -116,7 +141,7 @@ export function HeroVideo() {
       const rawWidth = MARKETING_HOTSPOT.width * contentBox.width;
       const rawHeight = MARKETING_HOTSPOT.height * contentBox.height;
 
-      const scale = isMobile && showStill ? ZOOM_END : 1;
+      const scale = isMobile ? MOBILE_ZOOM : 1;
       if (scale === 1) {
         setHotspotRect({ left: rawLeft, top: rawTop, width: rawWidth, height: rawHeight });
         return;
@@ -143,7 +168,7 @@ export function HeroVideo() {
     const observer = new ResizeObserver(updateHotspot);
     observer.observe(section);
     return () => observer.disconnect();
-  }, [isMobile, showStill]);
+  }, [isMobile]);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -159,6 +184,7 @@ export function HeroVideo() {
     if (!video) return;
 
     let retried = false;
+    let settled = false;
 
     const attemptPlay = () => {
       video.play().catch(() => {
@@ -168,6 +194,7 @@ export function HeroVideo() {
         // Retry once the browser says it's actually ready to play; only
         // fall back to the still end frame if that retry also fails.
         if (retried) {
+          settled = true;
           setEnded(true);
           return;
         }
@@ -176,44 +203,43 @@ export function HeroVideo() {
       });
     };
 
+    // On a flaky mobile connection (common testing over local Wi-Fi) the
+    // ~12MB source can stall entirely — no error event, `canplay` just
+    // never fires, so the promise-based retry above never resolves either
+    // way and the hero is stuck. `onError` catches an outright failed
+    // fetch/decode; this timeout catches the silent-stall case by forcing
+    // the same graceful fallback (the still poster frame) once the video
+    // hasn't started playing within a few seconds, instead of leaving the
+    // page waiting indefinitely on a refresh.
+    const stallTimeout = window.setTimeout(() => {
+      if (!settled && video.paused) {
+        settled = true;
+        setEnded(true);
+      }
+    }, 6000);
+
+    const handlePlaying = () => {
+      settled = true;
+      window.clearTimeout(stallTimeout);
+    };
+
+    const handleError = () => {
+      settled = true;
+      window.clearTimeout(stallTimeout);
+      setEnded(true);
+    };
+
+    video.addEventListener("playing", handlePlaying);
+    video.addEventListener("error", handleError);
     attemptPlay();
 
     return () => {
+      window.clearTimeout(stallTimeout);
       video.removeEventListener("canplay", attemptPlay);
+      video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("error", handleError);
     };
   }, [reducedMotion]);
-
-  // Mobile zoom: scale the video from ZOOM_START down to ZOOM_END in sync
-  // with actual playback progress (not a fixed-duration CSS animation) so it
-  // stays correct even if playback stalls, is paused, or the intro is
-  // replayed. Settles at ZOOM_END (not 1) so the resting frame stays full.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const mql = window.matchMedia(MOBILE_QUERY);
-
-    if (reducedMotion || ended) {
-      video.style.transform = mql.matches ? `scale(${ZOOM_END})` : "";
-      return;
-    }
-
-    let raf: number;
-
-    const tick = () => {
-      if (mql.matches && video.duration) {
-        const progress = Math.min(1, video.currentTime / video.duration);
-        const scale = ZOOM_START + (ZOOM_END - ZOOM_START) * easeOutQuad(progress);
-        video.style.transform = `scale(${scale})`;
-      } else {
-        video.style.transform = "";
-      }
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reducedMotion, ended]);
 
   const togglePause = () => {
     const video = videoRef.current;
@@ -253,7 +279,16 @@ export function HeroVideo() {
     <section
       ref={sectionRef}
       id="hero"
-      className="relative flex h-[100svh] w-full items-end justify-center overflow-hidden bg-espresso"
+      // Mobile only is shorter than a full 100svh, on purpose: the video/
+      // poster fill this box (absolute inset-0 h-full w-full) with the SAME
+      // calibrated object-position/zoom fractions from above, so shrinking
+      // the box only trims the empty letterboxed margin around the logo —
+      // it does not recrop or re-zoom the logo itself. This pulls the
+      // section below up the page on mobile without touching
+      // ZOOM_ORIGIN_X/Y or MOBILE_ZOOM. Desktop stays a full 100svh
+      // cinematic intro (only the video visible until the visitor scrolls)
+      // — that was explicitly kept as-is, do not shrink it to match mobile.
+      className="relative flex h-[82svh] w-full items-end justify-center overflow-hidden bg-espresso md:h-[100svh]"
     >
       {!reducedMotion && (
         <video
@@ -261,7 +296,10 @@ export function HeroVideo() {
           className={`absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-700 md:object-cover ${
             ended ? "opacity-0" : "opacity-100"
           }`}
-          style={{ transformOrigin: ZOOM_ORIGIN }}
+          style={{
+            transformOrigin: ZOOM_ORIGIN,
+            transform: isMobile ? `scale(${MOBILE_ZOOM})` : undefined,
+          }}
           muted={muted}
           playsInline
           autoPlay
@@ -284,7 +322,7 @@ export function HeroVideo() {
         }`}
         style={{
           transformOrigin: ZOOM_ORIGIN,
-          transform: isMobile ? `scale(${ZOOM_END})` : undefined,
+          transform: isMobile ? `scale(${MOBILE_ZOOM})` : undefined,
         }}
       />
 

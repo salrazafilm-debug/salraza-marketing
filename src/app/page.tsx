@@ -11,18 +11,19 @@ const SERVICES = [
   {
     title: "Social media management",
     body: "Content that sounds like you, posted on a plan you never have to think about.",
-    accent: "bg-golden-hour/40 text-warm-text",
+    accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="20" height="14" rx="2" />
         <path d="M8 22h10M13 18v4" />
+        <image href="/logos/salraza-logo-transparent.png" x="6" y="7.5" width="14" height="7" preserveAspectRatio="xMidYMid meet" />
       </svg>
     ),
   },
   {
     title: "Photography",
     body: "We capture moments and freeze them in time forever.",
-    accent: "bg-lavender-dusk/30 text-purple-text",
+    accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 8h4l2-3h8l2 3h4v13H3z" />
@@ -32,8 +33,8 @@ const SERVICES = [
   },
   {
     title: "Short-form video",
-    body: "Shot, edited and posted — reels and clips built to get your story out there.",
-    accent: "bg-marker-purple/15 text-marker-purple",
+    body: "Videos optimized for high performing views, followers, and comments! Grow your page!",
+    accent: "bg-white text-red-600",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="20" height="16" rx="2" />
@@ -92,7 +93,7 @@ export default function Home() {
               {SERVICES.map((service) => (
                 <div
                   key={service.title}
-                  className="flex flex-col items-center rounded-xl bg-paper-raised p-2 text-center sm:p-6"
+                  className="flex flex-col items-center rounded-xl bg-espresso p-2 text-center sm:p-6"
                 >
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full sm:h-14 sm:w-14 ${service.accent}`}
@@ -101,10 +102,16 @@ export default function Home() {
                       {service.icon}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-[11px] font-bold leading-tight text-ink sm:mt-4 sm:text-subhead">
+                  <p
+                    className="mt-1.5 text-[11px] font-bold leading-tight text-golden-hour sm:mt-4 sm:text-subhead"
+                    style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6), 0 0 14px rgba(241,207,159,0.4)" }}
+                  >
                     {service.title}
                   </p>
-                  <p className="mt-1 text-[9.5px] leading-snug text-ink-muted sm:mt-2 sm:text-body">
+                  <p
+                    className="mt-1 text-[13px] leading-snug text-golden-hour/75 sm:mt-2 sm:text-body"
+                    style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+                  >
                     {service.body}
                   </p>
                 </div>
@@ -123,9 +130,33 @@ export default function Home() {
             <span className="text-script-accent text-marker-purple">B&amp;E</span>
             <h2 className="text-headline text-ink">Bruce &amp; Elena</h2>
             <p className="max-w-xl text-body text-ink-muted">
-              We&apos;re passionate and motivated to help you grow. Your story matters to us, and
-              we&apos;re in this with you — all the way, every time.
+              We&apos;re passionate and motivated to help you grow. Your story matters to us and
+              we&apos;re in this with you — to the future success.
             </p>
+
+            <div className="mt-4 flex items-center gap-6 sm:gap-10">
+              {/*
+                Plain <img>, not next/image: these small signature files were
+                intermittently failing to show up on mobile when loaded
+                through Next's dev-mode /_next/image optimization endpoint
+                (same class of issue as the cross-origin dev-resource
+                blocking hit earlier) — a raw <img> bypasses that pipeline
+                entirely, matching how the header logo and hero poster are
+                already served for the same reliability reason.
+              */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/signatures/bruce-signature.png"
+                alt="Bruce's signature"
+                className="h-auto w-28 mix-blend-multiply sm:w-40"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/signatures/elena-signature.webp"
+                alt="Elena's signature"
+                className="h-auto w-[149px] mix-blend-multiply sm:w-[213px]"
+              />
+            </div>
           </div>
         </section>
 
@@ -148,18 +179,33 @@ export default function Home() {
         </section>
 
         <section className="px-4 py-20 sm:px-6">
-          <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-6 rounded-xl bg-lavender-dusk px-6 py-14 text-center sm:px-14">
-            <p className="text-caption uppercase tracking-wide text-on-highlighter/70">
-              Client work
-            </p>
-            <h2 className="text-headline max-w-xl text-on-highlighter">
-              Your <Highlight>dedicated</Highlight> workspace
-            </h2>
-            <p className="max-w-lg text-body text-on-highlighter/80">
-              Every client gets a private space for finished galleries, edits and clips — just
-              your password away.
-            </p>
-            <LinkButton href="/clients">Visit your workspace</LinkButton>
+          <h2 className="text-headline mb-8 text-center text-ink">Client work</h2>
+          <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-xl">
+            <Image
+              src="/client-work-vault.webp"
+              alt=""
+              aria-hidden
+              fill
+              sizes="(min-width: 1200px) 1200px, 100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-espresso/75" />
+            <div className="relative flex flex-col items-center gap-6 px-6 py-14 text-center sm:px-14">
+              <h2
+                className="text-headline max-w-xl text-golden-hour"
+                style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.45)" }}
+              >
+                THE VAULT
+              </h2>
+              <p
+                className="max-w-lg text-body font-semibold text-golden-hour"
+                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 2px 10px rgba(0,0,0,0.7)" }}
+              >
+                Every client gets a private safe deposit for finished galleries, edits, clips,
+                photos and videos. Type your password here to access.
+              </p>
+              <LinkButton href="/clients">Visit your safe</LinkButton>
+            </div>
           </div>
         </section>
 

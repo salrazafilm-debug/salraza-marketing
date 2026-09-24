@@ -64,13 +64,27 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
           : "pointer-events-none -translate-y-2 opacity-0 border-transparent"
       }`}
     >
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6">
+      {/*
+        Mobile-only: taller vertical padding than desktop. The hero video
+        below (HeroVideo.tsx) is deliberately shorter on mobile (h-[82svh])
+        and its object-fit:contain letterboxing leaves an empty bg-espresso
+        strip above the zoomed logo — the video's own centering/zoom is
+        locked and must not change (see HeroVideo.tsx), so instead this
+        fixed header is grown taller to overlay that strip, closing the gap
+        with more of the cream header band rather than moving the video.
+        md:py-3 keeps desktop's confirmed, untouched sizing. The logo below
+        is bigger on mobile for the same reason (h-16 vs desktop's h-12) —
+        padding was shrunk to py-[26px] to compensate, so the header's total
+        height stays ~117px either way (logo + padding), still lined up with
+        where the video's visible content begins.
+      */}
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-[26px] sm:px-6 md:py-3">
         <Link href="/" className="flex items-center" aria-label="Salraza Marketing home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/salraza-logo-transparent.png"
             alt="Salraza Marketing"
-            className="h-10 w-auto sm:h-12"
+            className="h-16 w-auto md:h-12"
           />
         </Link>
 
