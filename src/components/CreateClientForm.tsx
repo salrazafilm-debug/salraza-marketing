@@ -86,7 +86,7 @@ export function CreateClientForm() {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Workspace URL slug</span>
+        <span className="text-label text-ink">Vault URL slug</span>
         <input
           required
           value={slug}
@@ -96,11 +96,11 @@ export function CreateClientForm() {
           }}
           className="focus-brand rounded border border-line bg-paper px-4 py-3 font-mono text-body text-ink"
         />
-        <span className="text-caption text-ink-muted">/clients/{slug || "…"}/workspace</span>
+        <span className="text-caption text-ink-muted">/clients/{slug || "…"}/vault</span>
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Workspace password</span>
+        <span className="text-label text-ink">Vault password</span>
         <input
           required
           minLength={6}
@@ -114,7 +114,7 @@ export function CreateClientForm() {
         <span className="text-label text-ink">Welcome note</span>
         <input
           name="welcomeNote"
-          defaultValue="Welcome to your workspace."
+          defaultValue="Welcome to your vault."
           className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
         />
       </label>

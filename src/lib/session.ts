@@ -18,7 +18,7 @@ function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
 }
 
-/** Signs a client workspace session token for the given client slug. */
+/** Signs a client vault session token for the given client slug. */
 export function signSession(slug: string): string {
   const payload = JSON.stringify({ slug, exp: Date.now() + SESSION_TTL_MS });
   const encodedPayload = base64url(payload);

@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
 
-export default async function WorkspacePage({
+export default async function VaultPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -31,7 +31,7 @@ export default async function WorkspacePage({
           <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-caption uppercase tracking-wide text-warm-text">
-                {client.name}&apos;s workspace
+                {client.name}
               </p>
               <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
             </div>

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const slug = String(body.slug ?? "").trim().toLowerCase();
   const name = String(body.name ?? "").trim();
   const password = String(body.password ?? "");
-  const welcomeNote = String(body.welcomeNote ?? "Welcome to your workspace.").trim();
+  const welcomeNote = String(body.welcomeNote ?? "Welcome to your vault.").trim();
 
   if (!slug || !SLUG_PATTERN.test(slug)) {
     return NextResponse.json(

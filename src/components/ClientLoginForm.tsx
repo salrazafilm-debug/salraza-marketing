@@ -24,12 +24,12 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "That password didn't match a workspace.");
+        setError(data.error || "That password didn't match a vault.");
         setSubmitting(false);
         return;
       }
 
-      router.push(`/clients/${data.slug}/workspace`);
+      router.push(`/clients/${data.slug}/vault`);
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
@@ -39,7 +39,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Workspace password</span>
+        <span className="text-label text-ink">Vault password</span>
         <input
           required
           autoFocus
@@ -57,7 +57,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
         disabled={submitting}
         className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
       >
-        {submitting ? "Checking…" : "Enter your workspace"}
+        {submitting ? "Checking…" : "Enter your vault"}
       </button>
     </form>
   );

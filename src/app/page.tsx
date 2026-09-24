@@ -204,7 +204,7 @@ export default function Home() {
                 Every client gets a private safe deposit for finished galleries, edits, clips,
                 photos and videos. Type your password here to access.
               </p>
-              <LinkButton href="/clients">Visit your safe</LinkButton>
+              <LinkButton href="/clients">Visit your vault</LinkButton>
             </div>
           </div>
         </section>

@@ -41,7 +41,7 @@ export default async function AdminClientPage({
                 ← All clients
               </Link>
               <h1 className="text-headline mt-2 text-ink">{client.name}</h1>
-              <p className="text-caption text-ink-muted">/clients/{client.slug}</p>
+              <p className="text-caption text-ink-muted">/clients/{client.slug}/vault</p>
             </div>
             <AdminLogoutButton />
           </div>

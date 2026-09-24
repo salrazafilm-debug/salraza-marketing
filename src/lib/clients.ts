@@ -54,7 +54,7 @@ function toMediaItem(row: MediaRow): MediaItem {
   };
 }
 
-/** Looks up a client workspace by its URL slug, with its media items in display order. */
+/** Looks up a client vault by its URL slug, with its media items in display order. */
 export async function findClientBySlug(slug: string): Promise<Client | undefined> {
   const supabase = getSupabaseAdmin();
 
@@ -88,7 +88,7 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
 
 /**
  * Checks a plaintext password against every client's hash and returns the
- * matching client's slug, or null. Client passwords are per-workspace, not
+ * matching client's slug, or null. Client passwords are per-vault, not
  * looked up by slug first, so there's no way to avoid checking each one.
  */
 export async function findClientSlugByPassword(password: string): Promise<string | null> {
@@ -104,7 +104,7 @@ export async function findClientSlugByPassword(password: string): Promise<string
   return match?.slug ?? null;
 }
 
-/** Lists every client workspace with a media count, for the admin dashboard. */
+/** Lists every client vault with a media count, for the admin dashboard. */
 export async function listClientSummaries(): Promise<ClientSummary[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -124,7 +124,7 @@ export async function listClientSummaries(): Promise<ClientSummary[]> {
   }));
 }
 
-/** Creates a new client workspace. Throws if the slug is already taken. */
+/** Creates a new client vault. Throws if the slug is already taken. */
 export async function createClient(input: {
   slug: string;
   name: string;
@@ -162,7 +162,7 @@ export async function updateClient(
   if (error) throw new Error(error.message);
 }
 
-/** Deletes a client workspace and all of its media item rows (not the Cloudinary assets). */
+/** Deletes a client vault and all of its media item rows (not the Cloudinary assets). */
 export async function deleteClient(slug: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("clients").delete().eq("slug", slug);

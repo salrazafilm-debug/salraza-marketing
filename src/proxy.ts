@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 
 export function proxy(request: NextRequest) {
-  const match = request.nextUrl.pathname.match(/^\/clients\/([^/]+)\/workspace/);
+  const match = request.nextUrl.pathname.match(/^\/clients\/([^/]+)\/vault/);
   if (!match) return NextResponse.next();
 
   const slug = match[1];
@@ -20,5 +20,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/clients/:slug/workspace", "/clients/:slug/workspace/:path*"],
+  matcher: ["/clients/:slug/vault", "/clients/:slug/vault/:path*"],
 };
