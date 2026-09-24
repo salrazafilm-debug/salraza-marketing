@@ -4,9 +4,64 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { Folder } from "@/lib/clients";
 
-type UploadState = { fileName: string; progress: number; error?: string } | null;
+type UploadState = { fileName: string; progress: number; error?: string; status?: string } | null;
 
 const NEW_FOLDER_VALUE = "__new__";
+
+// Cloudinary's plan caps a single image at 10MB (exactly 10,485,760 bytes) —
+// stay a little under that so re-encoding overhead can't push it back over.
+const MAX_IMAGE_BYTES = 9.5 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 4000;
+
+/**
+ * Downscales/re-encodes an oversized photo in the browser so it clears
+ * Cloudinary's 10MB image cap, instead of just failing. Runs entirely
+ * client-side (canvas), so the original file on the admin's device is never
+ * touched — only what gets uploaded is smaller. Videos are left alone:
+ * Cloudinary's video cap is far higher (100MB) and this file's size problem
+ * is specific to camera-resolution photos.
+ */
+async function compressImageIfNeeded(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.size <= MAX_IMAGE_BYTES) return file;
+
+  const bitmap = await createImageBitmap(file);
+  let width = bitmap.width;
+  let height = bitmap.height;
+  if (Math.max(width, height) > MAX_IMAGE_DIMENSION) {
+    const scale = MAX_IMAGE_DIMENSION / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+
+  let blob: Blob | null = null;
+  let quality = 0.9;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+
+    if (blob && blob.size <= MAX_IMAGE_BYTES) break;
+    // Still too big: drop quality first, then shrink dimensions further if
+    // quality alone can't get there (a very high-resolution source).
+    if (quality > 0.5) {
+      quality -= 0.15;
+    } else {
+      width = Math.round(width * 0.75);
+      height = Math.round(height * 0.75);
+    }
+  }
+
+  bitmap.close();
+  if (!blob) return file;
+
+  const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+  return new File([blob], newName, { type: "image/jpeg" });
+}
 
 /**
  * Uploads a file straight from the browser to Cloudinary (not through our
@@ -64,6 +119,12 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
     setUpload({ fileName: file.name, progress: 0 });
 
     try {
+      let uploadFile = file;
+      if (resourceType === "image" && file.size > MAX_IMAGE_BYTES) {
+        setUpload({ fileName: file.name, progress: 0, status: "Compressing large photo…" });
+        uploadFile = await compressImageIfNeeded(file);
+      }
+
       const signatureRes = await fetch("/api/admin/cloudinary-signature", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,7 +136,7 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
       const { timestamp, signature, apiKey, cloudName, folder } = signatureData;
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
       formData.append("api_key", apiKey);
       formData.append("timestamp", String(timestamp));
       formData.append("signature", signature);
@@ -234,6 +295,8 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
         <div className="text-caption">
           {upload.error ? (
             <p className="text-red-700">{upload.error}</p>
+          ) : upload.status ? (
+            <p className="text-ink-muted">{upload.status}</p>
           ) : (
             <p className="text-ink-muted">
               Uploading {upload.fileName}… {upload.progress}%
