@@ -187,7 +187,7 @@ export async function addMediaItem(
     .eq("slug", clientSlug)
     .maybeSingle<{ id: string }>();
 
-  if (clientError || !clientRow) throw new Error("Client not found.");
+  if (clientError || !clientRow) throw new Error("Family not found.");
 
   const { count } = await supabase
     .from("media_items")

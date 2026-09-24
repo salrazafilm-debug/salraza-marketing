@@ -29,7 +29,7 @@ export function Footer() {
               Family
             </span>
             <Link href="/clients" className="focus-brand hover:text-highlighter">
-              Client work
+              Family work
             </Link>
             <Link href="/#quote" className="focus-brand hover:text-highlighter">
               Get a quote

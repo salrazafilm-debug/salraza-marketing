@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ sl
     await updateClient(slug, updates);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not update client." },
+      { error: error instanceof Error ? error.message : "Could not update family." },
       { status: 400 }
     );
   }
@@ -47,7 +47,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await deleteClient(slug);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not delete client." },
+      { error: error instanceof Error ? error.message : "Could not delete family." },
       { status: 400 }
     );
   }

@@ -38,10 +38,9 @@ export default async function AdminClientPage({
           <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <Link href="/admin/dashboard" className="focus-brand text-caption text-purple-text underline">
-                ← All clients
+                ← All families
               </Link>
               <h1 className="text-headline mt-2 text-ink">{client.name}</h1>
-              <p className="text-caption text-ink-muted">/clients/{client.slug}/vault</p>
             </div>
             <AdminLogoutButton />
           </div>

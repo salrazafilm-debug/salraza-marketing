@@ -47,7 +47,6 @@ export default async function AdminDashboardPage() {
                 className="focus-brand flex flex-col gap-2 rounded-xl bg-paper-raised p-6 transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <p className="text-subhead text-ink">{client.name}</p>
-                <p className="text-caption text-ink-muted">/clients/{client.slug}/vault</p>
                 <p className="text-caption mt-2 text-warm-text">
                   {client.mediaCount} {client.mediaCount === 1 ? "item" : "items"} uploaded
                 </p>
@@ -55,7 +54,7 @@ export default async function AdminDashboardPage() {
             ))}
 
             {clients.length === 0 && (
-              <p className="text-body text-ink-muted">No clients yet — add your first one above.</p>
+              <p className="text-body text-ink-muted">No families yet — add your first one above.</p>
             )}
           </div>
         </div>

@@ -62,7 +62,7 @@ export function ClientSettingsForm({
       <p className="text-subhead text-ink">Vault settings</p>
 
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Client name</span>
+        <span className="text-label text-ink">Family name</span>
         <input
           name="name"
           defaultValue={name}

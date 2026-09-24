@@ -25,7 +25,7 @@ export default async function AdminLoginPage() {
           <p className="text-caption uppercase tracking-wide text-warm-text">Admin</p>
           <h1 className="text-headline mt-3 text-ink">Sign in to manage the vault</h1>
           <p className="mx-auto mt-4 max-w-xl text-body text-ink-muted">
-            Add clients, assign their passwords, and upload their finished work.
+            Add families, assign their passwords, and upload their finished work.
           </p>
 
           <div className="mt-10">

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     await createClient({ slug, name, password, welcomeNote });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not create client." },
+      { error: error instanceof Error ? error.message : "Could not create family." },
       { status: 400 }
     );
   }

@@ -41,7 +41,7 @@ export function CreateClientForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Could not create client.");
+        setError(data.error || "Could not create family.");
         setSubmitting(false);
         return;
       }
@@ -61,7 +61,7 @@ export function CreateClientForm() {
         onClick={() => setOpen(true)}
         className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95"
       >
-        + Add a client
+        + Add a family
       </button>
     );
   }
@@ -72,7 +72,7 @@ export function CreateClientForm() {
       className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-xl bg-paper-raised p-6 text-left"
     >
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Client name</span>
+        <span className="text-label text-ink">Family name</span>
         <input
           required
           autoFocus
@@ -127,7 +127,7 @@ export function CreateClientForm() {
           disabled={submitting}
           className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
         >
-          {submitting ? "Creating…" : "Create client"}
+          {submitting ? "Creating…" : "Create family"}
         </button>
         <button
           type="button"

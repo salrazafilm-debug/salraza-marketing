@@ -179,7 +179,7 @@ export default function Home() {
         </section>
 
         <section className="px-4 py-20 sm:px-6">
-          <h2 className="text-headline mb-8 text-center text-ink">Client work</h2>
+          <h2 className="text-headline mb-8 text-center text-ink">Family work</h2>
           <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-xl">
             <Image
               src="/client-work-vault.webp"
@@ -201,7 +201,7 @@ export default function Home() {
                 className="max-w-lg text-body font-semibold text-golden-hour"
                 style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 2px 10px rgba(0,0,0,0.7)" }}
               >
-                Every client gets a private safe deposit for finished galleries, edits, clips,
+                Every family gets a private safe deposit for finished galleries, edits, clips,
                 photos and videos. Type your password here to access.
               </p>
               <LinkButton href="/clients">Visit your vault</LinkButton>

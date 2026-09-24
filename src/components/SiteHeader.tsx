@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { href: "/#services", label: "Services" },
   { href: "/#about", label: "About" },
   { href: "/portfolio", label: "Portfolio" },
-  { href: "/clients", label: "Client work" },
+  { href: "/clients", label: "Family work" },
 ];
 
 export function SiteHeader({ revealImmediately = false }: { revealImmediately?: boolean }) {
