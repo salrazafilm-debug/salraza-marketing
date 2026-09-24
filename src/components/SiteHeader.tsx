@@ -18,11 +18,22 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
   useEffect(() => {
     if (revealImmediately) return;
 
-    // Reveal once the hero video (HeroVideo, a separate component) settles
-    // on its still end frame — on both mobile and desktop — rather than
-    // sitting over the cinematic intro. Scrolling past the hero is kept as a
-    // fallback in case that event is ever missed (e.g. a JS error elsewhere),
-    // so navigation can never get permanently stuck hidden.
+    // Mobile always shows the white header + logo immediately, rather than
+    // waiting on the hero video like desktop does. Desktop's cinematic
+    // "only the video visible until you scroll" intro is locked as-is; on
+    // mobile the video load is flakier (real-device network conditions) and
+    // branding shouldn't be held hostage to whether it ever settles.
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    if (mobileQuery.matches) {
+      setRevealed(true);
+      return;
+    }
+
+    // Desktop: reveal once the hero video (HeroVideo, a separate component)
+    // settles on its still end frame, rather than sitting over the
+    // cinematic intro. Scrolling past the hero is kept as a fallback in
+    // case that event is ever missed (e.g. a JS error elsewhere), so
+    // navigation can never get permanently stuck hidden.
     let settled = false;
     let scrolledPast = false;
     const update = () => setRevealed(settled || scrolledPast);

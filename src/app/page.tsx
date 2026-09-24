@@ -125,7 +125,17 @@ export default function Home() {
             aria-hidden
             className="pointer-events-none absolute -right-10 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lavender-dusk/30 blur-3xl"
           />
-          <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
+          {/*
+            Mobile-only: a soft white "spotlight" behind the text so it
+            reads clearly against the warm cream/lavender-blur background
+            (which reads fine on desktop's larger, more spread-out layout
+            but was low-contrast on mobile's tighter stack). The section's
+            own colored background stays visible at the edges/corners since
+            the glow is a feathered box-shadow, not a hard-edged card, and
+            everything resets to fully transparent at sm: and up so desktop
+            is untouched.
+          */}
+          <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 rounded-[2.5rem] bg-white px-6 py-10 text-center shadow-[0_0_50px_25px_rgba(255,255,255,0.9)] sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
             <p className="text-caption uppercase tracking-wide text-warm-text">About us</p>
             <span className="text-script-accent text-marker-purple">B&amp;E</span>
             <h2 className="text-headline text-ink">Bruce &amp; Elena</h2>
