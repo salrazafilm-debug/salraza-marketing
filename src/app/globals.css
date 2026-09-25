@@ -18,20 +18,6 @@
   --focus-ring: #8b3fd6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1a0f0a;
-    --paper-raised: #2b1105;
-    --cream: #2b1105;
-    --ink: #fdf0d1;
-    --ink-muted: #c9b8a6;
-    --line: #3d2a22;
-    --purple-text: #c164fc;
-    --warm-text: #f1cf9f;
-    --focus-ring: #c164fc;
-  }
-}
-
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
