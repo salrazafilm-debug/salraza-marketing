@@ -159,11 +159,19 @@ export default function Home() {
                 entirely, matching how the header logo and hero poster are
                 already served for the same reliability reason.
               */}
+              {/*
+                No explicit ellipse size here — that's what makes this
+                actually seamless. Omitting a size defaults the gradient to
+                "farthest-corner", which mathematically guarantees the
+                box's own corners resolve to exactly --burgundy (the same
+                color as the page behind it), so there's no rectangle, no
+                border, nothing for the eye to catch — just a fade.
+              */}
               <div
-                className="rounded-2xl px-6 py-5"
+                className="px-8 py-6"
                 style={{
                   background:
-                    "radial-gradient(ellipse 75% 75% at 50% 50%, #ffffff 0%, #ffffff 45%, var(--burgundy) 95%)",
+                    "radial-gradient(ellipse at 50% 50%, #ffffff 0%, #ffffff 30%, var(--burgundy) 100%)",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -174,10 +182,10 @@ export default function Home() {
                 />
               </div>
               <div
-                className="rounded-2xl px-6 py-5"
+                className="px-8 py-6"
                 style={{
                   background:
-                    "radial-gradient(ellipse 75% 75% at 50% 50%, #ffffff 0%, #ffffff 45%, var(--burgundy) 95%)",
+                    "radial-gradient(ellipse at 50% 50%, #ffffff 0%, #ffffff 30%, var(--burgundy) 100%)",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
