@@ -142,11 +142,14 @@ export default function Home() {
             {/*
               Signatures still need a light backing to read (they're black
               ink on white, via mix-blend-multiply, which only works over a
-              light surface) — a small pill sized to the content itself
-              rather than the big glow this section used to have, so it
-              reads as "a signed card" rather than an odd spotlight.
+              light surface). Each gets its own small radial-gradient
+              spotlight — same seamless-fade-to-burgundy technique as
+              before, just scoped tightly to one signature instead of
+              stretched across the whole text block, which is what made it
+              look unnatural there. At this small size it reads as a soft
+              halo around each signature rather than an odd glow.
             */}
-            <div className="mt-4 flex items-center gap-6 rounded-2xl bg-white px-8 py-5 sm:gap-10 sm:px-10">
+            <div className="mt-4 flex items-center gap-6 sm:gap-10">
               {/*
                 Plain <img>, not next/image: these small signature files were
                 intermittently failing to show up on mobile when loaded
@@ -156,18 +159,34 @@ export default function Home() {
                 entirely, matching how the header logo and hero poster are
                 already served for the same reliability reason.
               */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/signatures/bruce-signature.png"
-                alt="Bruce's signature"
-                className="h-auto w-28 mix-blend-multiply sm:w-40"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/signatures/elena-signature.webp"
-                alt="Elena's signature"
-                className="h-auto w-[149px] mix-blend-multiply sm:w-[213px]"
-              />
+              <div
+                className="rounded-2xl px-6 py-5"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 75% 75% at 50% 50%, #ffffff 0%, #ffffff 45%, var(--burgundy) 95%)",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/signatures/bruce-signature.png"
+                  alt="Bruce's signature"
+                  className="h-auto w-28 mix-blend-multiply sm:w-40"
+                />
+              </div>
+              <div
+                className="rounded-2xl px-6 py-5"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 75% 75% at 50% 50%, #ffffff 0%, #ffffff 45%, var(--burgundy) 95%)",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/signatures/elena-signature.webp"
+                  alt="Elena's signature"
+                  className="h-auto w-[149px] mix-blend-multiply sm:w-[213px]"
+                />
+              </div>
             </div>
           </div>
         </section>
