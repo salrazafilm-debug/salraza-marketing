@@ -17,6 +17,8 @@
   --espresso: #2b1105;
   --burgundy: #4a1220;
   --focus-ring: #8b3fd6;
+  --frost: #a8e6ff;
+  --on-frost: #0a2740;
 }
 
 @theme inline {
@@ -36,6 +38,8 @@
   --color-espresso: var(--espresso);
   --color-burgundy: var(--burgundy);
   --color-focus-ring: var(--focus-ring);
+  --color-frost: var(--frost);
+  --color-on-frost: var(--on-frost);
 
   --font-display: var(--font-unbounded);
   --font-sans: var(--font-bricolage);
@@ -144,6 +148,25 @@ body {
     position: absolute;
     inset: 0.08em -0.2em;
     background: #ffffff;
+    transform: rotate(-2deg);
+    border-radius: 3px;
+    z-index: -1;
+  }
+
+  /* Same marker-stroke device as .highlight, in an icy blue. */
+  .highlight-frost {
+    position: relative;
+    isolation: isolate;
+    display: inline-block;
+    color: var(--color-on-frost);
+    white-space: nowrap;
+  }
+
+  .highlight-frost::before {
+    content: "";
+    position: absolute;
+    inset: 0.08em -0.2em;
+    background: var(--color-frost);
     transform: rotate(-2deg);
     border-radius: 3px;
     z-index: -1;
