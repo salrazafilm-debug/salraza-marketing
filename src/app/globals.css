@@ -100,6 +100,14 @@ body {
     color: var(--color-ink-muted);
   }
 
+  .text-eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 800;
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    letter-spacing: 0.06em;
+  }
+
   .text-script-accent {
     font-family: var(--font-script);
     font-weight: 400;

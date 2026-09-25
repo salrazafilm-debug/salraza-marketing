@@ -15,10 +15,10 @@ export default function PortfolioPage() {
   return (
     <>
       <SiteHeader revealImmediately />
-      <main className="px-4 pt-28 pb-20 sm:px-6">
+      <main className="px-4 pt-36 pb-20 sm:px-6 sm:pt-40">
         <div className="mx-auto max-w-[1200px]">
-          <p className="text-caption uppercase tracking-wide text-warm-text">Gallery</p>
-          <h1 className="text-headline mt-3 max-w-2xl text-ink">
+          <p className="text-eyebrow uppercase text-ink">Gallery</p>
+          <h1 className="text-headline mt-5 max-w-2xl text-ink">
             A look at moments - <Highlight variant="frost">frozen</Highlight> in time
           </h1>
 
