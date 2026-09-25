@@ -140,14 +140,14 @@ export default function Home() {
             </p>
 
             {/*
-              Signatures still need a light backing to read (they're black
-              ink on white, via mix-blend-multiply, which only works over a
-              light surface). Each gets its own small radial-gradient
-              spotlight — same seamless-fade-to-burgundy technique as
-              before, just scoped tightly to one signature instead of
-              stretched across the whole text block, which is what made it
-              look unnatural there. At this small size it reads as a soft
-              halo around each signature rather than an odd glow.
+              No background box at all — any box, no matter how softly it
+              fades, still reads as a shape with an edge. Instead the images
+              themselves are inverted (black ink on white -> white ink on
+              black) and blended with `screen`: screen blend makes black
+              areas act fully transparent and white areas render at full
+              opacity, so the former white paper disappears entirely and
+              only the ink strokes show, now in white, sitting directly on
+              the burgundy with nothing behind them to blend or border.
             */}
             <div className="mt-4 flex items-center gap-6 sm:gap-10">
               {/*
@@ -159,42 +159,18 @@ export default function Home() {
                 entirely, matching how the header logo and hero poster are
                 already served for the same reliability reason.
               */}
-              {/*
-                No explicit ellipse size here — that's what makes this
-                actually seamless. Omitting a size defaults the gradient to
-                "farthest-corner", which mathematically guarantees the
-                box's own corners resolve to exactly --burgundy (the same
-                color as the page behind it), so there's no rectangle, no
-                border, nothing for the eye to catch — just a fade.
-              */}
-              <div
-                className="px-8 py-6"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 50%, #ffffff 0%, #ffffff 30%, var(--burgundy) 100%)",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/signatures/bruce-signature.png"
-                  alt="Bruce's signature"
-                  className="h-auto w-28 mix-blend-multiply sm:w-40"
-                />
-              </div>
-              <div
-                className="px-8 py-6"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 50%, #ffffff 0%, #ffffff 30%, var(--burgundy) 100%)",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/signatures/elena-signature.webp"
-                  alt="Elena's signature"
-                  className="h-auto w-[149px] mix-blend-multiply sm:w-[213px]"
-                />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/signatures/bruce-signature.png"
+                alt="Bruce's signature"
+                className="h-auto w-28 invert mix-blend-screen sm:w-40"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/signatures/elena-signature.webp"
+                alt="Elena's signature"
+                className="h-auto w-[149px] invert mix-blend-screen sm:w-[213px]"
+              />
             </div>
           </div>
         </section>
