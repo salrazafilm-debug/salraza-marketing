@@ -18,11 +18,11 @@ export function PortfolioGrid({ limit }: { limit?: number }) {
   }
 
   return (
-    <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 sm:gap-6">
+    <div className="flex flex-wrap gap-2 sm:gap-6">
       {items.map((item, index) => (
         <figure
           key={item.title}
-          className="group relative overflow-hidden rounded-lg transition-transform duration-300 hover:-translate-y-1 sm:rounded-xl"
+          className="group relative h-44 shrink-0 overflow-hidden rounded-lg transition-transform duration-300 hover:-translate-y-1 sm:h-64 sm:rounded-xl lg:h-80"
           onMouseEnter={() => revealCaption(index)}
           onTouchStart={() => revealCaption(index)}
         >
@@ -31,8 +31,8 @@ export function PortfolioGrid({ limit }: { limit?: number }) {
             alt={item.title}
             width={item.width}
             height={item.height}
-            sizes="(min-width: 640px) 33vw, 50vw"
-            className="block h-auto w-full"
+            sizes="(min-width: 1024px) 480px, (min-width: 640px) 360px, 220px"
+            className="block h-full w-auto"
           />
           <figcaption
             className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-espresso/85 to-transparent px-3 py-4 text-label text-paper transition-opacity duration-500 ${

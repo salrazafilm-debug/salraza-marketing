@@ -43,18 +43,18 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
     height: 1800,
   },
   {
-    title: "Catering event coverage",
-    category: "Social media",
-    image: "/portfolio/catering-event.jpg",
-    width: 1015,
-    height: 1800,
-  },
-  {
     title: "Crew on site",
     category: "Photography",
     image: "/portfolio/crew-team-photo.jpg",
     width: 1800,
     height: 1196,
+  },
+  {
+    title: "Catering event coverage",
+    category: "Social media",
+    image: "/portfolio/catering-event.jpg",
+    width: 1015,
+    height: 1800,
   },
   {
     title: "Good sportsmanship",
