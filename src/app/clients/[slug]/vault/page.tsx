@@ -2,18 +2,44 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { findClientBySlug, type MediaItem } from "@/lib/clients";
-import { getVideoThumbnailUrl } from "@/lib/cloudinary";
+import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
+
+/**
+ * A real download, not just "open the file": links to a Cloudinary URL with
+ * the fl_attachment flag, which makes Cloudinary's own response include a
+ * Content-Disposition: attachment header. That's what makes this reliable
+ * on mobile browsers too — a plain <a download> on a cross-origin file like
+ * this often just opens it in a new tab instead of saving it.
+ */
+function DownloadButton({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      download
+      aria-label={`Download ${label}`}
+      className="focus-brand absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-espresso/70 text-golden-hour backdrop-blur transition hover:bg-espresso/90"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 2.5v9.5M5 8.5l4 4 4-4" />
+        <path d="M2.5 14.5v1a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-1" />
+      </svg>
+    </a>
+  );
+}
 
 function MediaGrid({ items }: { items: MediaItem[] }) {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) =>
         item.type === "video" ? (
-          <div key={item.id} className="flex flex-col overflow-hidden rounded-xl bg-espresso">
+          <div
+            key={item.id}
+            className="relative flex flex-col overflow-hidden rounded-xl bg-espresso"
+          >
             <video
               controls
               preload="none"
@@ -22,6 +48,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
             >
               <source src={item.src} />
             </video>
+            <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
             <div className="p-4 sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
               {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
@@ -40,6 +67,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/10 to-transparent" />
+            <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
             <div className="relative p-4 sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
               {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
