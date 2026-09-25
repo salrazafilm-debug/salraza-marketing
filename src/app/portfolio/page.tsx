@@ -16,7 +16,7 @@ export default function PortfolioPage() {
       <SiteHeader revealImmediately />
       <main className="px-4 pt-28 pb-20 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
-          <p className="text-caption uppercase tracking-wide text-warm-text">Photos</p>
+          <p className="text-caption uppercase tracking-wide text-warm-text">Gallery</p>
           <p className="mt-4 max-w-xl text-body text-ink-muted">
             A look at moments - frozen in time
           </p>
