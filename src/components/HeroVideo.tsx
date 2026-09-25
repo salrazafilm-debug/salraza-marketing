@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ============================================================================
 // CALIBRATED — DO NOT ADJUST ZOOM_ORIGIN_X/Y OR MOBILE_ZOOM BY EYE.
@@ -95,6 +95,18 @@ function getContentBox(containerWidth: number, containerHeight: number): Rect {
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  // A ref callback (not a useEffect) so `muted`/`defaultMuted` are set the
+  // instant the <video> node is created and attached — the earliest point
+  // in React's lifecycle, before paint, before any effect runs. Every extra
+  // millisecond of the element existing "unmuted" is another chance for
+  // Safari's autoplay gate to evaluate it that way and lock in a block.
+  const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node) {
+      node.muted = true;
+      node.defaultMuted = true;
+    }
+  }, []);
   const sectionRef = useRef<HTMLElement>(null);
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
   const [ended, setEnded] = useState(false);
@@ -183,7 +195,7 @@ export function HeroVideo() {
     const video = videoRef.current;
     if (!video) return;
 
-    let retried = false;
+    let retryCount = 0;
     let settled = false;
 
     // iOS Safari specifically: React sets `muted` as a DOM *property* after
@@ -198,20 +210,28 @@ export function HeroVideo() {
     video.muted = true;
     video.defaultMuted = true;
 
+    // Force a completely clean media pipeline on every mount, not only on
+    // the bfcache-restore path below. A stale/partially-buffered state left
+    // over from a previous load (very easy to hit on mobile, e.g. Wi-Fi to
+    // cellular handoff mid-buffer) can otherwise leave `play()` hanging
+    // with no error and no further events — "the video just never plays."
+    video.load();
+
     const attemptPlay = () => {
       video.play().catch(() => {
-        // The first attempt can be rejected simply because the video hasn't
-        // buffered enough yet (common on mobile with a cold cache, right
-        // after a hard refresh) rather than a real autoplay-policy block.
-        // Retry once the browser says it's actually ready to play; only
-        // fall back to the still end frame if that retry also fails.
-        if (retried) {
+        // A rejection here is usually the video not having buffered enough
+        // yet (common on mobile right after a hard refresh), not a real
+        // autoplay-policy block. Retry a couple of times as the browser
+        // reports more buffering progress; only fall back to the still end
+        // frame once those retries are exhausted too.
+        if (retryCount >= 2) {
           settled = true;
           setEnded(true);
           return;
         }
-        retried = true;
+        retryCount += 1;
         video.addEventListener("canplay", attemptPlay, { once: true });
+        video.addEventListener("loadeddata", attemptPlay, { once: true });
       });
     };
 
@@ -254,7 +274,7 @@ export function HeroVideo() {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (!event.persisted) return;
       settled = false;
-      retried = false;
+      retryCount = 0;
       video.muted = true;
       video.defaultMuted = true;
       video.load();
@@ -262,12 +282,30 @@ export function HeroVideo() {
     };
     window.addEventListener("pageshow", handlePageShow);
 
+    // Last-resort net: if every JS-driven attempt above still hasn't gotten
+    // the video playing (e.g. the device's Auto-Play setting hard-blocks
+    // any autoplay that isn't tied to a real tap), the very first touch or
+    // click anywhere on the page counts as that tap and starts it — a
+    // user gesture always satisfies autoplay policy, so this is the one
+    // path that's guaranteed to work regardless of any browser setting.
+    const handleFirstInteraction = () => {
+      if (video.paused && !settled) attemptPlay();
+    };
+    document.addEventListener("touchstart", handleFirstInteraction, {
+      once: true,
+      passive: true,
+    });
+    document.addEventListener("click", handleFirstInteraction, { once: true });
+
     return () => {
       window.clearTimeout(stallTimeout);
       video.removeEventListener("canplay", attemptPlay);
+      video.removeEventListener("loadeddata", attemptPlay);
       video.removeEventListener("playing", handlePlaying);
       video.removeEventListener("error", handleError);
       window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("touchstart", handleFirstInteraction);
+      document.removeEventListener("click", handleFirstInteraction);
     };
   }, [reducedMotion]);
 
@@ -322,7 +360,7 @@ export function HeroVideo() {
     >
       {!reducedMotion && (
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           className={`absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-700 md:object-cover ${
             ended ? "opacity-0" : "opacity-100"
           }`}
