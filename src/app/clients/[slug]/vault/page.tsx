@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import Image from "next/image";
 import { findClientBySlug, type MediaItem } from "@/lib/clients";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
@@ -57,18 +56,12 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
         ) : (
           <div
             key={item.id}
-            className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl"
+            className="relative flex flex-col overflow-hidden rounded-xl bg-espresso"
           >
-            <Image
-              src={item.src}
-              alt={item.label}
-              fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/10 to-transparent" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={item.src} alt={item.label} className="block h-auto w-full" />
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className="relative p-4 sm:p-6">
+            <div className="p-4 sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
               {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
             </div>
