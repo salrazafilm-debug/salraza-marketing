@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const slug = await findClientSlugByPassword(password);
 
   if (!slug) {
-    return NextResponse.json({ error: "That password didn't match a vault." }, { status: 401 });
+    return NextResponse.json({ error: "That password didn't match a Media Vault." }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true, slug });

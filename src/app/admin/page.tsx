@@ -23,7 +23,7 @@ export default async function AdminLoginPage() {
       <main className="flex min-h-[100svh] flex-col justify-center px-4 pt-28 pb-20 sm:px-6">
         <div className="mx-auto w-full max-w-[1200px] text-center">
           <p className="text-caption uppercase tracking-wide text-warm-text">Admin</p>
-          <h1 className="text-headline mt-3 text-ink">Sign in to manage the vault</h1>
+          <h1 className="text-headline mt-3 text-ink">Sign in to manage the Media Vault</h1>
           <p className="mx-auto mt-4 max-w-xl text-body text-ink-muted">
             Add families, assign their passwords, and upload their finished work.
           </p>

@@ -50,7 +50,7 @@ export function ClientSettingsForm({
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete ${name}'s entire vault? This cannot be undone.`)) return;
+    if (!confirm(`Delete ${name}'s entire Media Vault? This cannot be undone.`)) return;
     setDeleting(true);
     await fetch(`/api/admin/clients/${slug}`, { method: "DELETE" });
     router.push("/admin/dashboard");
@@ -59,7 +59,7 @@ export function ClientSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl bg-paper-raised p-6">
-      <p className="text-subhead text-ink">Vault settings</p>
+      <p className="text-subhead text-ink">Media Vault settings</p>
 
       <label className="flex flex-col gap-2">
         <span className="text-label text-ink">Family name</span>
@@ -107,7 +107,7 @@ export function ClientSettingsForm({
           disabled={deleting}
           className="focus-brand text-label text-red-700 underline disabled:opacity-60"
         >
-          {deleting ? "Deleting…" : "Delete vault"}
+          {deleting ? "Deleting…" : "Delete Media Vault"}
         </button>
       </div>
     </form>

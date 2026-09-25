@@ -30,7 +30,7 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-caption uppercase tracking-wide text-warm-text">Admin</p>
-              <h1 className="text-headline mt-2 text-ink">The Vault</h1>
+              <h1 className="text-headline mt-2 text-ink">The Media Vault</h1>
             </div>
             <AdminLogoutButton />
           </div>

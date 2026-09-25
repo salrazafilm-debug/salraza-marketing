@@ -209,7 +209,7 @@ export default function Home() {
                 className="text-headline max-w-xl text-golden-hour"
                 style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.45)" }}
               >
-                THE VAULT
+                THE MEDIA VAULT
               </h2>
               <p
                 className="max-w-lg text-body font-semibold text-golden-hour"
@@ -218,7 +218,7 @@ export default function Home() {
                 Every family gets a private safe deposit for finished galleries, edits, clips,
                 photos and videos. Type your password here to access.
               </p>
-              <LinkButton href="/clients">Visit your vault</LinkButton>
+              <LinkButton href="/clients">Visit your Media Vault</LinkButton>
             </div>
           </div>
         </section>
