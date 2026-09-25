@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { PortfolioGrid } from "@/components/PortfolioGrid";
-import { InstagramEmbeds } from "@/components/InstagramEmbeds";
 import { Highlight } from "@/components/Highlight";
 
 export const metadata: Metadata = {
@@ -26,26 +25,28 @@ export default function PortfolioPage() {
             <PortfolioGrid />
           </div>
 
-          <div className="mt-20 border-t border-line pt-16">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-caption uppercase tracking-wide text-warm-text">
-                  On Instagram
-                </p>
-                <h2 className="text-headline mt-3 text-ink">Follow along</h2>
-              </div>
+          <div className="mt-20 border-t border-line pt-16 text-center">
+            <p className="text-eyebrow uppercase text-ink">Social</p>
+            <h2 className="text-headline mt-5 text-ink">Follow us on social media</h2>
+            <p className="mt-4 text-body text-ink-muted">@salraza.film on Instagram and TikTok</p>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <a
-                href="https://www.instagram.com/thedmvcrabrolls/"
+                href="https://www.instagram.com/salraza.film/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="focus-brand inline-flex items-center justify-center self-start rounded-full bg-ink px-6 py-3 text-label text-paper transition hover:opacity-90"
+                className="focus-brand inline-flex items-center justify-center rounded-full bg-ink px-6 py-3 text-label text-paper transition hover:opacity-90"
               >
-                Follow @thedmvcrabrolls
+                Instagram
               </a>
-            </div>
-
-            <div className="mt-10">
-              <InstagramEmbeds />
+              <a
+                href="https://www.tiktok.com/@salraza.film"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="focus-brand inline-flex items-center justify-center rounded-full bg-ink px-6 py-3 text-label text-paper transition hover:opacity-90"
+              >
+                TikTok
+              </a>
             </div>
           </div>
         </div>
