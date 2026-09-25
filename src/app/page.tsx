@@ -181,7 +181,7 @@ export default function Home() {
             className="pointer-events-none absolute -left-16 top-10 h-56 w-56 rounded-full bg-golden-hour/25 blur-3xl"
           />
           <div className="relative mx-auto flex max-w-[1200px] flex-col items-center text-center">
-            <p className="text-caption uppercase tracking-wide text-warm-text">Portfolio</p>
+            <p className="text-caption uppercase tracking-wide text-warm-text">Photos</p>
             <h2 className="text-headline mt-3 text-ink">Recent work</h2>
             <LinkButton href="/portfolio" variant="secondary" className="mt-6">
               See the full portfolio

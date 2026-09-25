@@ -3,7 +3,6 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { PortfolioGrid } from "@/components/PortfolioGrid";
 import { InstagramEmbeds } from "@/components/InstagramEmbeds";
-import { Highlight } from "@/components/Highlight";
 
 export const metadata: Metadata = {
   title: "Portfolio — Salraza Marketing",
@@ -17,13 +16,9 @@ export default function PortfolioPage() {
       <SiteHeader revealImmediately />
       <main className="px-4 pt-28 pb-20 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
-          <p className="text-caption uppercase tracking-wide text-warm-text">Portfolio</p>
-          <h1 className="text-headline mt-3 max-w-2xl text-ink">
-            The work we&apos;re <Highlight>proud</Highlight> of
-          </h1>
+          <p className="text-caption uppercase tracking-wide text-warm-text">Photos</p>
           <p className="mt-4 max-w-xl text-body text-ink-muted">
-            A look at the social content, photography and short-form video we&apos;ve built for
-            the family — from game day to grand openings.
+            A look at moments - frozen in time
           </p>
 
           <div className="mt-12">

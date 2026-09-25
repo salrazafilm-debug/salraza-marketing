@@ -21,7 +21,7 @@ export function Footer() {
               About
             </Link>
             <Link href="/portfolio" className="focus-brand hover:text-highlighter">
-              Portfolio
+              Photos
             </Link>
           </div>
           <div className="flex flex-col gap-3">
