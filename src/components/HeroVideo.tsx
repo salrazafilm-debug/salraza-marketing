@@ -186,6 +186,18 @@ export function HeroVideo() {
     let retried = false;
     let settled = false;
 
+    // iOS Safari specifically: React sets `muted` as a DOM *property* after
+    // hydration, but never renders it as an actual `muted` HTML *attribute*
+    // in the server-rendered markup (a long-standing React SSR quirk).
+    // Safari's autoplay gate checks for the attribute, not just the
+    // property, so on some loads — reliably reproducible as "plays once,
+    // then silently refuses to autoplay after a refresh" — it treats the
+    // element as unmuted and blocks it. `defaultMuted` is the one property
+    // that actually reflects to the real attribute, so set both explicitly,
+    // as early as possible, before ever calling play().
+    video.muted = true;
+    video.defaultMuted = true;
+
     const attemptPlay = () => {
       video.play().catch(() => {
         // The first attempt can be rejected simply because the video hasn't
@@ -233,11 +245,29 @@ export function HeroVideo() {
     video.addEventListener("error", handleError);
     attemptPlay();
 
+    // iOS Safari can restore a page from its back/forward cache (bfcache)
+    // — which a "refresh" sometimes triggers there — with the <video>
+    // element still present in the DOM but its decode pipeline left dead:
+    // no error, no further events, just permanently paused. `pageshow`
+    // with `event.persisted` is the standard way to detect that exact
+    // restore and force the element to actually reinitialize.
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      settled = false;
+      retried = false;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.load();
+      attemptPlay();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+
     return () => {
       window.clearTimeout(stallTimeout);
       video.removeEventListener("canplay", attemptPlay);
       video.removeEventListener("playing", handlePlaying);
       video.removeEventListener("error", handleError);
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, [reducedMotion]);
 
