@@ -120,22 +120,27 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="about" className="relative overflow-hidden bg-cream px-4 py-20 sm:px-6">
+        <section id="about" className="relative overflow-hidden bg-burgundy px-4 py-20 sm:px-6">
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-10 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lavender-dusk/30 blur-3xl"
+            className="pointer-events-none absolute -right-10 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lavender-dusk/40 blur-3xl"
           />
           {/*
-            Mobile-only: a soft white "spotlight" behind the text so it
-            reads clearly against the warm cream/lavender-blur background
-            (which reads fine on desktop's larger, more spread-out layout
-            but was low-contrast on mobile's tighter stack). The section's
-            own colored background stays visible at the edges/corners since
-            the glow is a feathered box-shadow, not a hard-edged card, and
-            everything resets to fully transparent at sm: and up so desktop
-            is untouched.
+            A true radial gradient, not a flat white card + drop-shadow —
+            its outer edge is set to resolve to the exact same --burgundy as
+            the section background, so the "spotlight" has no visible edge
+            at all; it just fades into the surrounding color. Sized/stopped
+            generously so the fully-white zone covers every line of text
+            down through the signatures at the bottom, with the fade only
+            happening in the padding beyond that.
           */}
-          <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 rounded-[2.5rem] bg-white px-6 py-10 text-center shadow-[0_0_50px_25px_rgba(255,255,255,0.9)] sm:rounded-none sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
+          <div
+            className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 px-8 py-14 text-center sm:px-16 sm:py-20"
+            style={{
+              background:
+                "radial-gradient(ellipse 75% 80% at 50% 45%, #ffffff 0%, #ffffff 55%, var(--burgundy) 92%)",
+            }}
+          >
             <p className="text-caption uppercase tracking-wide text-warm-text">About us</p>
             <span className="text-script-accent text-marker-purple">B&amp;E</span>
             <h2 className="text-headline text-ink">Bruce &amp; Elena</h2>

@@ -15,6 +15,7 @@
   --golden-hour: #f1cf9f;
   --warm-text: #764b3d;
   --espresso: #2b1105;
+  --burgundy: #4a1220;
   --focus-ring: #8b3fd6;
 }
 
@@ -33,6 +34,7 @@
   --color-golden-hour: var(--golden-hour);
   --color-warm-text: var(--warm-text);
   --color-espresso: var(--espresso);
+  --color-burgundy: var(--burgundy);
   --color-focus-ring: var(--focus-ring);
 
   --font-display: var(--font-unbounded);
