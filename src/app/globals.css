@@ -103,9 +103,16 @@ body {
     line-height: 1.1;
   }
 
-  /* The highlighter move: a rotated yellow stroke behind one word. */
+  /* The highlighter move: a rotated yellow stroke behind one word.
+     `isolation: isolate` gives this element its own stacking context, so
+     the ::before's negative z-index stays scoped to just this element
+     (behind its own text) instead of bubbling up past it — without that,
+     on a section with its own opaque background (nothing in the chain
+     otherwise creates a stacking context), the stroke sinks below that
+     section's background entirely and disappears. */
   .highlight {
     position: relative;
+    isolation: isolate;
     display: inline-block;
     color: var(--color-on-highlighter);
     white-space: nowrap;
@@ -116,6 +123,27 @@ body {
     position: absolute;
     inset: 0.08em -0.2em;
     background: var(--color-highlighter);
+    transform: rotate(-2deg);
+    border-radius: 3px;
+    z-index: -1;
+  }
+
+  /* Same marker-stroke device as .highlight, in white — for text sitting on
+     a dark background (e.g. the burgundy About Us section) instead of the
+     usual light one. */
+  .highlight-white {
+    position: relative;
+    isolation: isolate;
+    display: inline-block;
+    color: var(--color-espresso);
+    white-space: nowrap;
+  }
+
+  .highlight-white::before {
+    content: "";
+    position: absolute;
+    inset: 0.08em -0.2em;
+    background: #ffffff;
     transform: rotate(-2deg);
     border-radius: 3px;
     z-index: -1;

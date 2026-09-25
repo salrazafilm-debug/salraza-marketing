@@ -125,31 +125,28 @@ export default function Home() {
             aria-hidden
             className="pointer-events-none absolute -right-10 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-lavender-dusk/40 blur-3xl"
           />
-          {/*
-            A true radial gradient, not a flat white card + drop-shadow —
-            its outer edge is set to resolve to the exact same --burgundy as
-            the section background, so the "spotlight" has no visible edge
-            at all; it just fades into the surrounding color. Sized/stopped
-            generously so the fully-white zone covers every line of text
-            down through the signatures at the bottom, with the fade only
-            happening in the padding beyond that.
-          */}
-          <div
-            className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 px-8 py-14 text-center sm:px-16 sm:py-20"
-            style={{
-              background:
-                "radial-gradient(ellipse 75% 80% at 50% 45%, #ffffff 0%, #ffffff 55%, var(--burgundy) 92%)",
-            }}
-          >
-            <p className="text-caption uppercase tracking-wide text-warm-text">About us</p>
+          <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
+            <p className="text-caption uppercase tracking-wide text-golden-hour/70">About us</p>
             <span className="text-script-accent text-marker-purple">B&amp;E</span>
-            <h2 className="text-headline text-ink">Bruce &amp; Elena</h2>
-            <p className="max-w-xl text-body text-ink-muted">
+            <h2 className="text-headline">
+              <Highlight variant="white">Bruce &amp; Elena</Highlight>
+            </h2>
+            <p
+              className="max-w-xl text-body text-golden-hour/85"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+            >
               We&apos;re passionate and motivated to help you grow. Your story matters to us and
               we&apos;re in this with you — to the future success.
             </p>
 
-            <div className="mt-4 flex items-center gap-6 sm:gap-10">
+            {/*
+              Signatures still need a light backing to read (they're black
+              ink on white, via mix-blend-multiply, which only works over a
+              light surface) — a small pill sized to the content itself
+              rather than the big glow this section used to have, so it
+              reads as "a signed card" rather than an odd spotlight.
+            */}
+            <div className="mt-4 flex items-center gap-6 rounded-2xl bg-white px-8 py-5 sm:gap-10 sm:px-10">
               {/*
                 Plain <img>, not next/image: these small signature files were
                 intermittently failing to show up on mobile when loaded
