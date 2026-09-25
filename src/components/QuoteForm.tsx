@@ -6,8 +6,9 @@ type Status = "idle" | "submitting" | "success" | "error";
 
 const SERVICES = [
   "Social media management",
-  "Photography",
+  "Photoshoot",
   "Short-form video",
+  "Website creation",
   "Not sure yet — let's talk",
 ];
 
