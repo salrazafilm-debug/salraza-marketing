@@ -9,7 +9,6 @@ import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
 import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
-import { TypewriterText } from "@/components/TypewriterText";
 
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
@@ -106,7 +105,7 @@ export default async function VaultPage({
       <SiteHeader revealImmediately theme={isMarksmen ? "marksmen" : "default"} />
       <main
         data-theme={isMarksmen ? "marksmen" : undefined}
-        className={`min-h-[100svh] px-4 pt-28 pb-20 sm:px-6 ${isMarksmen ? "bg-[#0a0a0c]" : ""}`}
+        className={`min-h-[100svh] px-4 pb-20 sm:px-6 ${isMarksmen ? "pt-40 bg-[#0a0a0c]" : "pt-28"}`}
       >
         <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
           <div className="mx-auto max-w-[1200px]">
@@ -124,9 +123,7 @@ export default async function VaultPage({
                       {client.name}
                     </p>
                   )}
-                  <h1 className="text-headline mt-2 text-ink">
-                    <TypewriterText text={client.welcomeNote} />
-                  </h1>
+                  <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
                 </div>
                 {!isMarksmen && <LogoutButton />}
               </div>
