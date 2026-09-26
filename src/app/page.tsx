@@ -233,8 +233,7 @@ export default function Home() {
               <p className="text-caption uppercase tracking-wide text-warm-text">Get started</p>
               <h2 className="text-headline mt-3 text-ink">Let&apos;s build together</h2>
               <p className="mx-auto mt-4 max-w-lg text-body text-ink-muted">
-                Tell us about your business and where you want to go. We&apos;ll take it from
-                there.
+                Picture the win, we&apos;ll get you there.
               </p>
             </div>
 
