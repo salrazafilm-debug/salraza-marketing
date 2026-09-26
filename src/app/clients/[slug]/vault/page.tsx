@@ -111,8 +111,14 @@ export default async function VaultPage({
         <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
           <div className="mx-auto max-w-[1200px]">
             <RevealSection index={step++}>
-              <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+              <div
+                className={`flex flex-col gap-4 border-b border-line pb-8 ${
+                  isMarksmen
+                    ? "items-center text-center"
+                    : "sm:flex-row sm:items-end sm:justify-between"
+                }`}
+              >
+                <div className={isMarksmen ? "flex flex-col items-center" : ""}>
                   <p className="text-caption uppercase tracking-wide text-warm-text">
                     {client.name}
                   </p>
