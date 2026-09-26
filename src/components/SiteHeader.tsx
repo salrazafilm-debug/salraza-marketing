@@ -99,6 +99,18 @@ export function SiteHeader({
     };
   }, [revealImmediately]);
 
+  // The Marksmen vault has no hero section to key off, and its page is
+  // long enough that keeping the banner pinned the whole time gets in the
+  // way — so there it fades out as soon as you scroll and reappears once
+  // you're back near the top, instead of just staying revealed forever.
+  useEffect(() => {
+    if (!marksmenTheme) return;
+    const onScroll = () => setRevealed(window.scrollY < 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [marksmenTheme]);
+
   return (
     <header
       ref={headerRef}

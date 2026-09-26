@@ -105,7 +105,7 @@ export default async function VaultPage({
       <SiteHeader revealImmediately theme={isMarksmen ? "marksmen" : "default"} />
       <main
         data-theme={isMarksmen ? "marksmen" : undefined}
-        className={`min-h-[100svh] px-4 pb-20 sm:px-6 ${isMarksmen ? "pt-40 bg-[#0a0a0c]" : "pt-28"}`}
+        className={`min-h-[100svh] px-4 pb-20 sm:px-6 ${isMarksmen ? "pt-[150px] md:pt-[112px] bg-[#0a0a0c]" : "pt-28"}`}
       >
         <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
           <div className="mx-auto max-w-[1200px]">
