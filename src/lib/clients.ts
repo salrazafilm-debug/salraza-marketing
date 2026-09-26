@@ -321,3 +321,21 @@ export async function deleteMediaItem(id: string): Promise<void> {
   const { error } = await supabase.from("media_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Reassigns sequential positions (0, 1, 2, ...) to media items in the given
+ * order, e.g. after an admin drags photos into a new arrangement. Only the
+ * items in `orderedIds` are touched — since display always filters by
+ * folder first, positions only need to be consistent within that filtered
+ * list, not globally unique across a client's whole gallery.
+ */
+export async function reorderMediaItems(orderedIds: string[]): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("media_items").update({ position: index }).eq("id", id)
+    )
+  );
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw new Error(failed.error.message);
+}
