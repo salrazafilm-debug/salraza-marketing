@@ -127,19 +127,21 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-[26px] sm:px-6 md:py-3">
         <Link href="/" className="flex items-center" aria-label="Salraza Marketing home">
           {/*
-            The logo's wordmark is dark ink, drawn for a light header — on
+            The regular wordmark is dark ink, drawn for a light header — on
             the Marksmen theme's near-black banner it would nearly vanish,
-            so it sits on its own small light chip there instead of trying
-            to recolor the logo itself.
+            so that theme uses a variant with its own white cloud backdrop
+            baked in instead.
           */}
-          <span className={marksmenTheme ? "rounded-md bg-paper/95 px-2 py-1.5" : ""}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/salraza-logo-transparent.png"
-              alt="Salraza Marketing"
-              className="h-16 w-auto md:h-12"
-            />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={
+              marksmenTheme
+                ? "/clients/dmv-marksmen/salraza-cloud-logo.png"
+                : "/logos/salraza-logo-transparent.png"
+            }
+            alt="Salraza Marketing"
+            className="h-16 w-auto md:h-12"
+          />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
