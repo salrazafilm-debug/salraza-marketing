@@ -4,9 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 /** How long to hold on solid black once the video (which fades to black itself) ends. */
-const HOLD_BLACK_MS = 300;
+const HOLD_BLACK_MS = 600;
 /** How long the black curtain takes to fade away, revealing the site at its natural opacity. */
-const REVEAL_MS = 700;
+const REVEAL_MS = 1300;
 
 /**
  * Whether the wrapped vault sections should be in their revealed state.

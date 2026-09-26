@@ -4,7 +4,7 @@ import { useContext, type ReactNode } from "react";
 import { RevealContext } from "@/components/MarksmenVaultIntro";
 
 /** Milliseconds of stagger between each section's build-in animation. */
-const STEP_DELAY_MS = 130;
+const STEP_DELAY_MS = 220;
 
 /**
  * Fades and slides a section into place, staggered by `index`. Outside of
@@ -16,8 +16,8 @@ export function RevealSection({ index, children }: { index: number; children: Re
 
   return (
     <div
-      className={`transition-all duration-700 ease-out ${
-        revealed ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+      className={`transition-all duration-1000 ease-out ${
+        revealed ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}
       style={{ transitionDelay: `${index * STEP_DELAY_MS}ms` }}
     >

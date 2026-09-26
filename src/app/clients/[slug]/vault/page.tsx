@@ -9,6 +9,7 @@ import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
 import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
+import { TypewriterText } from "@/components/TypewriterText";
 
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
@@ -108,7 +109,9 @@ export default async function VaultPage({
                   <p className="text-caption uppercase tracking-wide text-warm-text">
                     {client.name}
                   </p>
-                  <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
+                  <h1 className="text-headline mt-2 text-ink">
+                    <TypewriterText text={client.welcomeNote} />
+                  </h1>
                 </div>
                 <LogoutButton />
               </div>
