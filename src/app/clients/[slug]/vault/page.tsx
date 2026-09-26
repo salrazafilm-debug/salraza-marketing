@@ -45,7 +45,10 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
           >
             <video
               controls
-              preload="none"
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
               poster={getVideoThumbnailUrl(item.cloudinaryPublicId)}
               className="aspect-[4/5] w-full bg-black object-contain"
             >
