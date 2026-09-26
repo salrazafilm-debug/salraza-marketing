@@ -146,7 +146,7 @@ export function VaultMediaGrid({
             src={lightboxItem.src}
             alt={lightboxItem.label}
             onClick={(event) => event.stopPropagation()}
-            className="max-h-[88vh] max-w-[92vw] rounded-lg object-contain"
+            className="max-h-[88svh] max-w-[92vw] rounded-lg object-contain"
           />
         </div>
       )}
