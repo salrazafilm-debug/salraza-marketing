@@ -189,9 +189,6 @@ export default async function VaultPage({
                   return (
                     <RevealSection index={step++}>
                       <div className="flex flex-col gap-4">
-                        {client.folders.length > 0 && (
-                          <h2 className="text-subhead text-ink">More</h2>
-                        )}
                         <MediaGrid items={ungrouped} isMarksmen={isMarksmen} />
                       </div>
                     </RevealSection>
