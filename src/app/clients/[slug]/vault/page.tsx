@@ -7,7 +7,8 @@ import { SESSION_COOKIE, verifySession } from "@/lib/session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
-import { MarksmenIntroOverlay } from "@/components/MarksmenIntroOverlay";
+import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
+import { RevealSection } from "@/components/RevealSection";
 
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
@@ -92,65 +93,82 @@ export default async function VaultPage({
     redirect("/clients?error=session");
   }
 
+  const showIntro = slug === MARKSMEN_SLUG && intro === "1";
+  let step = 0;
+
   return (
     <>
-      {slug === MARKSMEN_SLUG && intro === "1" && (
-        <MarksmenIntroOverlay src="/clients/dmv-marksmen/login-intro.mp4" />
-      )}
       <SiteHeader revealImmediately />
       <main className="min-h-[100svh] px-4 pt-28 pb-20 sm:px-6">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-caption uppercase tracking-wide text-warm-text">
-                {client.name}
+        <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
+          <div className="mx-auto max-w-[1200px]">
+            <RevealSection index={step++}>
+              <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-caption uppercase tracking-wide text-warm-text">
+                    {client.name}
+                  </p>
+                  <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
+                </div>
+                <LogoutButton />
+              </div>
+            </RevealSection>
+
+            {client.media.length === 0 ? (
+              <RevealSection index={step++}>
+                <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
+                  <p className="text-subhead text-ink">Nothing here yet</p>
+                  <p className="max-w-sm text-body text-ink-muted">
+                    We&apos;re still finishing your gallery — check back soon.
+                  </p>
+                </div>
+              </RevealSection>
+            ) : (
+              <div className="mt-10 flex flex-col gap-10">
+                {client.folders.map((folder) => {
+                  const folderItems = client.media.filter((item) => item.folderId === folder.id);
+                  if (folderItems.length === 0) return null;
+                  return (
+                    <RevealSection key={folder.id} index={step++}>
+                      <div className="flex flex-col gap-4">
+                        <h2 className="text-subhead text-ink">{folder.name}</h2>
+                        <MediaGrid items={folderItems} />
+                      </div>
+                    </RevealSection>
+                  );
+                })}
+
+                {(() => {
+                  const ungrouped = client.media.filter((item) => !item.folderId);
+                  if (ungrouped.length === 0) return null;
+                  return (
+                    <RevealSection index={step++}>
+                      <div className="flex flex-col gap-4">
+                        {client.folders.length > 0 && (
+                          <h2 className="text-subhead text-ink">More</h2>
+                        )}
+                        <MediaGrid items={ungrouped} />
+                      </div>
+                    </RevealSection>
+                  );
+                })()}
+              </div>
+            )}
+
+            <RevealSection index={step++}>
+              <p className="mt-10 text-caption">
+                Don&apos;t see something you were expecting? Email us at{" "}
+                <a
+                  href="mailto:salraza.film@gmail.com"
+                  className="focus-brand text-purple-text underline"
+                >
+                  salraza.film@gmail.com
+                </a>{" "}
+                and we&apos;ll get it added.
               </p>
-              <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
-            </div>
-            <LogoutButton />
+            </RevealSection>
           </div>
-
-          {client.media.length === 0 ? (
-            <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
-              <p className="text-subhead text-ink">Nothing here yet</p>
-              <p className="max-w-sm text-body text-ink-muted">
-                We&apos;re still finishing your gallery — check back soon.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-10 flex flex-col gap-10">
-              {client.folders.map((folder) => {
-                const folderItems = client.media.filter((item) => item.folderId === folder.id);
-                if (folderItems.length === 0) return null;
-                return (
-                  <div key={folder.id} className="flex flex-col gap-4">
-                    <h2 className="text-subhead text-ink">{folder.name}</h2>
-                    <MediaGrid items={folderItems} />
-                  </div>
-                );
-              })}
-
-              {(() => {
-                const ungrouped = client.media.filter((item) => !item.folderId);
-                if (ungrouped.length === 0) return null;
-                return (
-                  <div className="flex flex-col gap-4">
-                    {client.folders.length > 0 && <h2 className="text-subhead text-ink">More</h2>}
-                    <MediaGrid items={ungrouped} />
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          <p className="mt-10 text-caption">
-            Don&apos;t see something you were expecting? Email us at{" "}
-            <a href="mailto:salraza.film@gmail.com" className="focus-brand text-purple-text underline">
-              salraza.film@gmail.com
-            </a>{" "}
-            and we&apos;ll get it added.
-          </p>
-        </div>
+        </MarksmenVaultIntro>
       </main>
       <Footer />
     </>
