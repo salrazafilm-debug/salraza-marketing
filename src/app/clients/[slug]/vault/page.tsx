@@ -34,7 +34,7 @@ function DownloadButton({ href, label }: { href: string; label: string }) {
   );
 }
 
-function MediaGrid({ items }: { items: MediaItem[] }) {
+function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksmen?: boolean }) {
   return (
     <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) =>
@@ -70,7 +70,13 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
             <div className="p-4 text-center sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
-              {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
+              {item.caption && (
+                <p
+                  className={`text-caption mt-1 ${isMarksmen ? "text-burgundy" : "text-golden-hour/80"}`}
+                >
+                  {item.caption}
+                </p>
+              )}
             </div>
           </div>
         )
@@ -158,7 +164,7 @@ export default async function VaultPage({
                           />
                         )}
                         <h2 className="text-subhead text-ink">{folder.name}</h2>
-                        <MediaGrid items={folderItems} />
+                        <MediaGrid items={folderItems} isMarksmen={isMarksmen} />
                       </div>
                     </RevealSection>
                   );
@@ -173,7 +179,7 @@ export default async function VaultPage({
                         {client.folders.length > 0 && (
                           <h2 className="text-subhead text-ink">More</h2>
                         )}
-                        <MediaGrid items={ungrouped} />
+                        <MediaGrid items={ungrouped} isMarksmen={isMarksmen} />
                       </div>
                     </RevealSection>
                   );
