@@ -46,26 +46,6 @@
   --font-script: var(--font-caveat-brush);
 }
 
-/* DMV Marksmen vault theme: black + cyan, matching the shield logo.
-   Scoped to a wrapper around just that page content; every other client
-   vault page keeps the normal site colors. Reuses the same token names
-   as root so existing bg-*/text-* utilities pick this up automatically.
-   paper is deliberately left alone here: this page also uses text-paper
-   for light captions on dark cards, so overriding it would turn that
-   text black-on-black. The black background is set directly on main
-   instead (see vault/page.tsx). */
-[data-theme="marksmen"] {
-  --cream: #131619;
-  --ink: #ffffff;
-  --ink-muted: #8fc7d6;
-  --line: #17363d;
-  --purple-text: #2fc4de;
-  --golden-hour: #ffffff;
-  --warm-text: #2fc4de;
-  --espresso: #131619;
-  --focus-ring: #2fc4de;
-}
-
 body {
   background: var(--color-paper);
   color: var(--color-ink);
@@ -218,4 +198,24 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* DMV Marksmen vault theme: black + cyan, matching the shield logo.
+   Scoped to a wrapper around just that page content; every other client
+   vault page keeps the normal site colors. Reuses the same token names
+   declared in :root above, so existing color utilities pick this up
+   automatically inside the scope. paper is deliberately left alone here:
+   this page also uses text-paper for light captions on dark cards, so
+   overriding it would turn that text black-on-black; the black page
+   background is set directly on main instead (see vault/page.tsx). */
+[data-theme="marksmen"] {
+  --cream: #131619;
+  --ink: #ffffff;
+  --ink-muted: #8fc7d6;
+  --line: #17363d;
+  --purple-text: #2fc4de;
+  --golden-hour: #ffffff;
+  --warm-text: #2fc4de;
+  --espresso: #131619;
+  --focus-ring: #2fc4de;
 }
