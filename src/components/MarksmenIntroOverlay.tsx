@@ -18,11 +18,11 @@ export function MarksmenIntroOverlay({ src }: { src: string }) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.play().catch(() => {
-      // Autoplay with sound was blocked — muted autoplay is always allowed.
-      video.muted = true;
-      video.play().catch(() => {});
-    });
+    // Muted autoplay is the one thing every browser reliably allows —
+    // playing with sound here is blocked outright on many mobile browsers
+    // since it isn't a direct continuation of the user's tap.
+    video.muted = true;
+    video.play().catch(() => {});
   }, []);
 
   function handleEnded() {
@@ -44,7 +44,16 @@ export function MarksmenIntroOverlay({ src }: { src: string }) {
       }`}
       style={{ transitionDuration: `${REVEAL_MS}ms` }}
     >
-      <video ref={videoRef} src={src} playsInline onEnded={handleEnded} className="h-full w-full object-contain" />
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={handleEnded}
+        className="h-full w-full object-contain"
+      />
     </div>
   );
 }
