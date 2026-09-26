@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { MediaItem } from "@/lib/clients";
 
 export type VaultMediaItem = MediaItem & {
@@ -126,30 +127,38 @@ export function VaultMediaGrid({
         )}
       </div>
 
-      {lightboxItem && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 sm:p-8"
-          onClick={() => setLightboxItem(null)}
-        >
-          <button
-            type="button"
+      {lightboxItem &&
+        createPortal(
+          // Rendered straight onto document.body, not in normal flow here:
+          // this grid sits inside a RevealSection, whose fade/slide-in
+          // relies on a CSS transform — and a transform on any ancestor
+          // turns `position: fixed` into "fixed to that ancestor" instead
+          // of the real viewport, which is what was pinning this off
+          // center and clipping it. A portal escapes that entirely.
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 sm:p-8"
             onClick={() => setLightboxItem(null)}
-            className="focus-brand absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-label text-white backdrop-blur transition hover:bg-white/20"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <path d="M11.5 3 4.5 8l7 5" />
-            </svg>
-            Back to gallery
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightboxItem.src}
-            alt={lightboxItem.label}
-            onClick={(event) => event.stopPropagation()}
-            className="max-h-[88svh] max-w-[92vw] rounded-lg object-contain"
-          />
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => setLightboxItem(null)}
+              className="focus-brand absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-label text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M11.5 3 4.5 8l7 5" />
+              </svg>
+              Back to gallery
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxItem.src}
+              alt={lightboxItem.label}
+              onClick={(event) => event.stopPropagation()}
+              className="max-h-[88svh] max-w-[92vw] rounded-lg object-contain"
+            />
+          </div>,
+          document.body
+        )}
     </>
   );
 }
