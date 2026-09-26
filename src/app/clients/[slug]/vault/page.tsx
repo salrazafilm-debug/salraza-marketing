@@ -36,7 +36,7 @@ function DownloadButton({ href, label }: { href: string; label: string }) {
 
 function MediaGrid({ items }: { items: MediaItem[] }) {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) =>
         item.type === "video" ? (
           <div
@@ -52,7 +52,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
               <source src={item.src} />
             </video>
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className="p-4 sm:p-6">
+            <div className="p-4 text-center sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
               {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
             </div>
@@ -65,7 +65,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.src} alt={item.label} className="block h-auto w-full" />
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className="p-4 sm:p-6">
+            <div className="p-4 text-center sm:p-6">
               <p className="text-subhead text-paper">{item.label}</p>
               {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
             </div>
