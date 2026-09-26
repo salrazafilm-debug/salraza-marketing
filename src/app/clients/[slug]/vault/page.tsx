@@ -68,15 +68,9 @@ function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksm
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.src} alt={item.label} className="block h-auto w-full" />
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className="p-4 text-center sm:p-6">
+            <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
               <p className="text-subhead text-paper">{item.label}</p>
-              {item.caption && (
-                <p
-                  className={`text-caption mt-1 ${isMarksmen ? "text-burgundy" : "text-golden-hour/80"}`}
-                >
-                  {item.caption}
-                </p>
-              )}
+              {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
             </div>
           </div>
         )
