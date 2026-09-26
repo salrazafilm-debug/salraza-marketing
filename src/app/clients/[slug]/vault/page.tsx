@@ -35,14 +35,14 @@ function DownloadButton({ href, label }: { href: string; label: string }) {
 
 function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksmen?: boolean }) {
   const cardClass = isMarksmen
-    ? "relative mb-6 flex flex-col break-inside-avoid overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
+    ? "relative mb-8 flex flex-col break-inside-avoid overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
     : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
 
   return (
     <div
       className={
         isMarksmen
-          ? "columns-1 gap-6 sm:columns-2 lg:columns-2 xl:columns-3"
+          ? "columns-1 gap-8 sm:columns-2"
           : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
       }
     >
