@@ -34,14 +34,21 @@ function DownloadButton({ href, label }: { href: string; label: string }) {
 }
 
 function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksmen?: boolean }) {
+  const cardClass = isMarksmen
+    ? "relative mb-6 flex flex-col break-inside-avoid overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
+    : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
+
   return (
-    <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={
+        isMarksmen
+          ? "columns-1 gap-6 sm:columns-2 lg:columns-2 xl:columns-3"
+          : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      }
+    >
       {items.map((item) =>
         item.type === "video" ? (
-          <div
-            key={item.id}
-            className="relative flex flex-col overflow-hidden rounded-xl bg-espresso"
-          >
+          <div key={item.id} className={cardClass}>
             <video
               controls
               autoPlay
@@ -60,12 +67,15 @@ function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksm
             </div>
           </div>
         ) : (
-          <div
-            key={item.id}
-            className="relative flex flex-col overflow-hidden rounded-xl bg-espresso"
-          >
+          <div key={item.id} className={`${cardClass} group`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.src} alt={item.label} className="block h-auto w-full" />
+            <img
+              src={item.src}
+              alt={item.label}
+              className={`block h-auto w-full ${
+                isMarksmen ? "transition-transform duration-500 group-hover:scale-105" : ""
+              }`}
+            />
             <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
             <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
               <p className="text-subhead text-paper">{item.label}</p>
