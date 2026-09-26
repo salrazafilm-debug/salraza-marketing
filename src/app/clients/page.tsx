@@ -22,8 +22,7 @@ export default async function ClientsPage({
         <div className="mx-auto w-full max-w-[1200px] text-center">
           <h1 className="text-headline text-ink">Visit your Media Vault</h1>
           <p className="mx-auto mt-4 max-w-xl text-body text-ink-muted">
-            Every family gets a private safe deposit for finished galleries, edits, photos and
-            videos. Type your password here to access.
+            Picture the win, we&apos;ll get you there.
           </p>
 
           <div className="mt-10">
