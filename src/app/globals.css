@@ -156,7 +156,6 @@ body {
     position: absolute;
     inset: 0.08em -0.2em;
     background: #ffffff;
-    transform: rotate(-2deg);
     border-radius: 3px;
     z-index: -1;
   }
