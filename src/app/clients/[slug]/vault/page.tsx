@@ -98,12 +98,16 @@ export default async function VaultPage({
   }
 
   const showIntro = slug === MARKSMEN_SLUG && intro === "1";
+  const isMarksmen = slug === MARKSMEN_SLUG;
   let step = 0;
 
   return (
     <>
       <SiteHeader revealImmediately />
-      <main className="min-h-[100svh] px-4 pt-28 pb-20 sm:px-6">
+      <main
+        data-theme={isMarksmen ? "marksmen" : undefined}
+        className={`min-h-[100svh] px-4 pt-28 pb-20 sm:px-6 ${isMarksmen ? "bg-[#0a0a0c]" : ""}`}
+      >
         <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
           <div className="mx-auto max-w-[1200px]">
             <RevealSection index={step++}>
@@ -134,9 +138,19 @@ export default async function VaultPage({
                 {client.folders.map((folder) => {
                   const folderItems = client.media.filter((item) => item.folderId === folder.id);
                   if (folderItems.length === 0) return null;
+                  const isJerseyReveal =
+                    isMarksmen && folder.name.trim().toLowerCase() === "jersey day reveal";
                   return (
                     <RevealSection key={folder.id} index={step++}>
                       <div className="flex flex-col gap-4">
+                        {isJerseyReveal && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src="/clients/dmv-marksmen/marksmen-logo.webp"
+                            alt="Marksmen Elite logo"
+                            className="mx-auto h-28 w-auto sm:h-36"
+                          />
+                        )}
                         <h2 className="text-subhead text-ink">{folder.name}</h2>
                         <MediaGrid items={folderItems} />
                       </div>
