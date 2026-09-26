@@ -123,7 +123,17 @@ export default async function VaultPage({
                       {client.name}
                     </p>
                   )}
-                  <h1 className="text-headline mt-2 text-ink">{client.welcomeNote}</h1>
+                  <h1 className="text-headline mt-2 text-ink">
+                    {isMarksmen ? (
+                      <>
+                        Welcome
+                        <br />
+                        DMV Marksmen
+                      </>
+                    ) : (
+                      client.welcomeNote
+                    )}
+                  </h1>
                 </div>
                 {!isMarksmen && <LogoutButton />}
               </div>
