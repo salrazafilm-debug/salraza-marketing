@@ -56,16 +56,23 @@ export function VaultMediaGrid({
     };
   }, [lightboxItem]);
 
+  // Marksmen: an equal-height "shelf" (flex-wrap, each media element the
+  // same height, natural width) instead of a fixed grid or column-based
+  // masonry — it packs every row using the full row width regardless of
+  // how tall or wide each photo/video naturally is, so there's no leftover
+  // gap the way a strict column layout leaves when heights don't balance,
+  // and it keeps working the same way as more photos get added later.
   const cardClass = isMarksmen
-    ? "relative mb-8 flex flex-col break-inside-avoid overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
+    ? "group relative flex shrink-0 flex-col overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
     : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
+  const mediaHeightClass = "h-64 sm:h-80 lg:h-[26rem]";
 
   return (
     <>
       <div
         className={
           isMarksmen
-            ? "columns-1 gap-8 sm:columns-2"
+            ? "flex flex-wrap items-start justify-center gap-6"
             : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
         }
       >
@@ -79,7 +86,11 @@ export function VaultMediaGrid({
                 playsInline
                 preload="auto"
                 poster={item.posterUrl}
-                className="aspect-[4/5] w-full bg-black object-contain"
+                className={
+                  isMarksmen
+                    ? `${mediaHeightClass} w-auto bg-black object-contain`
+                    : "aspect-[4/5] w-full bg-black object-contain"
+                }
               >
                 <source src={item.src} />
               </video>
@@ -92,16 +103,18 @@ export function VaultMediaGrid({
           ) : (
             <div
               key={item.id}
-              className={`${cardClass} group cursor-zoom-in`}
+              className={`${cardClass} cursor-zoom-in`}
               onClick={() => setLightboxItem(item)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={item.src}
                 alt={item.label}
-                className={`block h-auto w-full ${
-                  isMarksmen ? "transition-transform duration-500 group-hover:scale-105" : ""
-                }`}
+                className={
+                  isMarksmen
+                    ? `${mediaHeightClass} w-auto object-cover transition-transform duration-500 group-hover:scale-105`
+                    : "block h-auto w-full"
+                }
               />
               <DownloadButton href={item.downloadUrl} label={item.label} />
               <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
