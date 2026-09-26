@@ -14,15 +14,21 @@ const MEDIA_VAULT_LINK = { href: "/clients", label: "Media Vault" };
 function MediaVaultLink({
   className = "",
   onClick,
+  marksmenTheme = false,
 }: {
   className?: string;
   onClick?: () => void;
+  marksmenTheme?: boolean;
 }) {
   return (
     <Link
       href={MEDIA_VAULT_LINK.href}
       onClick={onClick}
-      className={`focus-brand inline-flex items-center gap-2 rounded-full bg-espresso px-5 py-2.5 font-display text-sm font-extrabold tracking-wide text-golden-hour transition hover:brightness-110 ${className}`}
+      className={`focus-brand inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide transition hover:brightness-110 ${
+        marksmenTheme
+          ? "border border-[#2fc4de]/50 bg-[#111823] text-[#2fc4de]"
+          : "bg-espresso text-golden-hour"
+      } ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="7" width="10" height="7" rx="1.5" />
@@ -33,10 +39,20 @@ function MediaVaultLink({
   );
 }
 
-export function SiteHeader({ revealImmediately = false }: { revealImmediately?: boolean }) {
+export function SiteHeader({
+  revealImmediately = false,
+  theme = "default",
+}: {
+  revealImmediately?: boolean;
+  /** "marksmen" gives the banner the club's black + cyan look. Only pass
+   * this from the DMV Marksmen vault page — every other page keeps the
+   * site's normal look. */
+  theme?: "default" | "marksmen";
+}) {
   const [revealed, setRevealed] = useState(revealImmediately);
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const marksmenTheme = theme === "marksmen";
 
   useEffect(() => {
     if (revealImmediately) return;
@@ -88,7 +104,9 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
       ref={headerRef}
       className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ease-out ${
         revealed
-          ? "translate-y-0 opacity-100 border-line bg-paper/95 backdrop-blur"
+          ? marksmenTheme
+            ? "translate-y-0 opacity-100 border-[#17363d] bg-[#0a0a0c]/95 backdrop-blur"
+            : "translate-y-0 opacity-100 border-line bg-paper/95 backdrop-blur"
           : "pointer-events-none -translate-y-2 opacity-0 border-transparent"
       }`}
     >
@@ -108,12 +126,20 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
       */}
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-[26px] sm:px-6 md:py-3">
         <Link href="/" className="flex items-center" aria-label="Salraza Marketing home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/salraza-logo-transparent.png"
-            alt="Salraza Marketing"
-            className="h-16 w-auto md:h-12"
-          />
+          {/*
+            The logo's wordmark is dark ink, drawn for a light header — on
+            the Marksmen theme's near-black banner it would nearly vanish,
+            so it sits on its own small light chip there instead of trying
+            to recolor the logo itself.
+          */}
+          <span className={marksmenTheme ? "rounded-md bg-paper/95 px-2 py-1.5" : ""}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/salraza-logo-transparent.png"
+              alt="Salraza Marketing"
+              className="h-16 w-auto md:h-12"
+            />
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
@@ -121,7 +147,11 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
             <Link
               key={link.href}
               href={link.href}
-              className="focus-brand text-label text-ink hover:text-purple-text"
+              className={`focus-brand text-label transition ${
+                marksmenTheme
+                  ? "text-white hover:text-[#2fc4de]"
+                  : "text-ink hover:text-purple-text"
+              }`}
             >
               {link.label}
             </Link>
@@ -129,10 +159,14 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <MediaVaultLink />
+          <MediaVaultLink marksmenTheme={marksmenTheme} />
           <Link
             href="/#quote"
-            className="focus-brand inline-flex items-center rounded-full bg-highlighter px-5 py-2.5 font-display text-sm font-extrabold tracking-wide text-on-highlighter transition hover:brightness-95"
+            className={`focus-brand inline-flex items-center rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide transition ${
+              marksmenTheme
+                ? "bg-[#2fc4de] text-[#04141a] hover:brightness-95"
+                : "bg-highlighter text-on-highlighter hover:brightness-95"
+            }`}
           >
             Start
           </Link>
@@ -140,7 +174,9 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
 
         <button
           type="button"
-          className="focus-brand flex h-10 w-10 items-center justify-center rounded-full md:hidden"
+          className={`focus-brand flex h-10 w-10 items-center justify-center rounded-full md:hidden ${
+            marksmenTheme ? "text-white" : ""
+          }`}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
@@ -157,12 +193,18 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
       </div>
 
       {menuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-line bg-paper px-4 py-3 md:hidden">
+        <nav
+          className={`flex flex-col gap-1 border-t px-4 py-3 md:hidden ${
+            marksmenTheme ? "border-[#17363d] bg-[#0a0a0c]" : "border-line bg-paper"
+          }`}
+        >
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="focus-brand rounded px-2 py-2.5 text-label text-ink"
+              className={`focus-brand rounded px-2 py-2.5 text-label ${
+                marksmenTheme ? "text-white" : "text-ink"
+              }`}
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
@@ -171,10 +213,13 @@ export function SiteHeader({ revealImmediately = false }: { revealImmediately?: 
           <MediaVaultLink
             className="mt-1 justify-center"
             onClick={() => setMenuOpen(false)}
+            marksmenTheme={marksmenTheme}
           />
           <Link
             href="/#quote"
-            className="focus-brand mt-1 inline-flex items-center justify-center rounded-full bg-highlighter px-5 py-2.5 font-display text-sm font-extrabold tracking-wide text-on-highlighter"
+            className={`focus-brand mt-1 inline-flex items-center justify-center rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide ${
+              marksmenTheme ? "bg-[#2fc4de] text-[#04141a]" : "bg-highlighter text-on-highlighter"
+            }`}
             onClick={() => setMenuOpen(false)}
           >
             Start

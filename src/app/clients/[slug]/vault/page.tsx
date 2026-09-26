@@ -103,7 +103,7 @@ export default async function VaultPage({
 
   return (
     <>
-      <SiteHeader revealImmediately />
+      <SiteHeader revealImmediately theme={isMarksmen ? "marksmen" : "default"} />
       <main
         data-theme={isMarksmen ? "marksmen" : undefined}
         className={`min-h-[100svh] px-4 pt-28 pb-20 sm:px-6 ${isMarksmen ? "bg-[#0a0a0c]" : ""}`}
