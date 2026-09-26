@@ -111,10 +111,10 @@ export default async function VaultPage({
           <div className="mx-auto max-w-[1200px]">
             <RevealSection index={step++}>
               <div
-                className={`flex flex-col gap-4 pb-8 ${
+                className={`flex flex-col gap-4 ${
                   isMarksmen
-                    ? "items-center text-center"
-                    : "border-b border-line sm:flex-row sm:items-end sm:justify-between"
+                    ? "items-center pb-0 text-center"
+                    : "border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between"
                 }`}
               >
                 <div className={isMarksmen ? "flex flex-col items-center" : ""}>
@@ -149,7 +149,7 @@ export default async function VaultPage({
                 </div>
               </RevealSection>
             ) : (
-              <div className="mt-10 flex flex-col gap-10">
+              <div className={`flex flex-col gap-10 ${isMarksmen ? "mt-2" : "mt-10"}`}>
                 {client.folders.map((folder) => {
                   const folderItems = client.media.filter((item) => item.folderId === folder.id);
                   if (folderItems.length === 0) return null;
