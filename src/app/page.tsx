@@ -212,8 +212,8 @@ export default function Home() {
                 THE MEDIA VAULT
               </h2>
               <p
-                className="max-w-lg text-body font-semibold text-golden-hour"
-                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.85), 0 2px 10px rgba(0,0,0,0.7)" }}
+                className="max-w-lg text-body font-bold text-paper"
+                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 2px 14px rgba(0,0,0,0.8)" }}
               >
                 Every family gets a private safe deposit for finished galleries, edits, clips,
                 photos and videos. Type your password here to access.
