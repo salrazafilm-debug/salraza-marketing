@@ -43,11 +43,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
   }
 
   const buttonLabel =
-    status === "loading"
-      ? "Loading Media…"
-      : status === "entering"
-        ? "Entering vault…"
-        : "Enter your Media Vault";
+    status === "loading" ? "Loading Media…" : status === "entering" ? "Entering vault…" : "Enter";
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-4">
@@ -89,7 +85,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
       <button
         type="submit"
         disabled={status !== "idle"}
-        className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
+        className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-8 py-3 font-display text-base font-extrabold tracking-wide text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
       >
         {buttonLabel}
       </button>
