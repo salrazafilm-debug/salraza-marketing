@@ -9,83 +9,14 @@ import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
 import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
+import { VaultMediaGrid, type VaultMediaItem } from "@/components/VaultMediaGrid";
 
-/**
- * A real download, not just "open the file": links to a Cloudinary URL with
- * the fl_attachment flag, which makes Cloudinary's own response include a
- * Content-Disposition: attachment header. That's what makes this reliable
- * on mobile browsers too — a plain <a download> on a cross-origin file like
- * this often just opens it in a new tab instead of saving it.
- */
-function DownloadButton({ href, label }: { href: string; label: string }) {
-  return (
-    <a
-      href={href}
-      download
-      aria-label={`Download ${label}`}
-      className="focus-brand absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-espresso/70 text-golden-hour backdrop-blur transition hover:bg-espresso/90"
-    >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 2.5v9.5M5 8.5l4 4 4-4" />
-        <path d="M2.5 14.5v1a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-1" />
-      </svg>
-    </a>
-  );
-}
-
-function MediaGrid({ items, isMarksmen = false }: { items: MediaItem[]; isMarksmen?: boolean }) {
-  const cardClass = isMarksmen
-    ? "relative mb-8 flex flex-col break-inside-avoid overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
-    : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
-
-  return (
-    <div
-      className={
-        isMarksmen
-          ? "columns-1 gap-8 sm:columns-2"
-          : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
-      }
-    >
-      {items.map((item) =>
-        item.type === "video" ? (
-          <div key={item.id} className={cardClass}>
-            <video
-              controls
-              autoPlay
-              muted
-              playsInline
-              preload="auto"
-              poster={getVideoThumbnailUrl(item.cloudinaryPublicId)}
-              className="aspect-[4/5] w-full bg-black object-contain"
-            >
-              <source src={item.src} />
-            </video>
-            <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className="p-4 text-center sm:p-6">
-              <p className="text-subhead text-paper">{item.label}</p>
-              {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
-            </div>
-          </div>
-        ) : (
-          <div key={item.id} className={`${cardClass} group`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.src}
-              alt={item.label}
-              className={`block h-auto w-full ${
-                isMarksmen ? "transition-transform duration-500 group-hover:scale-105" : ""
-              }`}
-            />
-            <DownloadButton href={getDownloadUrl(item.src, item.label)} label={item.label} />
-            <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
-              <p className="text-subhead text-paper">{item.label}</p>
-              {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
-            </div>
-          </div>
-        )
-      )}
-    </div>
-  );
+function withUrls(items: MediaItem[]): VaultMediaItem[] {
+  return items.map((item) => ({
+    ...item,
+    downloadUrl: getDownloadUrl(item.src, item.label),
+    posterUrl: item.type === "video" ? getVideoThumbnailUrl(item.cloudinaryPublicId) : undefined,
+  }));
 }
 
 export default async function VaultPage({
@@ -177,7 +108,7 @@ export default async function VaultPage({
                           />
                         )}
                         <h2 className="text-subhead text-ink">{folder.name}</h2>
-                        <MediaGrid items={folderItems} isMarksmen={isMarksmen} />
+                        <VaultMediaGrid items={withUrls(folderItems)} isMarksmen={isMarksmen} />
                       </div>
                     </RevealSection>
                   );
@@ -189,7 +120,7 @@ export default async function VaultPage({
                   return (
                     <RevealSection index={step++}>
                       <div className="flex flex-col gap-4">
-                        <MediaGrid items={ungrouped} isMarksmen={isMarksmen} />
+                        <VaultMediaGrid items={withUrls(ungrouped)} isMarksmen={isMarksmen} />
                       </div>
                     </RevealSection>
                   );
