@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 
 type Status = "idle" | "loading" | "entering";
 
@@ -33,7 +34,8 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
       }
 
       setStatus("entering");
-      router.push(`/clients/${data.slug}/vault`);
+      const introParam = data.slug === MARKSMEN_SLUG ? "?intro=1" : "";
+      router.push(`/clients/${data.slug}/vault${introParam}`);
     } catch {
       setError("Something went wrong. Please try again.");
       setStatus("idle");

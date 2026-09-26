@@ -1,11 +1,13 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { findClientBySlug, type MediaItem } from "@/lib/clients";
+import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
+import { MarksmenIntroOverlay } from "@/components/MarksmenIntroOverlay";
 
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
@@ -74,10 +76,13 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
 
 export default async function VaultPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ intro?: string }>;
 }) {
   const { slug } = await params;
+  const { intro } = await searchParams;
   const client = await findClientBySlug(slug);
   if (!client) notFound();
 
@@ -89,6 +94,9 @@ export default async function VaultPage({
 
   return (
     <>
+      {slug === MARKSMEN_SLUG && intro === "1" && (
+        <MarksmenIntroOverlay src="/clients/dmv-marksmen/login-intro.mp4" />
+      )}
       <SiteHeader revealImmediately />
       <main className="min-h-[100svh] px-4 pt-28 pb-20 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
