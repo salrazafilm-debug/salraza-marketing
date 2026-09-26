@@ -112,21 +112,23 @@ export default async function VaultPage({
           <div className="mx-auto max-w-[1200px]">
             <RevealSection index={step++}>
               <div
-                className={`flex flex-col gap-4 border-b border-line pb-8 ${
+                className={`flex flex-col gap-4 pb-8 ${
                   isMarksmen
                     ? "items-center text-center"
-                    : "sm:flex-row sm:items-end sm:justify-between"
+                    : "border-b border-line sm:flex-row sm:items-end sm:justify-between"
                 }`}
               >
                 <div className={isMarksmen ? "flex flex-col items-center" : ""}>
-                  <p className="text-caption uppercase tracking-wide text-warm-text">
-                    {client.name}
-                  </p>
+                  {!isMarksmen && (
+                    <p className="text-caption uppercase tracking-wide text-warm-text">
+                      {client.name}
+                    </p>
+                  )}
                   <h1 className="text-headline mt-2 text-ink">
                     <TypewriterText text={client.welcomeNote} />
                   </h1>
                 </div>
-                <LogoutButton />
+                {!isMarksmen && <LogoutButton />}
               </div>
             </RevealSection>
 
@@ -193,6 +195,14 @@ export default async function VaultPage({
                 and we&apos;ll get it added.
               </p>
             </RevealSection>
+
+            {isMarksmen && (
+              <RevealSection index={step++}>
+                <div className="mt-10 flex justify-center">
+                  <LogoutButton />
+                </div>
+              </RevealSection>
+            )}
           </div>
         </MarksmenVaultIntro>
       </main>

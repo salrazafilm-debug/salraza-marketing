@@ -105,7 +105,7 @@ export function SiteHeader({
       className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ease-out ${
         revealed
           ? marksmenTheme
-            ? "translate-y-0 opacity-100 border-[#17363d] bg-[#0a0a0c]/95 backdrop-blur"
+            ? "translate-y-0 opacity-100 border-transparent bg-[#0a0a0c]/95 backdrop-blur"
             : "translate-y-0 opacity-100 border-line bg-paper/95 backdrop-blur"
           : "pointer-events-none -translate-y-2 opacity-0 border-transparent"
       }`}
@@ -140,7 +140,7 @@ export function SiteHeader({
                 : "/logos/salraza-logo-transparent.png"
             }
             alt="Salraza Marketing"
-            className="h-16 w-auto md:h-12"
+            className={marksmenTheme ? "h-24 w-auto md:h-20" : "h-16 w-auto md:h-12"}
           />
         </Link>
 
