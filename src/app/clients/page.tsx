@@ -63,7 +63,7 @@ export default async function ClientsPage({
     <>
       <SiteHeader revealImmediately />
       <main className="min-h-[100svh] bg-cream">
-        <section className="relative overflow-hidden px-4 pt-28 pb-14 sm:px-6">
+        <section className="relative overflow-hidden px-4 pt-36 pb-14 sm:px-6 sm:pt-32">
           <Image
             src="/client-work-vault.webp"
             alt=""
