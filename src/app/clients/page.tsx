@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ClientLoginForm } from "@/components/ClientLoginForm";
-import { VaultPolaroid } from "@/components/VaultPolaroid";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, listSiteContent } from "@/lib/site-content";
@@ -58,19 +57,13 @@ export default async function ClientsPage({
 }) {
   const { error } = await searchParams;
   const siteContent = await listSiteContent();
-  const photoMain = siteContent["vault-photo-main"]?.value ?? undefined;
-  const photoCamera = siteContent["vault-photo-camera"]?.value ?? undefined;
-  const photoBottomLeft = siteContent["vault-photo-bottom-left"]?.value ?? undefined;
-  const captionMain = siteContent["vault-caption-main"]?.value ?? "";
-  const captionCamera = siteContent["vault-caption-camera"]?.value ?? "";
-  const captionBottomLeft = siteContent["vault-caption-bottom-left"]?.value ?? "";
   const introText = siteContent[VAULT_INTRO_TEXT_KEY]?.value ?? DEFAULT_VAULT_INTRO_TEXT;
 
   return (
     <>
       <SiteHeader revealImmediately />
       <main className="min-h-[100svh] bg-cream">
-        <section className="relative overflow-hidden px-4 pt-28 pb-20 sm:px-6 sm:pt-32">
+        <section className="relative overflow-hidden px-4 pt-28 pb-14 sm:px-6">
           <Image
             src="/client-work-vault.webp"
             alt=""
@@ -82,127 +75,45 @@ export default async function ClientsPage({
           />
           <div className="pointer-events-none absolute inset-0 bg-cream/70" />
 
-          <div className="relative mx-auto max-w-[900px]">
-            {/* Mobile / tablet: a fanned row of photos above the card. */}
-            <div className="mb-6 flex items-end justify-center gap-3 lg:hidden">
-              <VaultPolaroid
-                src={photoMain}
-                alt="Main family photo"
-                caption={captionMain}
-                rotate={-8}
-                tapeSide="top-left"
-                className="h-[112px] w-[92px]"
-              />
-              <VaultPolaroid
-                src={photoCamera}
-                alt="Camera photo"
-                caption={captionCamera}
-                rotate={5}
-                tapeSide="top"
-                className="z-10 h-[132px] w-[108px]"
-              />
-              <VaultPolaroid
-                src={photoBottomLeft}
-                alt="Bottom-left photo"
-                caption={captionBottomLeft}
-                rotate={-4}
-                tapeSide="top-right"
-                className="h-[112px] w-[92px]"
-              />
-            </div>
+          {/* The torn-paper card. */}
+          <div className="relative z-10 mx-auto max-w-[480px]">
+            <div className="torn-paper relative bg-paper px-6 py-10 sm:px-10">
+              <span className="tape absolute -top-3 left-1/2 h-7 w-20 -translate-x-1/2 -rotate-2" aria-hidden />
 
-            {/* Desktop: photos scattered around the card, layered underneath it. */}
-            <div className="relative hidden lg:block">
-              <div className="absolute -left-24 top-6 z-0">
-                <VaultPolaroid
-                  src={photoMain}
-                  alt="Main family photo"
-                  caption={captionMain}
-                  rotate={-9}
-                  tapeSide="top-left"
-                  className="h-[198px] w-[160px]"
+              <svg
+                width="40"
+                height="46"
+                viewBox="0 0 48 56"
+                fill="none"
+                stroke="var(--color-marker-purple)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mx-auto -rotate-3"
+                aria-hidden
+              >
+                <rect x="8" y="24" width="32" height="26" rx="4" />
+                <path d="M14 24v-8a10 10 0 0 1 19-4" />
+                <circle cx="24" cy="36" r="2.6" fill="var(--color-marker-purple)" stroke="none" />
+                <path d="M24 39v4.5" />
+              </svg>
+
+              <h1 className="text-headline mt-3 text-center text-ink">
+                Unlock your
+                <br />
+                <span className="highlight text-script-accent px-1">Media Vault</span>
+              </h1>
+
+              <p className="mx-auto mt-3 max-w-sm text-center text-body text-ink-muted">
+                {introText}
+              </p>
+
+              <div className="mt-6">
+                <ClientLoginForm
+                  initialError={
+                    error === "session" ? "Your session expired — please sign in again." : undefined
+                  }
                 />
-              </div>
-              <div className="absolute -right-28 top-0 z-0">
-                <VaultPolaroid
-                  src={photoCamera}
-                  alt="Camera photo"
-                  caption={captionCamera}
-                  rotate={7}
-                  tapeSide="top-right"
-                  className="h-[184px] w-[150px]"
-                />
-              </div>
-              <div className="absolute -left-16 bottom-6 z-0">
-                <VaultPolaroid
-                  src={photoBottomLeft}
-                  alt="Bottom-left photo"
-                  caption={captionBottomLeft}
-                  rotate={-5}
-                  tapeSide="top"
-                  className="h-[172px] w-[140px]"
-                />
-              </div>
-            </div>
-
-            {/* The torn-paper card. */}
-            <div className="relative z-10 mx-auto max-w-[560px]">
-              <div className="torn-paper relative bg-paper px-6 py-12 sm:px-12 sm:py-16">
-                <span className="tape absolute -top-3 left-1/2 h-7 w-20 -translate-x-1/2 -rotate-2" aria-hidden />
-
-                <div className="absolute -right-6 -top-8 hidden -rotate-6 sm:block">
-                  <div className="flex flex-col items-center gap-2 bg-burgundy px-4 py-3 text-center shadow-[0_10px_20px_rgba(0,0,0,0.25)]">
-                    <p className="text-caption font-bold leading-snug text-golden-hour">
-                      Photos + Video
-                      <br />
-                      + Edits
-                      <br />
-                      All in one place.
-                    </p>
-                  </div>
-                </div>
-
-                <svg
-                  width="46"
-                  height="54"
-                  viewBox="0 0 48 56"
-                  fill="none"
-                  stroke="var(--color-marker-purple)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mx-auto -rotate-3"
-                  aria-hidden
-                >
-                  <rect x="8" y="24" width="32" height="26" rx="4" />
-                  <path d="M14 24v-8a10 10 0 0 1 19-4" />
-                  <circle cx="24" cy="36" r="2.6" fill="var(--color-marker-purple)" stroke="none" />
-                  <path d="M24 39v4.5" />
-                </svg>
-
-                <h1 className="text-headline mt-4 text-center text-ink">
-                  Unlock your
-                  <br />
-                  <span className="highlight text-script-accent px-1">Media Vault</span>
-                </h1>
-
-                <p className="mx-auto mt-5 max-w-sm text-center text-body text-ink-muted">
-                  {introText}
-                </p>
-
-                <div className="mx-auto mt-5 w-fit -rotate-1 bg-burgundy px-4 py-2.5 text-center shadow-[0_8px_16px_rgba(0,0,0,0.2)] sm:hidden">
-                  <p className="text-caption font-bold leading-snug text-golden-hour">
-                    Photos + Video + Edits + All in one place.
-                  </p>
-                </div>
-
-                <div className="mt-8">
-                  <ClientLoginForm
-                    initialError={
-                      error === "session" ? "Your session expired — please sign in again." : undefined
-                    }
-                  />
-                </div>
               </div>
             </div>
           </div>

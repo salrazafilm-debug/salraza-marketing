@@ -4,12 +4,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { listClientSummaries } from "@/lib/clients";
-import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, VAULT_PHOTO_SLOTS, listSiteContent } from "@/lib/site-content";
+import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, listSiteContent } from "@/lib/site-content";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { CreateClientForm } from "@/components/CreateClientForm";
-import { SiteImageUploader } from "@/components/SiteImageUploader";
 import { MediaVaultContentForm } from "@/components/MediaVaultContentForm";
 
 export const metadata: Metadata = {
@@ -25,10 +24,6 @@ export default async function AdminDashboardPage() {
 
   const clients = await listClientSummaries();
   const siteContent = await listSiteContent();
-  const captions: Record<string, string> = {};
-  for (const slot of VAULT_PHOTO_SLOTS) {
-    captions[slot.captionKey] = siteContent[slot.captionKey]?.value ?? "";
-  }
   const introText = siteContent[VAULT_INTRO_TEXT_KEY]?.value ?? DEFAULT_VAULT_INTRO_TEXT;
 
   return (
@@ -71,24 +66,13 @@ export default async function AdminDashboardPage() {
             <div>
               <p className="text-subhead text-ink">Media Vault Page</p>
               <p className="text-caption mt-1 text-warm-text">
-                The photos, handwritten notes and supporting text on the public /clients
-                login page. The scrapbook design around them (tape, torn paper, rotations,
-                the vault door, the lock doodle) is fixed and isn&apos;t edited here.
+                The supporting text on the public /clients login page. The scrapbook design
+                around it (tape, torn paper, the vault door, the lock doodle) is fixed and
+                isn&apos;t edited here.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {VAULT_PHOTO_SLOTS.map((slot) => (
-                <SiteImageUploader
-                  key={slot.key}
-                  imageKey={slot.key}
-                  label={slot.label}
-                  currentSrc={siteContent[slot.key]?.value ?? undefined}
-                />
-              ))}
-            </div>
-
-            <MediaVaultContentForm captions={captions} introText={introText} />
+            <MediaVaultContentForm introText={introText} />
           </div>
         </div>
       </main>

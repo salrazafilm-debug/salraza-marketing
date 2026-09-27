@@ -2,21 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { VAULT_INTRO_TEXT_KEY, VAULT_PHOTO_SLOTS } from "@/lib/site-content";
+import { VAULT_INTRO_TEXT_KEY } from "@/lib/site-content";
 
 /**
- * The editable text on the Media Vault login page: a short handwritten
- * caption under each Polaroid, and the supporting paragraph under the
- * headline. Same single-form, single-save-button pattern as
- * ClientSettingsForm — everything saves together with one "Save changes".
+ * The editable text on the Media Vault login page: the supporting paragraph
+ * under the headline. Same single-form, single-save-button pattern as
+ * ClientSettingsForm.
  */
-export function MediaVaultContentForm({
-  captions,
-  introText,
-}: {
-  captions: Record<string, string>;
-  introText: string;
-}) {
+export function MediaVaultContentForm({ introText }: { introText: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>();
   const [saved, setSaved] = useState(false);
@@ -29,11 +22,7 @@ export function MediaVaultContentForm({
     setSaved(false);
 
     const formData = new FormData(event.currentTarget);
-    const fields: Record<string, string> = {};
-    for (const slot of VAULT_PHOTO_SLOTS) {
-      fields[slot.captionKey] = String(formData.get(slot.captionKey) ?? "");
-    }
-    fields[VAULT_INTRO_TEXT_KEY] = String(formData.get(VAULT_INTRO_TEXT_KEY) ?? "");
+    const fields = { [VAULT_INTRO_TEXT_KEY]: String(formData.get(VAULT_INTRO_TEXT_KEY) ?? "") };
 
     const res = await fetch("/api/admin/site-content", {
       method: "PATCH",
@@ -54,20 +43,6 @@ export function MediaVaultContentForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border border-line bg-paper p-4">
-      <p className="text-label text-ink">Handwritten notes &amp; supporting text</p>
-
-      {VAULT_PHOTO_SLOTS.map((slot) => (
-        <label key={slot.captionKey} className="flex flex-col gap-2">
-          <span className="text-label text-ink">{slot.label} — handwritten note</span>
-          <input
-            name={slot.captionKey}
-            defaultValue={captions[slot.captionKey] ?? ""}
-            placeholder="e.g. Our favorite family!"
-            className="focus-brand rounded border border-line bg-paper-raised px-4 py-3 text-body text-ink"
-          />
-        </label>
-      ))}
-
       <label className="flex flex-col gap-2">
         <span className="text-label text-ink">Supporting text (under the headline)</span>
         <textarea

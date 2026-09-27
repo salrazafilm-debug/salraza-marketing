@@ -48,7 +48,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-5">
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Media Vault password</span>
+        <span className="text-label text-ink">Enter your password here</span>
         <div className="relative">
           <input
             required
