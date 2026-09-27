@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   const folder = String(body.folder ?? "").trim();
-  if (!folder || !/^(clients\/[a-z0-9-]+|site)$/.test(folder)) {
+  if (!folder || !/^(clients\/[a-z0-9-]+|site|portfolio)$/.test(folder)) {
     return NextResponse.json({ error: "Invalid folder." }, { status: 400 });
   }
 

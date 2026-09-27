@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     "Social media management, photography and short-form video from Salraza Marketing.",
 };
 
+// Portfolio items now come from the database instead of a hardcoded list —
+// force this page to render per-request so an admin adding/removing a photo
+// shows up immediately, not just after the next deploy.
+export const dynamic = "force-dynamic";
+
 export default function PortfolioPage() {
   return (
     <>

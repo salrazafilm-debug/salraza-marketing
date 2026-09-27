@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { listClientSummaries } from "@/lib/clients";
+import { listPortfolioItems } from "@/lib/portfolio";
 import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, listSiteContent } from "@/lib/site-content";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
@@ -23,6 +24,7 @@ export default async function AdminDashboardPage() {
   }
 
   const clients = await listClientSummaries();
+  const portfolioItems = await listPortfolioItems();
   const siteContent = await listSiteContent();
   const introText = siteContent[VAULT_INTRO_TEXT_KEY]?.value ?? DEFAULT_VAULT_INTRO_TEXT;
 
@@ -60,6 +62,24 @@ export default async function AdminDashboardPage() {
             {clients.length === 0 && (
               <p className="text-body text-ink-muted">No families yet — add your first one above.</p>
             )}
+          </div>
+
+          <div className="mt-10">
+            <Link
+              href="/admin/dashboard/portfolio"
+              className="focus-brand flex items-center justify-between gap-4 rounded-xl bg-paper-raised p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div>
+                <p className="text-subhead text-ink">Portfolio</p>
+                <p className="text-caption mt-2 text-warm-text">
+                  {portfolioItems.length} {portfolioItems.length === 1 ? "photo" : "photos"} shown on
+                  the public /portfolio page and homepage
+                </p>
+              </div>
+              <span className="text-purple-text" aria-hidden>
+                →
+              </span>
+            </Link>
           </div>
 
           <div className="mt-10 flex flex-col gap-6 rounded-xl bg-paper-raised p-6">

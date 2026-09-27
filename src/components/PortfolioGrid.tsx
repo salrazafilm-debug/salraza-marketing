@@ -1,14 +1,15 @@
 import Image from "next/image";
-import { PORTFOLIO_ITEMS } from "@/lib/portfolio";
+import { listPortfolioItems } from "@/lib/portfolio";
 
-export function PortfolioGrid({ limit }: { limit?: number }) {
-  const items = limit ? PORTFOLIO_ITEMS.slice(0, limit) : PORTFOLIO_ITEMS;
+export async function PortfolioGrid({ limit }: { limit?: number }) {
+  const allItems = await listPortfolioItems();
+  const items = limit ? allItems.slice(0, limit) : allItems;
 
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-6">
       {items.map((item) => (
         <div
-          key={item.title}
+          key={item.id}
           className="group relative aspect-square overflow-hidden rounded-lg transition-transform duration-300 hover:-translate-y-1 sm:aspect-[4/5] sm:rounded-xl"
         >
           <Image
