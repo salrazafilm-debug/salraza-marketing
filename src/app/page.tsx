@@ -7,6 +7,12 @@ import { LinkButton } from "@/components/Button";
 import { PortfolioGrid } from "@/components/PortfolioGrid";
 import { QuoteForm } from "@/components/QuoteForm";
 
+// The homepage embeds the portfolio grid, which now reads from the database
+// instead of a hardcoded list — force this page to render per-request so an
+// admin adding/removing a photo shows up immediately, not just after the
+// next deploy.
+export const dynamic = "force-dynamic";
+
 const SERVICES = [
   {
     title: "Social media management",
