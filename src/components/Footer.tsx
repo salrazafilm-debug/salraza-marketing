@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <p className="text-headline text-golden-hour">Salraza Marketing</p>
           <p className="max-w-md text-body text-golden-hour/90">
-            We are all family in this world — let&apos;s all grow together.
+            We are all family on this little rock — floating across the universe together.
           </p>
         </div>
 
