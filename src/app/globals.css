@@ -187,6 +187,45 @@ body {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
   }
+
+  /* A hand-torn sheet of paper: a jagged clip-path on the top and bottom
+     edges instead of a straight rectangle. `filter: drop-shadow` (not
+     box-shadow) is required here — box-shadow is cast from the element's
+     rectangular border box before clip-path is applied, so it would ignore
+     the jagged silhouette entirely and just look like a rectangle again. */
+  .torn-paper {
+    clip-path: polygon(
+      0% 2%, 4% 0%, 8% 3%, 13% 1%, 18% 3%, 23% 0%, 28% 2%, 33% 0%, 38% 3%,
+      43% 1%, 50% 3%, 57% 0%, 62% 2%, 67% 0%, 72% 3%, 77% 1%, 82% 3%, 87% 0%,
+      92% 2%, 96% 0%, 100% 2%,
+      100% 98%, 96% 100%, 92% 97%, 87% 99%, 82% 97%, 77% 100%, 72% 98%,
+      67% 100%, 62% 97%, 57% 99%, 50% 97%, 43% 100%, 38% 98%, 33% 100%,
+      28% 97%, 23% 99%, 18% 97%, 13% 100%, 8% 98%, 4% 100%, 0% 98%
+    );
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.22));
+  }
+
+  /* Same tear, top edge only (for a strip that meets a hard section boundary
+     on its bottom edge, e.g. the top of the cream section below the fold). */
+  .torn-paper-top {
+    clip-path: polygon(
+      0% 2%, 4% 0%, 8% 3%, 13% 1%, 18% 3%, 23% 0%, 28% 2%, 33% 0%, 38% 3%,
+      43% 1%, 50% 3%, 57% 0%, 62% 2%, 67% 0%, 72% 3%, 77% 1%, 82% 3%, 87% 0%,
+      92% 2%, 96% 0%, 100% 2%, 100% 100%, 0% 100%
+    );
+  }
+
+  /* A short strip of washi tape: a translucent rectangle with a slight sheen
+     down the middle, meant to sit rotated across a photo/paper corner. */
+  .tape {
+    background: linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.32) 45%,
+      rgba(255, 255, 255, 0.5) 100%
+    );
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

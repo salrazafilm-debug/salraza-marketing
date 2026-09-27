@@ -46,7 +46,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
     status === "loading" ? "Loading Media…" : status === "entering" ? "Entering vault…" : "Enter";
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-4">
+    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-5">
       <label className="flex flex-col gap-2">
         <span className="text-label text-ink">Media Vault password</span>
         <div className="relative">
@@ -56,13 +56,13 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
             type={showPassword ? "text" : "password"}
             name="password"
             autoComplete="current-password"
-            className="focus-brand w-full rounded border border-line bg-paper px-4 py-3 pr-12 text-body text-ink"
+            className="focus-brand w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 pr-14 text-body text-ink"
           />
           <button
             type="button"
             onClick={() => setShowPassword((show) => !show)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="focus-brand absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-muted hover:text-ink"
+            className="focus-brand absolute inset-y-0 right-0 flex w-12 items-center justify-center text-ink-muted hover:text-ink"
           >
             {showPassword ? (
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -85,9 +85,14 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
       <button
         type="submit"
         disabled={status !== "idle"}
-        className="focus-brand inline-flex items-center justify-center rounded-full bg-highlighter px-8 py-3 font-display text-base font-extrabold tracking-wide text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
+        className="focus-brand inline-flex items-center justify-center gap-2 rounded-full bg-highlighter px-10 py-4 font-display text-lg font-extrabold tracking-wide text-on-highlighter transition hover:brightness-95 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
       >
         {buttonLabel}
+        {status === "idle" && (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 10h12M11 5l5 5-5 5" />
+          </svg>
+        )}
       </button>
     </form>
   );

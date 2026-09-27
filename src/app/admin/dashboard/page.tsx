@@ -4,10 +4,18 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { listClientSummaries } from "@/lib/clients";
+import { listSiteImages, VAULT_PHOTO_KEYS } from "@/lib/site-images";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { CreateClientForm } from "@/components/CreateClientForm";
+import { SiteImageUploader } from "@/components/SiteImageUploader";
+
+const VAULT_PHOTO_LABELS: Record<(typeof VAULT_PHOTO_KEYS)[number], string> = {
+  "vault-photo-1": "Media Vault login — photo 1",
+  "vault-photo-2": "Media Vault login — photo 2",
+  "vault-photo-3": "Media Vault login — photo 3",
+};
 
 export const metadata: Metadata = {
   title: "Admin dashboard — Salraza Marketing",
@@ -21,6 +29,7 @@ export default async function AdminDashboardPage() {
   }
 
   const clients = await listClientSummaries();
+  const siteImages = await listSiteImages();
 
   return (
     <>
@@ -56,6 +65,25 @@ export default async function AdminDashboardPage() {
             {clients.length === 0 && (
               <p className="text-body text-ink-muted">No families yet — add your first one above.</p>
             )}
+          </div>
+
+          <div className="mt-10 flex flex-col gap-4 rounded-xl bg-paper-raised p-6">
+            <div>
+              <p className="text-subhead text-ink">Media Vault login photos</p>
+              <p className="text-caption mt-1 text-warm-text">
+                The three scrapbook photos shown on the /clients login page.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {VAULT_PHOTO_KEYS.map((key) => (
+                <SiteImageUploader
+                  key={key}
+                  imageKey={key}
+                  label={VAULT_PHOTO_LABELS[key]}
+                  currentSrc={siteImages[key]?.src}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </main>
