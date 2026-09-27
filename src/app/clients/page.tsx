@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { ClientLoginForm } from "@/components/ClientLoginForm";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
@@ -63,18 +62,7 @@ export default async function ClientsPage({
     <>
       <SiteHeader revealImmediately />
       <main className="min-h-[100svh] bg-cream">
-        <section className="relative overflow-hidden px-4 pt-36 pb-14 sm:px-6 sm:pt-32">
-          <Image
-            src="/client-work-vault.webp"
-            alt=""
-            aria-hidden
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover opacity-[0.16]"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-cream/70" />
-
+        <section className="relative bg-cream px-4 pt-36 pb-14 sm:px-6 sm:pt-32">
           {/* The torn-paper card. */}
           <div className="relative z-10 mx-auto max-w-[480px]">
             <div className="torn-paper relative bg-paper px-6 py-10 sm:px-10">
@@ -119,18 +107,9 @@ export default async function ClientsPage({
           </div>
         </section>
 
-        <section className="torn-paper-top relative bg-cream px-4 pb-20 pt-14 sm:px-6">
+        <section className="torn-paper-top relative bg-cream px-4 py-14 sm:px-6">
           <div className="mx-auto max-w-[1000px] text-center">
-            <h2 className="text-script-accent relative inline-block text-ink">
-              Finished galleries
-              <span
-                aria-hidden
-                className="absolute -bottom-1 left-0 h-3 w-full -rotate-1 rounded-full bg-highlighter/80"
-                style={{ zIndex: -1 }}
-              />
-            </h2>
-
-            <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8">
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8">
               {FEATURES.map((feature) => (
                 <div key={feature.title} className="flex flex-col items-center gap-3">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-purple-text shadow-sm">
