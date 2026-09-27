@@ -4,18 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { listClientSummaries } from "@/lib/clients";
-import { listSiteImages, VAULT_PHOTO_KEYS } from "@/lib/site-images";
+import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, VAULT_PHOTO_SLOTS, listSiteContent } from "@/lib/site-content";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { CreateClientForm } from "@/components/CreateClientForm";
 import { SiteImageUploader } from "@/components/SiteImageUploader";
-
-const VAULT_PHOTO_LABELS: Record<(typeof VAULT_PHOTO_KEYS)[number], string> = {
-  "vault-photo-1": "Media Vault login — photo 1",
-  "vault-photo-2": "Media Vault login — photo 2",
-  "vault-photo-3": "Media Vault login — photo 3",
-};
+import { MediaVaultContentForm } from "@/components/MediaVaultContentForm";
 
 export const metadata: Metadata = {
   title: "Admin dashboard — Salraza Marketing",
@@ -29,7 +24,12 @@ export default async function AdminDashboardPage() {
   }
 
   const clients = await listClientSummaries();
-  const siteImages = await listSiteImages();
+  const siteContent = await listSiteContent();
+  const captions: Record<string, string> = {};
+  for (const slot of VAULT_PHOTO_SLOTS) {
+    captions[slot.captionKey] = siteContent[slot.captionKey]?.value ?? "";
+  }
+  const introText = siteContent[VAULT_INTRO_TEXT_KEY]?.value ?? DEFAULT_VAULT_INTRO_TEXT;
 
   return (
     <>
@@ -67,23 +67,28 @@ export default async function AdminDashboardPage() {
             )}
           </div>
 
-          <div className="mt-10 flex flex-col gap-4 rounded-xl bg-paper-raised p-6">
+          <div className="mt-10 flex flex-col gap-6 rounded-xl bg-paper-raised p-6">
             <div>
-              <p className="text-subhead text-ink">Media Vault login photos</p>
+              <p className="text-subhead text-ink">Media Vault Page</p>
               <p className="text-caption mt-1 text-warm-text">
-                The three scrapbook photos shown on the /clients login page.
+                The photos, handwritten notes and supporting text on the public /clients
+                login page. The scrapbook design around them (tape, torn paper, rotations,
+                the vault door, the lock doodle) is fixed and isn&apos;t edited here.
               </p>
             </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {VAULT_PHOTO_KEYS.map((key) => (
+              {VAULT_PHOTO_SLOTS.map((slot) => (
                 <SiteImageUploader
-                  key={key}
-                  imageKey={key}
-                  label={VAULT_PHOTO_LABELS[key]}
-                  currentSrc={siteImages[key]?.src}
+                  key={slot.key}
+                  imageKey={slot.key}
+                  label={slot.label}
+                  currentSrc={siteContent[slot.key]?.value ?? undefined}
                 />
               ))}
             </div>
+
+            <MediaVaultContentForm captions={captions} introText={introText} />
           </div>
         </div>
       </main>

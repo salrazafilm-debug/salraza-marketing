@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { VaultPhotoKey } from "@/lib/site-images";
+import type { VaultPhotoKey } from "@/lib/site-content";
 
 // Cloudinary's plan caps a single image at 10MB — stay a little under that.
 const MAX_IMAGE_BYTES = 9.5 * 1024 * 1024;
@@ -129,7 +129,7 @@ export function SiteImageUploader({
         }
       );
 
-      const saveRes = await fetch("/api/admin/site-images", {
+      const saveRes = await fetch("/api/admin/site-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -168,7 +168,7 @@ export function SiteImageUploader({
       </div>
 
       <label className="focus-brand inline-flex w-fit cursor-pointer items-center justify-center rounded-full bg-highlighter px-4 py-2 text-label text-on-highlighter transition hover:brightness-95">
-        {currentSrc ? "Replace photo" : "Upload photo"}
+        {currentSrc ? "Replace Image" : "Upload Image"}
         <input
           ref={fileInputRef}
           type="file"

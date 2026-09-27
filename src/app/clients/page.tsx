@@ -4,7 +4,7 @@ import { ClientLoginForm } from "@/components/ClientLoginForm";
 import { VaultPolaroid } from "@/components/VaultPolaroid";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
-import { listSiteImages } from "@/lib/site-images";
+import { DEFAULT_VAULT_INTRO_TEXT, VAULT_INTRO_TEXT_KEY, listSiteContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Media Vault — Salraza Marketing",
@@ -57,10 +57,14 @@ export default async function ClientsPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const siteImages = await listSiteImages();
-  const photo1 = siteImages["vault-photo-1"]?.src;
-  const photo2 = siteImages["vault-photo-2"]?.src;
-  const photo3 = siteImages["vault-photo-3"]?.src;
+  const siteContent = await listSiteContent();
+  const photoMain = siteContent["vault-photo-main"]?.value ?? undefined;
+  const photoCamera = siteContent["vault-photo-camera"]?.value ?? undefined;
+  const photoBottomLeft = siteContent["vault-photo-bottom-left"]?.value ?? undefined;
+  const captionMain = siteContent["vault-caption-main"]?.value ?? "";
+  const captionCamera = siteContent["vault-caption-camera"]?.value ?? "";
+  const captionBottomLeft = siteContent["vault-caption-bottom-left"]?.value ?? "";
+  const introText = siteContent[VAULT_INTRO_TEXT_KEY]?.value ?? DEFAULT_VAULT_INTRO_TEXT;
 
   return (
     <>
@@ -82,25 +86,28 @@ export default async function ClientsPage({
             {/* Mobile / tablet: a fanned row of photos above the card. */}
             <div className="mb-6 flex items-end justify-center gap-3 lg:hidden">
               <VaultPolaroid
-                src={photo1}
-                alt="A family we've worked with"
+                src={photoMain}
+                alt="Main family photo"
+                caption={captionMain}
                 rotate={-8}
                 tapeSide="top-left"
-                className="h-[104px] w-[92px]"
+                className="h-[112px] w-[92px]"
               />
               <VaultPolaroid
-                src={photo2}
-                alt="Behind the scenes on set"
+                src={photoCamera}
+                alt="Camera photo"
+                caption={captionCamera}
                 rotate={5}
                 tapeSide="top"
-                className="z-10 h-[124px] w-[108px]"
+                className="z-10 h-[132px] w-[108px]"
               />
               <VaultPolaroid
-                src={photo3}
-                alt="A finished gallery moment"
+                src={photoBottomLeft}
+                alt="Bottom-left photo"
+                caption={captionBottomLeft}
                 rotate={-4}
                 tapeSide="top-right"
-                className="h-[104px] w-[92px]"
+                className="h-[112px] w-[92px]"
               />
             </div>
 
@@ -108,29 +115,32 @@ export default async function ClientsPage({
             <div className="relative hidden lg:block">
               <div className="absolute -left-24 top-6 z-0">
                 <VaultPolaroid
-                  src={photo1}
-                  alt="A family we've worked with"
+                  src={photoMain}
+                  alt="Main family photo"
+                  caption={captionMain}
                   rotate={-9}
                   tapeSide="top-left"
-                  className="h-[190px] w-[160px]"
+                  className="h-[198px] w-[160px]"
                 />
               </div>
               <div className="absolute -right-28 top-0 z-0">
                 <VaultPolaroid
-                  src={photo2}
-                  alt="Behind the scenes on set"
+                  src={photoCamera}
+                  alt="Camera photo"
+                  caption={captionCamera}
                   rotate={7}
                   tapeSide="top-right"
-                  className="h-[210px] w-[176px]"
+                  className="h-[184px] w-[150px]"
                 />
               </div>
-              <div className="absolute -right-16 bottom-10 z-0">
+              <div className="absolute -left-16 bottom-6 z-0">
                 <VaultPolaroid
-                  src={photo3}
-                  alt="A finished gallery moment"
-                  rotate={-6}
+                  src={photoBottomLeft}
+                  alt="Bottom-left photo"
+                  caption={captionBottomLeft}
+                  rotate={-5}
                   tapeSide="top"
-                  className="h-[170px] w-[144px]"
+                  className="h-[172px] w-[140px]"
                 />
               </div>
             </div>
@@ -177,8 +187,7 @@ export default async function ClientsPage({
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-sm text-center text-body text-ink-muted">
-                  Every family gets a private safe deposit for finished galleries, edits, photos and
-                  videos. Type your password below to access.
+                  {introText}
                 </p>
 
                 <div className="mx-auto mt-5 w-fit -rotate-1 bg-burgundy px-4 py-2.5 text-center shadow-[0_8px_16px_rgba(0,0,0,0.2)] sm:hidden">
