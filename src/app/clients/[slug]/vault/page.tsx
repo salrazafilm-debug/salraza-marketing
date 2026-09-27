@@ -80,26 +80,6 @@ export default async function VaultPage({
               </div>
             </RevealSection>
 
-            {client.media.some((item) => item.type === "image") && (
-              <RevealSection index={step++}>
-                <div className={`flex ${isMarksmen ? "justify-center" : "justify-center sm:justify-start"} mt-6`}>
-                  <a
-                    href={`/api/clients/${slug}/download-all`}
-                    download
-                    className={`focus-brand inline-flex items-center gap-2 rounded-full px-6 py-3 text-label font-bold transition hover:brightness-95 ${
-                      isMarksmen ? "bg-[#2fc4de] text-[#04141a]" : "bg-highlighter text-on-highlighter"
-                    }`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 2.5v9.5M5 8.5l4 4 4-4" />
-                      <path d="M2.5 14.5v1a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-1" />
-                    </svg>
-                    Download all
-                  </a>
-                </div>
-              </RevealSection>
-            )}
-
             {client.media.length === 0 ? (
               <RevealSection index={step++}>
                 <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
@@ -146,6 +126,26 @@ export default async function VaultPage({
                   );
                 })()}
               </div>
+            )}
+
+            {client.media.some((item) => item.type === "image") && (
+              <RevealSection index={step++}>
+                <div className="mt-10 flex justify-center">
+                  <a
+                    href={`/api/clients/${slug}/download-all`}
+                    download
+                    className={`focus-brand inline-flex items-center gap-2 rounded-full px-6 py-3 text-label font-bold transition hover:brightness-95 ${
+                      isMarksmen ? "bg-[#2fc4de] text-[#04141a]" : "bg-highlighter text-on-highlighter"
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 2.5v9.5M5 8.5l4 4 4-4" />
+                      <path d="M2.5 14.5v1a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-1" />
+                    </svg>
+                    Download all
+                  </a>
+                </div>
+              </RevealSection>
             )}
 
             <RevealSection index={step++}>
