@@ -3,13 +3,14 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
-import { findClientBySlug } from "@/lib/clients";
+import { findClientBySlug, listClientPasswords } from "@/lib/clients";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { MediaUploader } from "@/components/MediaUploader";
 import { MediaManager } from "@/components/MediaManager";
 import { ClientSettingsForm } from "@/components/ClientSettingsForm";
+import { ClientPasswordsManager } from "@/components/ClientPasswordsManager";
 
 export const metadata: Metadata = {
   title: "Admin — Salraza Marketing",
@@ -29,6 +30,7 @@ export default async function AdminClientPage({
   const { slug } = await params;
   const client = await findClientBySlug(slug);
   if (!client) notFound();
+  const extraPasswords = await listClientPasswords(client.slug);
 
   return (
     <>
@@ -51,7 +53,10 @@ export default async function AdminClientPage({
               <MediaManager items={client.media} folders={client.folders} />
             </div>
 
-            <ClientSettingsForm slug={client.slug} name={client.name} welcomeNote={client.welcomeNote} />
+            <div className="flex flex-col gap-6">
+              <ClientSettingsForm slug={client.slug} name={client.name} welcomeNote={client.welcomeNote} />
+              <ClientPasswordsManager clientSlug={client.slug} passwords={extraPasswords} />
+            </div>
           </div>
         </div>
       </main>
