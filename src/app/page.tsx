@@ -238,7 +238,6 @@ export default function Home() {
 
         <section className="px-4 py-20 sm:px-6">
           <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-3 text-center">
-            <p className="text-eyebrow uppercase text-ink">Family</p>
             <h2 className="text-headline max-w-xl text-ink">THE MEDIA VAULT</h2>
           </div>
 
