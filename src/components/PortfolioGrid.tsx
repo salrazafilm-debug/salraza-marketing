@@ -7,8 +7,8 @@ export async function PortfolioGrid({
 }: {
   limit?: number;
   /** "compact" (default): the tight 3-column teaser used on the homepage.
-   * "large": fewer, bigger columns with more breathing room, for the
-   * dedicated /portfolio page. */
+   * "large": 2 columns on mobile, 3 on larger screens, with wider gaps for
+   * more breathing room — used on the dedicated /portfolio page. */
   size?: "compact" | "large";
 }) {
   const allItems = await listPortfolioItems();
@@ -18,7 +18,7 @@ export async function PortfolioGrid({
     <div
       className={
         size === "large"
-          ? "grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10"
+          ? "grid grid-cols-2 gap-4 sm:gap-8 lg:grid-cols-3"
           : "grid grid-cols-3 gap-2 sm:gap-6"
       }
     >
@@ -33,7 +33,11 @@ export async function PortfolioGrid({
             src={item.image}
             alt={item.title}
             fill
-            sizes={size === "large" ? "(min-width: 640px) 50vw, 100vw" : "(min-width: 640px) 33vw, 33vw"}
+            sizes={
+              size === "large"
+                ? "(min-width: 1024px) 33vw, 50vw"
+                : "(min-width: 640px) 33vw, 33vw"
+            }
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
