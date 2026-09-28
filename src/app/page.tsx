@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 const SERVICES = [
   {
     title: "Social media management",
-    body: "Content that sounds like you, posted on a plan you never have to think about.",
+    body: "We manage and create video content for the world to see, love, and follow your online pages.",
     accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -38,13 +38,49 @@ const SERVICES = [
     ),
   },
   {
-    title: "Short-form video",
-    body: "Videos optimized for high performing views, followers, and comments! Grow your page!",
-    accent: "bg-white text-red-600",
+    title: "Website creation",
+    body: "Unlock and visit your brand in a site that showcases your name and work.",
+    accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="20" height="16" rx="2" />
-        <path d="M11 10l6 3-6 3z" fill="currentColor" stroke="none" />
+        <path d="M3 10h20" />
+        <circle cx="6.5" cy="7.5" r="0.6" fill="currentColor" stroke="none" />
+        <circle cx="9" cy="7.5" r="0.6" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    title: "Branding",
+    body: "We help you find the style and design that fits you and establish your brand to the world.",
+    accent: "bg-white text-black",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 3a10 10 0 1 0 0 20c1.5 0 2.5-1 2.5-2.3 0-.6-.2-1.1-.6-1.5-.4-.4-.6-.9-.6-1.5 0-1.3 1-2.3 2.3-2.3H18a5 5 0 0 0 5-5c0-4-4.5-7.4-10-7.4Z" />
+        <circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="13" cy="7.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="18" cy="10" r="1.1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    title: "Logo",
+    body: "We can create & design a look for your company to be recognized anywhere.",
+    accent: "bg-white text-black",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="13" cy="10" r="6.5" />
+        <path d="M9.5 15.5 8 22l5-2.5 5 2.5-1.5-6.5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Brand refresh",
+    body: "Let's update and give your look a modern glow up.",
+    accent: "bg-white text-black",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 3c0 4-1 7-3 9s-5 3-9 3c4 0 7 1 9 3s3 5 3 9c0-4 1-7 3-9s5-3 9-3c-4 0-7-1-9-3s-3-5-3-9Z" />
       </svg>
     ),
   },
