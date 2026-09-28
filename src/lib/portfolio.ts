@@ -61,6 +61,21 @@ export async function addPortfolioItem(item: {
 }
 
 /**
+ * Reassigns sequential positions (0, 1, 2, ...) to portfolio items in the
+ * given order, e.g. after an admin moves one up or down in the list.
+ */
+export async function reorderPortfolioItems(orderedIds: string[]): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("portfolio_items").update({ position: index }).eq("id", id)
+    )
+  );
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw new Error(failed.error.message);
+}
+
+/**
  * Deletes a portfolio item and returns its Cloudinary public ID so the
  * caller can also remove the file from Cloudinary — items seeded from the
  * original static images have no Cloudinary asset, so this can be null.
