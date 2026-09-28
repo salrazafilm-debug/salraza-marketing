@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
-import { findClientBySlug, listClientPasswords } from "@/lib/clients";
+import { findClientBySlug, listClientPasswords, listMediaVariantsByClient } from "@/lib/clients";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
@@ -31,6 +31,7 @@ export default async function AdminClientPage({
   const client = await findClientBySlug(slug);
   if (!client) notFound();
   const extraPasswords = await listClientPasswords(client.slug);
+  const variantsByItem = await listMediaVariantsByClient(client.slug);
 
   return (
     <>
@@ -50,7 +51,12 @@ export default async function AdminClientPage({
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
             <div className="flex flex-col gap-8">
               <MediaUploader clientSlug={client.slug} folders={client.folders} />
-              <MediaManager items={client.media} folders={client.folders} />
+              <MediaManager
+                clientSlug={client.slug}
+                items={client.media}
+                folders={client.folders}
+                variantsByItem={variantsByItem}
+              />
             </div>
 
             <div className="flex flex-col gap-6">
