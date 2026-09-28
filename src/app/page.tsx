@@ -237,11 +237,16 @@ export default function Home() {
         </section>
 
         <section className="px-4 py-20 sm:px-6">
-          <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-3 text-center">
-            <h2 className="text-headline max-w-xl text-ink">THE MEDIA VAULT</h2>
+          <div className="mx-auto flex max-w-[1200px] flex-col items-center py-8 text-center">
+            <h2
+              className="text-display-hero text-ink"
+              style={{ textShadow: "0 4px 16px rgba(0,0,0,0.15)" }}
+            >
+              THE <Highlight>MEDIA VAULT</Highlight>
+            </h2>
           </div>
 
-          <div className="relative mx-auto mt-10 overflow-hidden rounded-xl">
+          <div className="relative mx-auto mt-14 overflow-hidden rounded-xl">
             <Image
               src="/client-work-vault.webp"
               alt="A bank vault door, representing each family's private Media Vault"
