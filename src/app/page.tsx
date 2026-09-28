@@ -237,24 +237,31 @@ export default function Home() {
         </section>
 
         <section className="px-4 py-20 sm:px-6">
-          <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-6 text-center">
+          <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-3 text-center">
             <p className="text-eyebrow uppercase text-ink">Family</p>
             <h2 className="text-headline max-w-xl text-ink">THE MEDIA VAULT</h2>
-            <p className="max-w-lg text-body text-ink-muted">
-              Every family gets a private safe deposit for finished galleries, edits, clips,
-              photos and videos. Type your password here to access.
-            </p>
-            <LinkButton href="/clients">Visit your Media Vault</LinkButton>
           </div>
 
-          <div className="relative mx-auto mt-10 aspect-[16/9] max-w-[1200px] overflow-hidden rounded-xl">
+          <div className="relative mx-auto mt-10 overflow-hidden rounded-xl">
             <Image
               src="/client-work-vault.webp"
               alt="A bank vault door, representing each family's private Media Vault"
               fill
+              aria-hidden
               sizes="(min-width: 1200px) 1200px, 100vw"
               className="object-cover"
             />
+            <div className="absolute inset-0 bg-espresso/75" />
+            <div className="relative mx-auto flex max-w-[1200px] flex-col items-center gap-6 px-6 py-14 text-center sm:px-14">
+              <p
+                className="max-w-lg text-body font-bold text-paper"
+                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 2px 14px rgba(0,0,0,0.8)" }}
+              >
+                Every family gets a private safe deposit for finished galleries, edits, clips,
+                photos and videos. Type your password here to access.
+              </p>
+              <LinkButton href="/clients">Visit your Media Vault</LinkButton>
+            </div>
           </div>
         </section>
 
