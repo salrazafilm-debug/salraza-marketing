@@ -45,14 +45,17 @@ export function PortfolioTile({
             setIndex((current) => (current + 1) % images.length);
           }}
           aria-label={`Show variant ${((index + 1) % images.length) + 1} of ${images.length}`}
-          className="focus-brand absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-ink/70 py-1 pl-1.5 pr-2.5 text-caption font-bold text-paper shadow-md backdrop-blur transition hover:scale-105 hover:bg-ink active:scale-95"
+          className={`focus-brand absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-full bg-ink/80 font-bold text-paper shadow-lg backdrop-blur transition hover:scale-105 hover:bg-ink active:scale-95 ${
+            size === "large" ? "px-3.5 py-2 text-label" : "px-2.5 py-1.5 text-caption"
+          }`}
         >
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg width={size === "large" ? 16 : 13} height={size === "large" ? 16 : 13} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2 8a6 6 0 0 1 10.2-4.2" />
             <path d="M12.5 1.5v2.8h-2.8" />
             <path d="M14 8a6 6 0 0 1-10.2 4.2" />
             <path d="M3.5 14.5v-2.8h2.8" />
           </svg>
+          {size === "large" && "Click here · "}
           {index + 1}/{images.length}
         </button>
       )}

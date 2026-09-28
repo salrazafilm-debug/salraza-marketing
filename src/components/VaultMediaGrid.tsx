@@ -54,15 +54,15 @@ function VariantToggle({
         onToggle();
       }}
       aria-label={`Show variant ${((index + 1) % total) + 1} of ${total}`}
-      className="focus-brand absolute bottom-3 left-3 z-10 flex items-center gap-1 rounded-full bg-espresso/70 py-1 pl-1.5 pr-2.5 text-caption font-bold text-golden-hour shadow-md backdrop-blur transition hover:scale-105 hover:bg-espresso/90 active:scale-95"
+      className="focus-brand absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-full bg-espresso/80 px-3.5 py-2 text-label font-bold text-golden-hour shadow-lg backdrop-blur transition hover:scale-105 hover:bg-espresso/95 active:scale-95"
     >
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M2 8a6 6 0 0 1 10.2-4.2" />
         <path d="M12.5 1.5v2.8h-2.8" />
         <path d="M14 8a6 6 0 0 1-10.2 4.2" />
         <path d="M3.5 14.5v-2.8h2.8" />
       </svg>
-      {index + 1}/{total}
+      Click here · {index + 1}/{total}
     </button>
   );
 }
@@ -230,15 +230,15 @@ export function VaultMediaGrid({
                     current ? { ...current, index: (current.index + 1) % lightboxImages.length } : current
                   );
                 }}
-                className="focus-brand absolute bottom-6 z-10 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-label font-bold text-white backdrop-blur transition hover:scale-105 hover:bg-white/20 active:scale-95"
+                className="focus-brand absolute bottom-6 z-10 flex items-center gap-2 rounded-full bg-white/15 px-5 py-2.5 text-body font-bold text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-white/25 active:scale-95"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M2 8a6 6 0 0 1 10.2-4.2" />
                   <path d="M12.5 1.5v2.8h-2.8" />
                   <path d="M14 8a6 6 0 0 1-10.2 4.2" />
                   <path d="M3.5 14.5v-2.8h2.8" />
                 </svg>
-                {lightbox.index + 1}/{lightboxImages.length}
+                Click here · {lightbox.index + 1}/{lightboxImages.length}
               </button>
             )}
           </div>,
