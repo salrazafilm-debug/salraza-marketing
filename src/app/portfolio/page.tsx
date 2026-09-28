@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
-import { PortfolioGrid } from "@/components/PortfolioGrid";
+import { PortfolioFeed } from "@/components/PortfolioFeed";
 import { Highlight } from "@/components/Highlight";
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function PortfolioPage() {
           </h1>
 
           <div className="mt-12">
-            <PortfolioGrid />
+            <PortfolioFeed />
           </div>
 
           <div className="mt-20 border-t border-line pt-16 text-center">
