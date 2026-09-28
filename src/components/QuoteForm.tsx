@@ -103,7 +103,7 @@ export function QuoteForm() {
           name="message"
           rows={4}
           className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
-          placeholder="Picture the win. We'll figure out how to get you there."
+          placeholder="Ask us any questions - we are happy to help always"
         />
       </label>
 
