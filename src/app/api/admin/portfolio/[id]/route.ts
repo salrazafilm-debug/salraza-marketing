@@ -16,9 +16,13 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   // Items seeded from the site's original static images have no Cloudinary
   // asset (cloudinaryPublicId is null) — nothing to clean up there.
-  if (deleted.cloudinaryPublicId) {
+  const publicIdsToClean = [
+    ...(deleted.cloudinaryPublicId ? [deleted.cloudinaryPublicId] : []),
+    ...deleted.variantCloudinaryPublicIds,
+  ];
+  for (const publicId of publicIdsToClean) {
     try {
-      await deleteCloudinaryAsset(deleted.cloudinaryPublicId, "image");
+      await deleteCloudinaryAsset(publicId, "image");
     } catch {
       // If Cloudinary cleanup fails (e.g. already deleted there), the row is
       // already gone from our own list — nothing more to do.
