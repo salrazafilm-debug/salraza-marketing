@@ -177,11 +177,9 @@ export default function Home() {
               className="max-w-xl text-body text-golden-hour/85"
               style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
             >
-              We love camera work — it&apos;s our passion and we love helping people. Our brand is
-              built off our skills and talent used to help people reach success. Marketing leads
-              to growth — social media — followers — motivation — profits. All connect &amp; help
-              to build the next big path. For success. We want everyone in the world to succeed —
-              we are all family in this infinite universe.
+              We love camera work — it&apos;s our passion and we love helping people. That is our
+              brand. We want to share our skills and talents to help everyone with a want to grow
+              their business — in the end we are all family in this infinite universe.
             </p>
 
             {/*
