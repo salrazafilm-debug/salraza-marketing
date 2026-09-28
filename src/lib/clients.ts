@@ -9,7 +9,11 @@ export type MediaItem = {
   src: string;
   cloudinaryPublicId: string;
   folderId: string | null;
+  /** Extra variant images alongside `src` (photos only — always [] for videos). */
+  variants: string[];
 };
+
+export type MediaVariant = { id: string; image: string };
 
 export type Folder = {
   id: string;
@@ -58,7 +62,7 @@ type FolderRow = {
   position: number;
 };
 
-function toMediaItem(row: MediaRow): MediaItem {
+function toMediaItem(row: MediaRow, variants: string[]): MediaItem {
   return {
     id: row.id,
     type: row.type,
@@ -67,7 +71,36 @@ function toMediaItem(row: MediaRow): MediaItem {
     src: row.src,
     cloudinaryPublicId: row.cloudinary_public_id,
     folderId: row.folder_id,
+    variants,
   };
+}
+
+type MediaVariantRow = { id: string; media_item_id: string; image: string; cloudinary_public_id: string };
+
+/**
+ * Fetches every extra variant for the given media item ids, grouped by
+ * media_item_id. Soft-fails to an empty map if media_item_variants doesn't
+ * exist yet, so callers work fine before that table is created — items
+ * just show as having no variants.
+ */
+async function fetchMediaVariantsByItem(mediaItemIds: string[]): Promise<Map<string, MediaVariantRow[]>> {
+  const map = new Map<string, MediaVariantRow[]>();
+  if (mediaItemIds.length === 0) return map;
+
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("media_item_variants")
+    .select("id, media_item_id, image, cloudinary_public_id")
+    .in("media_item_id", mediaItemIds)
+    .order("position", { ascending: true })
+    .returns<MediaVariantRow[]>();
+
+  for (const row of data ?? []) {
+    const list = map.get(row.media_item_id) ?? [];
+    list.push(row);
+    map.set(row.media_item_id, list);
+  }
+  return map;
 }
 
 /** Looks up a client vault by its URL slug, with its media items in display order. */
@@ -92,6 +125,8 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
 
   if (mediaError) throw new Error(mediaError.message);
 
+  const variantsByItem = await fetchMediaVariantsByItem((mediaRows ?? []).map((row) => row.id));
+
   const { data: folderRows, error: folderError } = await supabase
     .from("folders")
     .select("*")
@@ -108,7 +143,12 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
     name: clientRow.name,
     passwordHash: clientRow.password_hash,
     welcomeNote: clientRow.welcome_note,
-    media: (mediaRows ?? []).map(toMediaItem),
+    media: (mediaRows ?? []).map((row) =>
+      toMediaItem(
+        row,
+        (variantsByItem.get(row.id) ?? []).map((variant) => variant.image)
+      )
+    ),
     folders: (folderRows ?? []).map((row) => ({ id: row.id, name: row.name })),
   };
 }
@@ -383,6 +423,86 @@ export async function deleteMediaItem(id: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("media_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+/** Lists every media item's extra variants for a client, grouped by media item id — for the admin manager. */
+export async function listMediaVariantsByClient(
+  clientSlug: string
+): Promise<Record<string, MediaVariant[]>> {
+  const supabase = getSupabaseAdmin();
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("slug", clientSlug)
+    .maybeSingle<{ id: string }>();
+
+  if (!clientRow) return {};
+
+  const { data: mediaRows } = await supabase
+    .from("media_items")
+    .select("id")
+    .eq("client_id", clientRow.id)
+    .returns<{ id: string }[]>();
+
+  const variantsByItem = await fetchMediaVariantsByItem((mediaRows ?? []).map((row) => row.id));
+
+  const result: Record<string, MediaVariant[]> = {};
+  for (const [itemId, rows] of variantsByItem) {
+    result[itemId] = rows.map((row) => ({ id: row.id, image: row.image }));
+  }
+  return result;
+}
+
+/** Lists a media item's extra variants with their Cloudinary public IDs — used to clean up Cloudinary before deleting the item. */
+export async function listMediaVariants(
+  mediaItemId: string
+): Promise<{ id: string; cloudinaryPublicId: string }[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("media_item_variants")
+    .select("id, cloudinary_public_id")
+    .eq("media_item_id", mediaItemId)
+    .returns<{ id: string; cloudinary_public_id: string }[]>();
+
+  if (error) return [];
+  return (data ?? []).map((row) => ({ id: row.id, cloudinaryPublicId: row.cloudinary_public_id }));
+}
+
+/** Adds an extra variant image to a media item. */
+export async function addMediaVariant(
+  mediaItemId: string,
+  image: string,
+  cloudinaryPublicId: string
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { count } = await supabase
+    .from("media_item_variants")
+    .select("id", { count: "exact", head: true })
+    .eq("media_item_id", mediaItemId);
+
+  const { error } = await supabase.from("media_item_variants").insert({
+    media_item_id: mediaItemId,
+    image,
+    cloudinary_public_id: cloudinaryPublicId,
+    position: count ?? 0,
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+/** Removes an extra variant and returns its Cloudinary public ID for cleanup. */
+export async function deleteMediaVariant(id: string): Promise<{ cloudinaryPublicId: string } | undefined> {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("media_item_variants")
+    .select("cloudinary_public_id")
+    .eq("id", id)
+    .maybeSingle<{ cloudinary_public_id: string }>();
+
+  const { error } = await supabase.from("media_item_variants").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  return data ? { cloudinaryPublicId: data.cloudinary_public_id } : undefined;
 }
 
 /**

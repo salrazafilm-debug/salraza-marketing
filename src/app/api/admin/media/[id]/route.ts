@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { findMediaItem, updateMediaItem, deleteMediaItem } from "@/lib/clients";
+import { findMediaItem, updateMediaItem, deleteMediaItem, listMediaVariants } from "@/lib/clients";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,11 +43,16 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Media item not found." }, { status: 404 });
   }
 
-  try {
-    await deleteCloudinaryAsset(item.cloudinaryPublicId, item.type);
-  } catch {
-    // If Cloudinary cleanup fails (e.g. already deleted there), still remove
-    // our own record rather than leaving a broken item stuck in the gallery.
+  const variants = await listMediaVariants(id);
+  const publicIdsToClean = [item.cloudinaryPublicId, ...variants.map((variant) => variant.cloudinaryPublicId)];
+
+  for (const publicId of publicIdsToClean) {
+    try {
+      await deleteCloudinaryAsset(publicId, item.type);
+    } catch {
+      // If Cloudinary cleanup fails (e.g. already deleted there), still remove
+      // our own record rather than leaving a broken item stuck in the gallery.
+    }
   }
 
   await deleteMediaItem(id);
