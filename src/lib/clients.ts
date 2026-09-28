@@ -114,9 +114,10 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
 }
 
 /**
- * Checks a plaintext password against every client's hash and returns the
- * matching client's slug, or null. Client passwords are per-vault, not
- * looked up by slug first, so there's no way to avoid checking each one.
+ * Checks a plaintext password against every client's primary hash, plus
+ * every extra password in client_passwords, and returns the matching
+ * client's slug, or null. Client passwords are per-vault, not looked up by
+ * slug first, so there's no way to avoid checking each one.
  */
 export async function findClientSlugByPassword(password: string): Promise<string | null> {
   const supabase = getSupabaseAdmin();
@@ -127,8 +128,70 @@ export async function findClientSlugByPassword(password: string): Promise<string
 
   if (error || !data) return null;
 
-  const match = data.find((row) => verifyPassword(password, row.password_hash));
-  return match?.slug ?? null;
+  const primaryMatch = data.find((row) => verifyPassword(password, row.password_hash));
+  if (primaryMatch) return primaryMatch.slug;
+
+  const { data: extraRows, error: extraError } = await supabase
+    .from("client_passwords")
+    .select("password_hash, clients(slug)")
+    .returns<{ password_hash: string; clients: { slug: string } | null }[]>();
+
+  if (extraError || !extraRows) return null;
+
+  const extraMatch = extraRows.find((row) => verifyPassword(password, row.password_hash));
+  return extraMatch?.clients?.slug ?? null;
+}
+
+/** Lists a client's extra passwords (id + when added — never the plaintext, which isn't stored). */
+export async function listClientPasswords(
+  clientSlug: string
+): Promise<{ id: string; createdAt: string }[]> {
+  const supabase = getSupabaseAdmin();
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("slug", clientSlug)
+    .maybeSingle<{ id: string }>();
+
+  if (!clientRow) return [];
+
+  // Soft-fails (returns []) rather than throwing if client_passwords doesn't
+  // exist yet — this list is a nice-to-have on the admin client page, and a
+  // missing table there shouldn't break loading a client's other settings.
+  const { data, error } = await supabase
+    .from("client_passwords")
+    .select("id, created_at")
+    .eq("client_id", clientRow.id)
+    .order("created_at", { ascending: true })
+    .returns<{ id: string; created_at: string }[]>();
+
+  if (error) return [];
+  return (data ?? []).map((row) => ({ id: row.id, createdAt: row.created_at }));
+}
+
+/** Adds an extra password that unlocks the same vault as the client's primary password. */
+export async function addClientPassword(clientSlug: string, password: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data: clientRow, error: clientError } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("slug", clientSlug)
+    .maybeSingle<{ id: string }>();
+
+  if (clientError || !clientRow) throw new Error("Family not found.");
+
+  const { error } = await supabase
+    .from("client_passwords")
+    .insert({ client_id: clientRow.id, password_hash: hashPassword(password) });
+
+  if (error) throw new Error(error.message);
+}
+
+/** Removes one of a client's extra passwords. */
+export async function deleteClientPassword(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("client_passwords").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 /** Lists every client vault with a media count, for the admin dashboard. */
