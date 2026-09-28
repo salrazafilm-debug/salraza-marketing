@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { listPortfolioItems } from "@/lib/portfolio";
+import { PortfolioTile } from "@/components/PortfolioTile";
 
 export async function PortfolioGrid({
   limit,
@@ -23,24 +23,17 @@ export async function PortfolioGrid({
       }
     >
       {items.map((item) => (
-        <div
+        <PortfolioTile
           key={item.id}
-          className={`group relative aspect-square overflow-hidden transition-transform duration-300 hover:-translate-y-1 ${
-            size === "large" ? "rounded-xl sm:aspect-[4/5] sm:rounded-2xl" : "rounded-lg sm:aspect-[4/5] sm:rounded-xl"
-          }`}
-        >
-          <Image
-            src={item.image}
-            alt={item.title}
-            fill
-            sizes={
-              size === "large"
-                ? "(min-width: 1024px) 33vw, 50vw"
-                : "(min-width: 640px) 33vw, 33vw"
-            }
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        </div>
+          images={item.images}
+          alt={item.title}
+          size={size}
+          sizes={
+            size === "large"
+              ? "(min-width: 1024px) 33vw, 50vw"
+              : "(min-width: 640px) 33vw, 33vw"
+          }
+        />
       ))}
     </div>
   );

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
-import { listPortfolioItems } from "@/lib/portfolio";
+import { listPortfolioItems, listPortfolioVariantsByItem } from "@/lib/portfolio";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
@@ -22,6 +22,7 @@ export default async function AdminPortfolioPage() {
   }
 
   const items = await listPortfolioItems();
+  const variantsByItem = await listPortfolioVariantsByItem();
 
   return (
     <>
@@ -43,7 +44,7 @@ export default async function AdminPortfolioPage() {
 
           <div className="mt-8 flex flex-col gap-8">
             <PortfolioUploader />
-            <PortfolioManager items={items} />
+            <PortfolioManager items={items} variantsByItem={variantsByItem} />
           </div>
         </div>
       </main>
