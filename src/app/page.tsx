@@ -39,7 +39,7 @@ const SERVICES = [
   },
   {
     title: "Website creation",
-    body: "Unlock and visit your brand in a site that showcases your name and work.",
+    body: "A site that showcases your name and work.",
     accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -76,7 +76,7 @@ const SERVICES = [
   },
   {
     title: "Brand refresh",
-    body: "Let's update and give your look a modern glow up.",
+    body: "Update and give your look a modern glow up.",
     accent: "bg-white text-black",
     icon: (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -177,8 +177,11 @@ export default function Home() {
               className="max-w-xl text-body text-golden-hour/85"
               style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
             >
-              We&apos;re passionate and motivated to help you grow. Your story matters to us and
-              we&apos;re in this with you — to the future success.
+              We love camera work — it&apos;s our passion and we love helping people. Our brand is
+              built off our skills and talent used to help people reach success. Marketing leads
+              to growth — social media — followers — motivation — profits. All connect &amp; help
+              to build the next big path. For success. We want everyone in the world to succeed —
+              we are all family in this infinite universe.
             </p>
 
             {/*
