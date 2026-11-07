@@ -56,8 +56,16 @@ export function VaultFolderGrid({
       {folders.map((folder) => {
         const items = media.filter((item) => item.folderId === folder.id);
         if (items.length === 0) return null;
-        const cover = getFolderCoverSrc(folder, items);
-        const videoThumb = getFolderVideoThumb(items);
+        let cover = getFolderCoverSrc(folder, items);
+        let videoThumb = getFolderVideoThumb(items);
+        // Never show the same picture twice: if the cover *is* the video's thumbnail,
+        // use a real photo as the cover when there is one, otherwise show it just once.
+        if (cover && videoThumb && cover === videoThumb) {
+          const firstPhoto = items.find((item) => item.type === "image");
+          if (firstPhoto) cover = firstPhoto.src;
+          else videoThumb = null;
+        }
+        const coverIsVideo = !!cover && !videoThumb && items.every((item) => item.type === "video");
         return (
           <Link
             key={folder.id}
@@ -75,6 +83,13 @@ export function VaultFolderGrid({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-golden-hour/60">Photos</div>
+                )}
+                {coverIsVideo && (
+                  <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-espresso/75 text-golden-hour backdrop-blur">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
                 )}
               </div>
               {videoThumb && (
