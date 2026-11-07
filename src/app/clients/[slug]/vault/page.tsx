@@ -5,6 +5,7 @@ import { findClientBySlug, type MediaItem } from "@/lib/clients";
 import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -35,7 +36,9 @@ export default async function VaultPage({
 
   const cookieStore = await cookies();
   const sessionSlug = verifySession(cookieStore.get(SESSION_COOKIE)?.value);
-  if (sessionSlug !== slug) {
+  // The admin can open any vault too — that's what powers the "Client view" preview.
+  const isAdmin = verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+  if (sessionSlug !== slug && !isAdmin) {
     redirect("/clients?error=session");
   }
 
