@@ -23,12 +23,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const cloudinaryPublicId = String(body.cloudinaryPublicId ?? "").trim();
   const folderId = typeof body.folderId === "string" && body.folderId ? body.folderId : null;
 
+  const externalUrl = typeof body.externalUrl === "string" ? body.externalUrl.trim() : "";
+  const thumbnailUrl = typeof body.thumbnailUrl === "string" ? body.thumbnailUrl.trim() : "";
+
+  if (externalUrl && !/^https?:\/\//i.test(externalUrl)) {
+    return NextResponse.json({ error: "The video link must start with http:// or https://." }, { status: 400 });
+  }
+  if (externalUrl && !thumbnailUrl) {
+    return NextResponse.json({ error: "A thumbnail is required for a linked video." }, { status: 400 });
+  }
+
   if (!type || !label || !src || !cloudinaryPublicId) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 
   try {
-    await addMediaItem(slug, { type, label, caption, src, cloudinaryPublicId, folderId });
+    await addMediaItem(slug, {
+      type,
+      label,
+      caption,
+      src,
+      cloudinaryPublicId,
+      folderId,
+      externalUrl: externalUrl || undefined,
+      thumbnailUrl: thumbnailUrl || undefined,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not save media item." },

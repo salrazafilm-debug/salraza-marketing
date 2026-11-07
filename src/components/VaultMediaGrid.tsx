@@ -156,7 +156,34 @@ export function VaultMediaGrid({
         }
       >
         {items.map((item) =>
-          item.type === "video" ? (
+          item.externalUrl ? (
+            <a
+              key={item.id}
+              href={item.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Watch ${item.label} (opens in a new tab)`}
+              className={`${cardClass} focus-brand transition hover:-translate-y-1`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.thumbnailUrl ?? ""}
+                alt={item.label}
+                className={isMarksmen ? `${mediaHeightClass} w-auto object-cover` : "block h-auto w-full"}
+              />
+              <span className="absolute left-1/2 top-[38%] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-espresso/75 text-golden-hour backdrop-blur">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+              <div className="p-4 text-center sm:p-6">
+                <p className="text-subhead text-paper">{item.label}</p>
+                <p className="text-caption mt-1 text-golden-hour/80">
+                  {item.caption ? `${item.caption} · ` : ""}Watch video ↗
+                </p>
+              </div>
+            </a>
+          ) : item.type === "video" ? (
             <div key={item.id} className={cardClass}>
               <video
                 controls

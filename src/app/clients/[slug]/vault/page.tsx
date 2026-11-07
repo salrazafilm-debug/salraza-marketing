@@ -1,15 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { findClientBySlug, type MediaItem } from "@/lib/clients";
 import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
 import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
 import { VaultMediaGrid, type VaultMediaItem } from "@/components/VaultMediaGrid";
+import { VaultFolderGrid, formatEventDate } from "@/components/VaultFolderGrid";
 
 function withUrls(items: MediaItem[]): VaultMediaItem[] {
   return items.map((item) => ({
@@ -24,19 +27,22 @@ export default async function VaultPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ intro?: string }>;
+  searchParams: Promise<{ intro?: string; folder?: string }>;
 }) {
   const { slug } = await params;
-  const { intro } = await searchParams;
+  const { intro, folder: folderParam } = await searchParams;
   const client = await findClientBySlug(slug);
   if (!client) notFound();
 
   const cookieStore = await cookies();
   const sessionSlug = verifySession(cookieStore.get(SESSION_COOKIE)?.value);
-  if (sessionSlug !== slug) {
+  // The admin can open any vault too — that's what powers the "Client view" preview.
+  const isAdmin = verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+  if (sessionSlug !== slug && !isAdmin) {
     redirect("/clients?error=session");
   }
 
+  const activeFolder = folderParam ? client.folders.find((folder) => folder.id === folderParam) : undefined;
   const showIntro = slug === MARKSMEN_SLUG && intro === "1";
   const isMarksmen = slug === MARKSMEN_SLUG;
   let step = 0;
@@ -91,44 +97,67 @@ export default async function VaultPage({
               </RevealSection>
             ) : (
               <div className={`flex flex-col gap-10 ${isMarksmen ? "mt-2" : "mt-10"}`}>
-                {client.folders.map((folder) => {
-                  const folderItems = client.media.filter((item) => item.folderId === folder.id);
-                  if (folderItems.length === 0) return null;
-                  const isJerseyReveal =
-                    isMarksmen && folder.name.trim().toLowerCase() === "jersey day reveal";
-                  return (
-                    <RevealSection key={folder.id} index={step++}>
-                      <div className="flex flex-col gap-4">
-                        {isJerseyReveal && (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src="/clients/dmv-marksmen/marksmen-logo.webp"
-                            alt="Marksmen Elite logo"
-                            className="mx-auto h-28 w-auto sm:h-36"
-                          />
-                        )}
-                        <h2 className="text-subhead text-ink">{folder.name}</h2>
-                        <VaultMediaGrid items={withUrls(folderItems)} isMarksmen={isMarksmen} />
-                      </div>
-                    </RevealSection>
-                  );
-                })}
-
-                {(() => {
-                  const ungrouped = client.media.filter((item) => !item.folderId);
-                  if (ungrouped.length === 0) return null;
-                  return (
+                {activeFolder ? (
+                  (() => {
+                    const folderItems = client.media.filter((item) => item.folderId === activeFolder.id);
+                    const isJerseyReveal =
+                      isMarksmen && activeFolder.name.trim().toLowerCase() === "jersey day reveal";
+                    return (
+                      <RevealSection index={step++}>
+                        <div className="flex flex-col gap-4">
+                          <Link
+                            href={`/clients/${slug}/vault`}
+                            className="focus-brand w-fit text-label text-purple-text underline"
+                          >
+                            ← All folders
+                          </Link>
+                          {isJerseyReveal && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src="/clients/dmv-marksmen/marksmen-logo.webp"
+                              alt="Marksmen Elite logo"
+                              className="mx-auto h-28 w-auto sm:h-36"
+                            />
+                          )}
+                          <div>
+                            {activeFolder.eventDate && (
+                              <p className="text-caption uppercase tracking-wide text-warm-text">
+                                {formatEventDate(activeFolder.eventDate)}
+                              </p>
+                            )}
+                            <h2 className="text-headline text-ink">{activeFolder.name}</h2>
+                          </div>
+                          <VaultMediaGrid items={withUrls(folderItems)} isMarksmen={isMarksmen} />
+                        </div>
+                      </RevealSection>
+                    );
+                  })()
+                ) : (
+                  <>
                     <RevealSection index={step++}>
-                      <div className="flex flex-col gap-4">
-                        <VaultMediaGrid items={withUrls(ungrouped)} isMarksmen={isMarksmen} />
-                      </div>
+                      <VaultFolderGrid slug={slug} folders={client.folders} media={client.media} />
                     </RevealSection>
-                  );
-                })()}
+
+                    {(() => {
+                      const ungrouped = client.media.filter((item) => !item.folderId);
+                      if (ungrouped.length === 0) return null;
+                      return (
+                        <RevealSection index={step++}>
+                          <div className="flex flex-col gap-4">
+                            {client.folders.length > 0 && (
+                              <h2 className="text-subhead text-ink">More</h2>
+                            )}
+                            <VaultMediaGrid items={withUrls(ungrouped)} isMarksmen={isMarksmen} />
+                          </div>
+                        </RevealSection>
+                      );
+                    })()}
+                  </>
+                )}
               </div>
             )}
 
-            {client.media.some((item) => item.type === "image") && (
+            {!activeFolder && client.media.some((item) => item.type === "image") && (
               <RevealSection index={step++}>
                 <div className="mt-10 flex justify-center">
                   <a

@@ -9,6 +9,10 @@ export type MediaItem = {
   src: string;
   cloudinaryPublicId: string;
   folderId: string | null;
+  /** For videos hosted on an external cloud drive: the link the card opens. Null for uploaded files. */
+  externalUrl: string | null;
+  /** Custom thumbnail image for a linked video (null otherwise). */
+  thumbnailUrl: string | null;
   /** Extra variant images alongside `src` (photos only — always [] for videos). */
   variants: string[];
 };
@@ -18,6 +22,10 @@ export type MediaVariant = { id: string; image: string };
 export type Folder = {
   id: string;
   name: string;
+  /** The day/event the folder is for, as YYYY-MM-DD (null if not set). */
+  eventDate: string | null;
+  /** The media item chosen as the folder's thumbnail (null = use the first photo). */
+  coverMediaId: string | null;
 };
 
 export type Client = {
@@ -53,6 +61,8 @@ type MediaRow = {
   cloudinary_public_id: string;
   position: number;
   folder_id: string | null;
+  external_url?: string | null;
+  thumbnail_url?: string | null;
 };
 
 type FolderRow = {
@@ -60,6 +70,9 @@ type FolderRow = {
   client_id: string;
   name: string;
   position: number;
+  created_at: string;
+  event_date?: string | null;
+  cover_media_id?: string | null;
 };
 
 function toMediaItem(row: MediaRow, variants: string[]): MediaItem {
@@ -71,6 +84,8 @@ function toMediaItem(row: MediaRow, variants: string[]): MediaItem {
     src: row.src,
     cloudinaryPublicId: row.cloudinary_public_id,
     folderId: row.folder_id,
+    externalUrl: row.external_url ?? null,
+    thumbnailUrl: row.thumbnail_url ?? null,
     variants,
   };
 }
@@ -101,6 +116,19 @@ async function fetchMediaVariantsByItem(mediaItemIds: string[]): Promise<Map<str
     map.set(row.media_item_id, list);
   }
   return map;
+}
+
+/**
+ * Newest first: by event date when set, otherwise by when the folder was
+ * created. Folders with an event date always sort by it; undated ones fall
+ * back to their creation day so they land where you'd expect.
+ */
+function sortFoldersNewestFirst(rows: FolderRow[]): FolderRow[] {
+  const key = (row: FolderRow) => row.event_date ?? row.created_at.slice(0, 10);
+  return [...rows].sort((a, b) => {
+    const byDate = key(b).localeCompare(key(a));
+    return byDate !== 0 ? byDate : b.created_at.localeCompare(a.created_at);
+  });
 }
 
 /** Looks up a client vault by its URL slug, with its media items in display order. */
@@ -149,7 +177,12 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
         (variantsByItem.get(row.id) ?? []).map((variant) => variant.image)
       )
     ),
-    folders: (folderRows ?? []).map((row) => ({ id: row.id, name: row.name })),
+    folders: sortFoldersNewestFirst(folderRows ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      eventDate: row.event_date ?? null,
+      coverMediaId: row.cover_media_id ?? null,
+    })),
   };
 }
 
@@ -309,6 +342,9 @@ export async function addMediaItem(
     src: string;
     cloudinaryPublicId: string;
     folderId?: string | null;
+    /** Set for a cloud-drive video: `src`/link target, with `thumbnailUrl` as its card image. */
+    externalUrl?: string;
+    thumbnailUrl?: string;
   }
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -334,13 +370,18 @@ export async function addMediaItem(
     cloudinary_public_id: item.cloudinaryPublicId,
     position: count ?? 0,
     folder_id: item.folderId || null,
+    ...(item.externalUrl ? { external_url: item.externalUrl, thumbnail_url: item.thumbnailUrl ?? null } : {}),
   });
 
   if (error) throw new Error(error.message);
 }
 
 /** Creates a new (initially empty) folder in a client's gallery. */
-export async function createFolder(clientSlug: string, name: string): Promise<void> {
+export async function createFolder(
+  clientSlug: string,
+  name: string,
+  eventDate?: string | null
+): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { data: clientRow, error: clientError } = await supabase
     .from("clients")
@@ -357,8 +398,30 @@ export async function createFolder(clientSlug: string, name: string): Promise<vo
 
   const { error } = await supabase
     .from("folders")
-    .insert({ client_id: clientRow.id, name, position: count ?? 0 });
+    .insert({
+      client_id: clientRow.id,
+      name,
+      position: count ?? 0,
+      ...(eventDate ? { event_date: eventDate } : {}),
+    });
 
+  if (error) throw new Error(error.message);
+}
+
+/** Updates a folder's name, event date and/or cover (only the given fields change). */
+export async function updateFolder(
+  id: string,
+  updates: { name?: string; eventDate?: string | null; coverMediaId?: string | null }
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const patch: Record<string, string | null> = {};
+  if (updates.name !== undefined) patch.name = updates.name;
+  if (updates.eventDate !== undefined) patch.event_date = updates.eventDate || null;
+  if (updates.coverMediaId !== undefined) patch.cover_media_id = updates.coverMediaId;
+
+  if (Object.keys(patch).length === 0) return;
+
+  const { error } = await supabase.from("folders").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
 }
 
@@ -374,16 +437,17 @@ export async function deleteFolder(
 
   const { data: mediaRows } = await supabase
     .from("media_items")
-    .select("cloudinary_public_id, type")
+    .select("*")
     .eq("folder_id", id)
-    .returns<Pick<MediaRow, "cloudinary_public_id" | "type">[]>();
+    .returns<MediaRow[]>();
 
   const { error } = await supabase.from("folders").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
   return (mediaRows ?? []).map((row) => ({
     cloudinaryPublicId: row.cloudinary_public_id,
-    type: row.type,
+    // A linked video's Cloudinary asset is its thumbnail image, not a video.
+    type: row.external_url ? ("image" as const) : row.type,
   }));
 }
 
@@ -410,12 +474,17 @@ export async function findMediaItem(
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("media_items")
-    .select("id, cloudinary_public_id, type")
+    .select("*")
     .eq("id", id)
-    .maybeSingle<Pick<MediaRow, "id" | "cloudinary_public_id" | "type">>();
+    .maybeSingle<MediaRow>();
 
   if (error || !data) return undefined;
-  return { id: data.id, cloudinaryPublicId: data.cloudinary_public_id, type: data.type };
+  return {
+    id: data.id,
+    cloudinaryPublicId: data.cloudinary_public_id,
+    // A linked video's Cloudinary asset is its thumbnail image, not a video.
+    type: data.external_url ? "image" : data.type,
+  };
 }
 
 /** Deletes a media item row (call deleteCloudinaryAsset separately to remove the file itself). */

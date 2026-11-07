@@ -1,95 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
-import type { Folder, MediaItem, MediaVariant } from "@/lib/clients";
+import { useRef, useState } from "react";
+import type { MediaItem, MediaVariant } from "@/lib/clients";
+import { compressImageIfNeeded, uploadToCloudinary } from "@/lib/upload-client";
 
-// Cloudinary's plan caps a single image at 10MB — stay a little under that.
-const MAX_IMAGE_BYTES = 9.5 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 4000;
-
-async function compressImageIfNeeded(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || file.size <= MAX_IMAGE_BYTES) return file;
-
-  const bitmap = await createImageBitmap(file);
-  let width = bitmap.width;
-  let height = bitmap.height;
-  if (Math.max(width, height) > MAX_IMAGE_DIMENSION) {
-    const scale = MAX_IMAGE_DIMENSION / Math.max(width, height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
-
-  let blob: Blob | null = null;
-  let quality = 0.9;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    canvas.width = width;
-    canvas.height = height;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-
-    if (blob && blob.size <= MAX_IMAGE_BYTES) break;
-    if (quality > 0.5) {
-      quality -= 0.15;
-    } else {
-      width = Math.round(width * 0.75);
-      height = Math.round(height * 0.75);
-    }
-  }
-
-  bitmap.close();
-  if (!blob) return file;
-
-  const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-  return new File([blob], newName, { type: "image/jpeg" });
-}
-
-async function uploadToCloudinary(
-  file: File,
-  folder: string
-): Promise<{ secure_url: string; public_id: string }> {
-  const signatureRes = await fetch("/api/admin/cloudinary-signature", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ folder }),
-  });
-  const signatureData = await signatureRes.json();
-  if (!signatureRes.ok) throw new Error(signatureData.error || "Could not start upload.");
-
-  const { timestamp, signature, apiKey, cloudName, folder: signedFolder } = signatureData;
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("api_key", apiKey);
-  formData.append("timestamp", String(timestamp));
-  formData.append("signature", signature);
-  formData.append("folder", signedFolder);
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
-      } else {
-        let reason = `Cloudinary upload failed (${xhr.status}).`;
-        try {
-          const parsed = JSON.parse(xhr.responseText);
-          if (parsed?.error?.message) reason = `Cloudinary: ${parsed.error.message}`;
-        } catch {
-          // Response wasn't JSON — stick with the generic reason above.
-        }
-        reject(new Error(reason));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Cloudinary upload failed — check your connection."));
-    xhr.send(formData);
-  });
-}
 
 function GripIcon() {
   return (
@@ -211,10 +126,15 @@ function ItemGrid({
   onSave,
   onDelete,
   onReorder,
+  coverId,
+  onSetCover,
 }: {
   clientSlug: string;
   items: MediaItem[];
   busyId: string | null;
+  /** Folder grids only: the item currently used as the folder thumbnail. */
+  coverId?: string | null;
+  onSetCover?: (item: MediaItem) => void;
   drafts: Record<string, { label: string; caption: string }>;
   variantsByItem: Record<string, MediaVariant[]>;
   onDraftChange: (id: string, draft: { label: string; caption: string }) => void;
@@ -306,9 +226,22 @@ function ItemGrid({
               </div>
             </div>
 
-            <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-espresso">
-              {item.type === "video" ? (
+            <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-espresso">
+              {coverId === item.id && (
+                <span className="absolute left-2 top-2 z-10 rounded-full bg-highlighter px-3 py-1 text-caption font-bold text-on-highlighter">
+                  Folder cover
+                </span>
+              )}
+              {item.externalUrl && (
+                <span className="absolute bottom-2 right-2 z-10 rounded-full bg-ink/80 px-3 py-1 text-caption text-paper">
+                  Video link
+                </span>
+              )}
+              {item.type === "video" && !item.externalUrl ? (
                 <video src={item.src} className="h-full w-full object-cover" muted />
+              ) : item.externalUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.thumbnailUrl ?? ""} alt={item.label} className="h-full w-full object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.src} alt={item.label} className="h-full w-full object-cover" />
@@ -344,6 +277,15 @@ function ItemGrid({
               >
                 Delete
               </button>
+              {onSetCover && coverId !== item.id && (item.type === "image" || item.externalUrl) && (
+                <button
+                  type="button"
+                  onClick={() => onSetCover(item)}
+                  className="focus-brand text-label text-ink underline"
+                >
+                  Use as folder cover
+                </button>
+              )}
             </div>
 
             {item.type === "image" && (
@@ -360,25 +302,26 @@ function ItemGrid({
   );
 }
 
-export function MediaManager({
+/**
+ * The editable grid for one folder (or for individual uploads): rename,
+ * caption, reorder, delete, variants, and "Use as folder cover".
+ */
+export function FolderItems({
   clientSlug,
   items,
-  folders,
   variantsByItem,
+  coverId,
+  onSetCover,
 }: {
   clientSlug: string;
   items: MediaItem[];
-  folders: Folder[];
   variantsByItem: Record<string, MediaVariant[]>;
+  coverId?: string | null;
+  onSetCover?: (item: MediaItem) => void;
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [busyFolderId, setBusyFolderId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { label: string; caption: string }>>({});
-
-  function handleDraftChange(id: string, draft: { label: string; caption: string }) {
-    setDrafts((prev) => ({ ...prev, [id]: draft }));
-  }
 
   async function saveEdit(item: MediaItem) {
     const draft = drafts[item.id] ?? { label: item.label, caption: item.caption ?? "" };
@@ -400,18 +343,6 @@ export function MediaManager({
     router.refresh();
   }
 
-  async function deleteFolder(folder: Folder, itemCount: number) {
-    const warning =
-      itemCount > 0
-        ? `Delete "${folder.name}" and all ${itemCount} item${itemCount === 1 ? "" : "s"} inside it? This removes them from Cloudinary too.`
-        : `Delete the empty folder "${folder.name}"?`;
-    if (!confirm(warning)) return;
-    setBusyFolderId(folder.id);
-    await fetch(`/api/admin/folders/${folder.id}`, { method: "DELETE" });
-    setBusyFolderId(null);
-    router.refresh();
-  }
-
   async function saveReorder(orderedIds: string[]) {
     await fetch("/api/admin/media/reorder", {
       method: "PATCH",
@@ -421,77 +352,19 @@ export function MediaManager({
     router.refresh();
   }
 
-  // Stable array references (only recomputed when items/folders actually
-  // change) so ItemGrid's own local drag-order state doesn't get reset by
-  // an unrelated re-render — e.g. typing into another item's caption field.
-  const groupedByFolder = useMemo(() => {
-    const map = new Map<string, MediaItem[]>();
-    for (const folder of folders) {
-      map.set(folder.id, items.filter((item) => item.folderId === folder.id));
-    }
-    return map;
-  }, [items, folders]);
-  const ungrouped = useMemo(() => items.filter((item) => !item.folderId), [items]);
-
-  if (items.length === 0 && folders.length === 0) {
-    return <p className="text-body text-ink-muted">Nothing uploaded yet.</p>;
-  }
-
   return (
-    <div className="flex flex-col gap-8">
-      {folders.map((folder) => {
-        const folderItems = groupedByFolder.get(folder.id) ?? [];
-        return (
-          <div key={folder.id} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-line pb-2">
-              <p className="text-subhead text-ink">
-                {folder.name}{" "}
-                <span className="text-caption font-normal text-ink-muted">
-                  ({folderItems.length})
-                </span>
-              </p>
-              <button
-                type="button"
-                onClick={() => deleteFolder(folder, folderItems.length)}
-                disabled={busyFolderId === folder.id}
-                className="focus-brand text-label text-red-700 underline disabled:opacity-60"
-              >
-                Delete folder
-              </button>
-            </div>
-            <ItemGrid
-              clientSlug={clientSlug}
-              items={folderItems}
-              busyId={busyId}
-              drafts={drafts}
-              variantsByItem={variantsByItem}
-              onDraftChange={handleDraftChange}
-              onSave={saveEdit}
-              onDelete={deleteItem}
-              onReorder={saveReorder}
-            />
-          </div>
-        );
-      })}
-
-      {(folders.length === 0 || ungrouped.length > 0) && (
-        <div className="flex flex-col gap-4">
-          {folders.length > 0 && (
-            <p className="text-subhead border-b border-line pb-2 text-ink">Individual uploads</p>
-          )}
-          <ItemGrid
-            clientSlug={clientSlug}
-            items={ungrouped}
-            busyId={busyId}
-            drafts={drafts}
-            variantsByItem={variantsByItem}
-            onDraftChange={handleDraftChange}
-            onSave={saveEdit}
-            onDelete={deleteItem}
-            onReorder={saveReorder}
-          />
-        </div>
-      )}
-    </div>
+    <ItemGrid
+      clientSlug={clientSlug}
+      items={items}
+      busyId={busyId}
+      drafts={drafts}
+      variantsByItem={variantsByItem}
+      onDraftChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))}
+      onSave={saveEdit}
+      onDelete={deleteItem}
+      onReorder={saveReorder}
+      coverId={coverId}
+      onSetCover={onSetCover}
+    />
   );
 }
