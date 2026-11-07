@@ -63,6 +63,36 @@ async function compressImageIfNeeded(file: File): Promise<File> {
   return new File([blob], newName, { type: "image/jpeg" });
 }
 
+/** Uploads a video's custom thumbnail image straight to Cloudinary. */
+async function uploadThumbnail(
+  file: File,
+  clientSlug: string
+): Promise<{ secure_url: string; public_id: string }> {
+  const signatureRes = await fetch("/api/admin/cloudinary-signature", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder: `clients/${clientSlug}` }),
+  });
+  const signatureData = await signatureRes.json();
+  if (!signatureRes.ok) throw new Error(signatureData.error || "Could not start upload.");
+
+  const { timestamp, signature, apiKey, cloudName, folder } = signatureData;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("api_key", apiKey);
+  formData.append("timestamp", String(timestamp));
+  formData.append("signature", signature);
+  formData.append("folder", folder);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error?.message ? `Cloudinary: ${data.error.message}` : "Thumbnail upload failed.");
+  return data;
+}
+
 /**
  * Uploads a file straight from the browser to Cloudinary (not through our
  * own server) so large video files don't hit Vercel's serverless
@@ -77,6 +107,12 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
   const [folderId, setFolderId] = useState<string>("");
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderDate, setNewFolderDate] = useState("");
+  const [mode, setMode] = useState<"file" | "link">("file");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState<string | undefined>();
   const [folderError, setFolderError] = useState<string | undefined>();
   const [upload, setUpload] = useState<UploadState>(null);
 
@@ -96,7 +132,7 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
     const res = await fetch(`/api/admin/clients/${clientSlug}/folders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, eventDate: newFolderDate || null }),
     });
     const data = await res.json();
 
@@ -107,7 +143,50 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
 
     setCreatingFolder(false);
     setNewFolderName("");
+    setNewFolderDate("");
     router.refresh();
+  }
+
+  async function handleSaveVideoLink() {
+    setLinkError(undefined);
+    const title = label.trim();
+    const url = videoUrl.trim();
+    if (!title) return setLinkError("Give the video a title.");
+    if (!/^https?:\/\//i.test(url)) return setLinkError("Paste the full link, starting with https://");
+    if (!thumbFile) return setLinkError("Choose a thumbnail image for this video.");
+
+    setLinkBusy(true);
+    try {
+      const uploadFile = await compressImageIfNeeded(thumbFile);
+      const thumb = await uploadThumbnail(uploadFile, clientSlug);
+
+      const saveRes = await fetch(`/api/admin/clients/${clientSlug}/media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "video",
+          label: title,
+          caption,
+          src: url,
+          externalUrl: url,
+          thumbnailUrl: thumb.secure_url,
+          cloudinaryPublicId: thumb.public_id,
+          folderId: folderId || null,
+        }),
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) throw new Error(saveData.error || "Could not save the video link.");
+
+      setLabel("");
+      setCaption("");
+      setVideoUrl("");
+      setThumbFile(null);
+      router.refresh();
+    } catch (error) {
+      setLinkError(error instanceof Error ? error.message : "Could not save the video link.");
+    } finally {
+      setLinkBusy(false);
+    }
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -229,6 +308,15 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
       {creatingFolder && (
         <div className="flex flex-col gap-2 rounded border border-line bg-paper p-4">
           <span className="text-label text-ink">New folder name</span>
+          <label className="flex flex-col gap-1">
+            <span className="text-caption text-ink-muted">Event date (folders show newest first)</span>
+            <input
+              type="date"
+              value={newFolderDate}
+              onChange={(event) => setNewFolderDate(event.target.value)}
+              className="focus-brand w-fit rounded border border-line bg-paper-raised px-4 py-2 text-body text-ink"
+            />
+          </label>
           <div className="flex gap-2">
             <input
               autoFocus
@@ -249,6 +337,7 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
               onClick={() => {
                 setCreatingFolder(false);
                 setNewFolderName("");
+                setNewFolderDate("");
               }}
               className="focus-brand text-label text-ink-muted underline"
             >
@@ -259,9 +348,29 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
         </div>
       )}
 
+      <div className="flex gap-2" role="tablist" aria-label="What are you adding?">
+        {([
+          ["file", "Upload photo / video file"],
+          ["link", "Video link (cloud drive)"],
+        ] as const).map(([value, text]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={mode === value}
+            onClick={() => setMode(value)}
+            className={`focus-brand rounded-full px-4 py-2 text-label transition ${
+              mode === value ? "bg-ink text-paper" : "bg-paper text-ink ring-1 ring-line hover:bg-line"
+            }`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2">
-          <span className="text-label text-ink">Label</span>
+          <span className="text-label text-ink">{mode === "link" ? "Video title" : "Label"}</span>
           <input
             value={label}
             onChange={(event) => setLabel(event.target.value)}
@@ -280,6 +389,38 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
         </label>
       </div>
 
+      {mode === "link" ? (
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-label text-ink">Cloud drive link</span>
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(event) => setVideoUrl(event.target.value)}
+              placeholder="https://drive.google.com/…"
+              className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-label text-ink">Thumbnail image (required)</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => setThumbFile(event.target.files?.[0] ?? null)}
+              className="text-caption text-ink"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleSaveVideoLink}
+            disabled={linkBusy}
+            className="focus-brand inline-flex w-fit items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
+          >
+            {linkBusy ? "Saving…" : "Add video link"}
+          </button>
+          {linkError && <p className="text-caption text-red-700">{linkError}</p>}
+        </div>
+      ) : (
       <label className="focus-brand inline-flex w-fit cursor-pointer items-center justify-center rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95">
         Choose a photo or video
         <input
@@ -290,8 +431,9 @@ export function MediaUploader({ clientSlug, folders }: { clientSlug: string; fol
           className="hidden"
         />
       </label>
+      )}
 
-      {upload && (
+      {mode === "file" && upload && (
         <div className="text-caption">
           {upload.error ? (
             <p className="text-red-700">{upload.error}</p>

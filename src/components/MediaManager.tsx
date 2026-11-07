@@ -211,10 +211,15 @@ function ItemGrid({
   onSave,
   onDelete,
   onReorder,
+  coverId,
+  onSetCover,
 }: {
   clientSlug: string;
   items: MediaItem[];
   busyId: string | null;
+  /** Folder grids only: the item currently used as the folder thumbnail. */
+  coverId?: string | null;
+  onSetCover?: (item: MediaItem) => void;
   drafts: Record<string, { label: string; caption: string }>;
   variantsByItem: Record<string, MediaVariant[]>;
   onDraftChange: (id: string, draft: { label: string; caption: string }) => void;
@@ -306,9 +311,22 @@ function ItemGrid({
               </div>
             </div>
 
-            <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-espresso">
-              {item.type === "video" ? (
+            <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-espresso">
+              {coverId === item.id && (
+                <span className="absolute left-2 top-2 z-10 rounded-full bg-highlighter px-3 py-1 text-caption font-bold text-on-highlighter">
+                  Folder cover
+                </span>
+              )}
+              {item.externalUrl && (
+                <span className="absolute bottom-2 right-2 z-10 rounded-full bg-ink/80 px-3 py-1 text-caption text-paper">
+                  Video link
+                </span>
+              )}
+              {item.type === "video" && !item.externalUrl ? (
                 <video src={item.src} className="h-full w-full object-cover" muted />
+              ) : item.externalUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.thumbnailUrl ?? ""} alt={item.label} className="h-full w-full object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.src} alt={item.label} className="h-full w-full object-cover" />
@@ -344,6 +362,15 @@ function ItemGrid({
               >
                 Delete
               </button>
+              {onSetCover && coverId !== item.id && (item.type === "image" || item.externalUrl) && (
+                <button
+                  type="button"
+                  onClick={() => onSetCover(item)}
+                  className="focus-brand text-label text-ink underline"
+                >
+                  Use as folder cover
+                </button>
+              )}
             </div>
 
             {item.type === "image" && (
@@ -412,6 +439,18 @@ export function MediaManager({
     router.refresh();
   }
 
+  async function patchFolder(
+    folderId: string,
+    body: { name?: string; eventDate?: string | null; coverMediaId?: string | null }
+  ) {
+    await fetch(`/api/admin/folders/${folderId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    router.refresh();
+  }
+
   async function saveReorder(orderedIds: string[]) {
     await fetch("/api/admin/media/reorder", {
       method: "PATCH",
@@ -450,14 +489,25 @@ export function MediaManager({
                   ({folderItems.length})
                 </span>
               </p>
-              <button
-                type="button"
-                onClick={() => deleteFolder(folder, folderItems.length)}
-                disabled={busyFolderId === folder.id}
-                className="focus-brand text-label text-red-700 underline disabled:opacity-60"
-              >
-                Delete folder
-              </button>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-caption text-ink-muted">
+                  Event date
+                  <input
+                    type="date"
+                    defaultValue={folder.eventDate ?? ""}
+                    onChange={(event) => patchFolder(folder.id, { eventDate: event.target.value || null })}
+                    className="focus-brand rounded border border-line bg-paper px-2 py-1 text-caption text-ink"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => deleteFolder(folder, folderItems.length)}
+                  disabled={busyFolderId === folder.id}
+                  className="focus-brand text-label text-red-700 underline disabled:opacity-60"
+                >
+                  Delete folder
+                </button>
+              </div>
             </div>
             <ItemGrid
               clientSlug={clientSlug}
@@ -469,6 +519,8 @@ export function MediaManager({
               onSave={saveEdit}
               onDelete={deleteItem}
               onReorder={saveReorder}
+              coverId={folder.coverMediaId}
+              onSetCover={(item) => patchFolder(folder.id, { coverMediaId: item.id })}
             />
           </div>
         );
