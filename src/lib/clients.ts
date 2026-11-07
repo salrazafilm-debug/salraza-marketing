@@ -26,6 +26,8 @@ export type Folder = {
   eventDate: string | null;
   /** The media item chosen as the folder's thumbnail (null = use the first photo). */
   coverMediaId: string | null;
+  /** A custom cover image uploaded just for the folder (wins over coverMediaId). */
+  coverUrl: string | null;
 };
 
 export type Client = {
@@ -73,6 +75,7 @@ type FolderRow = {
   created_at: string;
   event_date?: string | null;
   cover_media_id?: string | null;
+  cover_url?: string | null;
 };
 
 function toMediaItem(row: MediaRow, variants: string[]): MediaItem {
@@ -182,6 +185,7 @@ export async function findClientBySlug(slug: string): Promise<Client | undefined
       name: row.name,
       eventDate: row.event_date ?? null,
       coverMediaId: row.cover_media_id ?? null,
+      coverUrl: row.cover_url ?? null,
     })),
   };
 }
@@ -411,13 +415,19 @@ export async function createFolder(
 /** Updates a folder's name, event date and/or cover (only the given fields change). */
 export async function updateFolder(
   id: string,
-  updates: { name?: string; eventDate?: string | null; coverMediaId?: string | null }
+  updates: {
+    name?: string;
+    eventDate?: string | null;
+    coverMediaId?: string | null;
+    coverUrl?: string | null;
+  }
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
   const patch: Record<string, string | null> = {};
   if (updates.name !== undefined) patch.name = updates.name;
   if (updates.eventDate !== undefined) patch.event_date = updates.eventDate || null;
   if (updates.coverMediaId !== undefined) patch.cover_media_id = updates.coverMediaId;
+  if (updates.coverUrl !== undefined) patch.cover_url = updates.coverUrl;
 
   if (Object.keys(patch).length === 0) return;
 

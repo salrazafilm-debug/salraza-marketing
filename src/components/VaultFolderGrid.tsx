@@ -16,6 +16,7 @@ export function formatEventDate(date: string): string {
 /** The folder thumbnail: the chosen cover, else the first photo, else a linked video's thumbnail. */
 export function getFolderCoverSrc(folder: Folder, items: MediaItem[]): string | null {
   const thumbOf = (item: MediaItem) => (item.externalUrl ? item.thumbnailUrl : item.type === "image" ? item.src : null);
+  if (folder.coverUrl) return folder.coverUrl;
   const chosen = folder.coverMediaId ? items.find((item) => item.id === folder.coverMediaId) : undefined;
   if (chosen) {
     const src = thumbOf(chosen);
