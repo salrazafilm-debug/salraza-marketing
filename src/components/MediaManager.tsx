@@ -401,6 +401,16 @@ export function MediaManager({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [busyFolderId, setBusyFolderId] = useState<string | null>(null);
+  // Folders start closed so a big folder doesn't dump every photo on the page.
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  function toggleOpen(id: string) {
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [drafts, setDrafts] = useState<Record<string, { label: string; caption: string }>>({});
 
   function handleDraftChange(id: string, draft: { label: string; caption: string }) {
@@ -480,15 +490,33 @@ export function MediaManager({
     <div className="flex flex-col gap-8">
       {folders.map((folder) => {
         const folderItems = groupedByFolder.get(folder.id) ?? [];
+        const isOpen = openIds.has(folder.id);
+        const coverItem = folderItems.find((item) => item.id === folder.coverMediaId);
+        const firstImage = folderItems.find((item) => item.type === "image");
+        const thumb = coverItem ?? firstImage ?? folderItems.find((item) => item.externalUrl);
+        const thumbSrc = thumb ? (thumb.externalUrl ? thumb.thumbnailUrl : thumb.src) : null;
         return (
           <div key={folder.id} className="flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-line pb-2">
-              <p className="text-subhead text-ink">
-                {folder.name}{" "}
-                <span className="text-caption font-normal text-ink-muted">
-                  ({folderItems.length})
+              <button
+                type="button"
+                onClick={() => toggleOpen(folder.id)}
+                aria-expanded={isOpen}
+                className="focus-brand flex items-center gap-3 text-left"
+              >
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-espresso">
+                  {thumbSrc && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+                  )}
                 </span>
-              </p>
+                <span className="text-subhead text-ink">
+                  {folder.name}{" "}
+                  <span className="text-caption font-normal text-ink-muted">
+                    ({folderItems.length}) · {isOpen ? "Close" : "Open folder"}
+                  </span>
+                </span>
+              </button>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-caption text-ink-muted">
                   Event date
@@ -509,6 +537,7 @@ export function MediaManager({
                 </button>
               </div>
             </div>
+            {isOpen && (
             <ItemGrid
               clientSlug={clientSlug}
               items={folderItems}
@@ -522,6 +551,7 @@ export function MediaManager({
               coverId={folder.coverMediaId}
               onSetCover={(item) => patchFolder(folder.id, { coverMediaId: item.id })}
             />
+            )}
           </div>
         );
       })}
@@ -529,8 +559,19 @@ export function MediaManager({
       {(folders.length === 0 || ungrouped.length > 0) && (
         <div className="flex flex-col gap-4">
           {folders.length > 0 && (
-            <p className="text-subhead border-b border-line pb-2 text-ink">Individual uploads</p>
+            <button
+              type="button"
+              onClick={() => toggleOpen("__ungrouped__")}
+              aria-expanded={openIds.has("__ungrouped__")}
+              className="focus-brand border-b border-line pb-2 text-left text-subhead text-ink"
+            >
+              Individual uploads{" "}
+              <span className="text-caption font-normal text-ink-muted">
+                ({ungrouped.length}) · {openIds.has("__ungrouped__") ? "Close" : "Open"}
+              </span>
+            </button>
           )}
+          {(folders.length === 0 || openIds.has("__ungrouped__")) && (
           <ItemGrid
             clientSlug={clientSlug}
             items={ungrouped}
@@ -542,6 +583,7 @@ export function MediaManager({
             onDelete={deleteItem}
             onReorder={saveReorder}
           />
+          )}
         </div>
       )}
     </div>
