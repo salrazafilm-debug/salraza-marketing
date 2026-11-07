@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Folder, MediaItem, MediaVariant } from "@/lib/clients";
 import { FolderItems } from "@/components/MediaManager";
+import { compressImageIfNeeded, uploadToCloudinary } from "@/lib/upload-client";
 import { AddMediaPanel } from "@/components/admin/AddMediaPanel";
 
 export const INDIVIDUAL = "individual";
@@ -15,6 +16,7 @@ function thumbOf(item: MediaItem): string | null {
 }
 
 function folderCover(folder: Folder, items: MediaItem[]): string | null {
+  if (folder.coverUrl) return folder.coverUrl;
   const chosen = items.find((item) => item.id === folder.coverMediaId);
   if (chosen && thumbOf(chosen)) return thumbOf(chosen);
   return items.map(thumbOf).find(Boolean) ?? null;
@@ -278,6 +280,7 @@ function FolderWorkspace({
   const [name, setName] = useState(folder.name);
   const [date, setDate] = useState(folder.eventDate ?? "");
   const [saving, setSaving] = useState(false);
+  const [coverBusy, setCoverBusy] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
   const cover = folderCover(folder, items);
   const dirty = name.trim() !== folder.name || date !== (folder.eventDate ?? "");
@@ -297,7 +300,27 @@ function FolderWorkspace({
   }
 
   async function setCover(item: MediaItem) {
-    await patchFolder(folder.id, { coverMediaId: item.id });
+    await patchFolder(folder.id, { coverMediaId: item.id, coverUrl: null });
+    router.refresh();
+  }
+
+  async function replaceCover(file: File | undefined) {
+    if (!file) return;
+    setCoverBusy(true);
+    setMessage(undefined);
+    try {
+      const uploaded = await uploadToCloudinary(await compressImageIfNeeded(file), `clients/${clientSlug}`);
+      await patchFolder(folder.id, { coverUrl: uploaded.secure_url });
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not replace the cover.");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function removeCustomCover() {
+    await patchFolder(folder.id, { coverUrl: null });
     router.refresh();
   }
 
@@ -334,7 +357,25 @@ function FolderWorkspace({
               <img src={cover} alt="" className="h-full w-full object-cover" />
             )}
           </div>
-          <span className="text-caption text-ink-muted">Change it with “Use as folder cover” on any photo below.</span>
+          <label className="focus-brand mt-1 inline-flex w-fit cursor-pointer rounded-full bg-ink px-4 py-2 text-label text-paper transition hover:opacity-90">
+            {coverBusy ? "Uploading…" : "Replace cover image"}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={coverBusy}
+              onChange={(event) => {
+                replaceCover(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+              className="sr-only"
+            />
+          </label>
+          {folder.coverUrl && (
+            <button type="button" onClick={removeCustomCover} className="focus-brand w-fit text-caption text-purple-text underline">
+              Remove custom cover
+            </button>
+          )}
+          <span className="text-caption text-ink-muted">Or tap “Use as folder cover” on any photo below.</span>
         </div>
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">

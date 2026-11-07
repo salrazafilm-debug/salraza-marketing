@@ -9,3 +9,6 @@ alter table folders
 alter table media_items
   add column if not exists external_url text,
   add column if not exists thumbnail_url text;
+
+-- A custom cover image uploaded just for the folder.
+alter table folders add column if not exists cover_url text;

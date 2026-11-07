@@ -46,7 +46,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const updates: { name?: string; eventDate?: string | null; coverMediaId?: string | null } = {};
+  const updates: {
+    name?: string;
+    eventDate?: string | null;
+    coverMediaId?: string | null;
+    coverUrl?: string | null;
+  } = {};
   if (typeof body.name === "string" && body.name.trim()) updates.name = body.name.trim();
   if ("eventDate" in body) {
     updates.eventDate =
@@ -57,6 +62,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("coverMediaId" in body) {
     updates.coverMediaId =
       typeof body.coverMediaId === "string" && body.coverMediaId ? body.coverMediaId : null;
+  }
+
+  if ("coverUrl" in body) {
+    updates.coverUrl =
+      typeof body.coverUrl === "string" && /^https:\/\//i.test(body.coverUrl) ? body.coverUrl : null;
   }
 
   try {
