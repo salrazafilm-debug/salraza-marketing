@@ -79,28 +79,35 @@ function FileDrop({
     const update = (index: number, patch: Partial<FileJob>) =>
       setJobs((prev) => prev.map((job, i) => (i === index ? { ...job, ...patch } : job)));
 
-    // One at a time keeps memory low on phones and keeps upload order = gallery order.
-    for (let index = 0; index < files.length; index++) {
-      const file = files[index];
-      const resourceType: "image" | "video" = file.type.startsWith("video/") ? "video" : "image";
-      update(index, { status: "uploading" });
-      try {
-        const uploadFile = resourceType === "image" ? await compressImageIfNeeded(file) : file;
-        const result = await uploadToCloudinary(uploadFile, `clients/${clientSlug}`, resourceType, (progress) =>
-          update(index, { progress })
-        );
-        await saveMedia(clientSlug, {
-          type: resourceType,
-          label: file.name.replace(/\.[^.]+$/, ""),
-          src: result.secure_url,
-          cloudinaryPublicId: result.public_id,
-          folderId,
-        });
-        update(index, { status: "done", progress: 100 });
-      } catch (error) {
-        update(index, { status: "error", error: error instanceof Error ? error.message : "Upload failed." });
+    // A few at a time: much faster than one-by-one on a phone connection, without
+    // flooding it. Photos are uploaded as-is (no quality loss) unless over Cloudinary's 10MB cap.
+    const CONCURRENCY = 3;
+    let next = 0;
+    async function worker() {
+      while (next < files.length) {
+        const index = next++;
+        const file = files[index];
+        const resourceType: "image" | "video" = file.type.startsWith("video/") ? "video" : "image";
+        update(index, { status: "uploading" });
+        try {
+          const uploadFile = resourceType === "image" ? await compressImageIfNeeded(file) : file;
+          const result = await uploadToCloudinary(uploadFile, `clients/${clientSlug}`, resourceType, (progress) =>
+            update(index, { progress })
+          );
+          await saveMedia(clientSlug, {
+            type: resourceType,
+            label: file.name.replace(/\.[^.]+$/, ""),
+            src: result.secure_url,
+            cloudinaryPublicId: result.public_id,
+            folderId,
+          });
+          update(index, { status: "done", progress: 100 });
+        } catch (error) {
+          update(index, { status: "error", error: error instanceof Error ? error.message : "Upload failed." });
+        }
       }
     }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
     if (inputRef.current) inputRef.current.value = "";
     onDone();
   }
