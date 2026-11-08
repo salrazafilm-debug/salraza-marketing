@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Folder, MediaItem } from "@/lib/clients";
-import { DEFAULT_RATIO, clampRatio, widthStyle } from "@/components/VaultMediaGrid";
+import { DEFAULT_RATIO, JustifiedRows, clampRatio, type JustifyItem } from "@/components/JustifiedRows";
 
 /** "Saturday, November 1, 2025" from a YYYY-MM-DD string (UTC, so it never shifts a day). */
 export function formatEventDate(date: string): string {
@@ -39,27 +39,37 @@ function countLabel(items: MediaItem[]): string {
   return parts.join(" · ");
 }
 
-function FolderCard({ slug, folder, items }: { slug: string; folder: Folder; items: MediaItem[] }) {
-  const [ratio, setRatio] = useState(DEFAULT_RATIO);
+function FolderCard({
+  slug,
+  folder,
+  items,
+  width,
+  height,
+  onRatio,
+}: {
+  slug: string;
+  folder: Folder;
+  items: MediaItem[];
+  width: number;
+  height: number;
+  onRatio: (id: string, ratio: number) => void;
+}) {
   const cover = getFolderCoverSrc(folder, items);
-  const chosen = items.find((item) => item.id === folder.coverMediaId);
-  // A video picked as the cover is premium: it takes a full-width row to itself.
-  const featured = !folder.coverUrl && !!chosen?.externalUrl;
 
   return (
     <Link
       href={`/clients/${slug}/vault?folder=${folder.id}`}
       className="justified-item focus-brand group flex flex-col shadow-lg shadow-black/30 transition hover:-translate-y-1"
-      style={featured ? { flexBasis: "100%", flexGrow: 0 } : widthStyle(ratio)}
+      style={{ width }}
     >
-      <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: `${ratio}` }}>
+      <div className="relative w-full overflow-hidden bg-black" style={{ height }}>
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
             alt=""
             onLoad={(event) =>
-              setRatio(clampRatio(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))
+              onRatio(folder.id, clampRatio(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))
             }
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />
@@ -90,16 +100,34 @@ export function VaultFolderGrid({
   folders: Folder[];
   media: MediaItem[];
 }) {
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const onRatio = (id: string, ratio: number) =>
+    setRatios((prev) => (prev[id] === ratio ? prev : { ...prev, [id]: ratio }));
+
   const visible = folders
     .map((folder) => ({ folder, items: media.filter((item) => item.folderId === folder.id) }))
     .filter(({ items }) => items.length > 0);
 
+  const layoutItems: JustifyItem[] = visible.map(({ folder, items }) => {
+    const chosen = items.find((item) => item.id === folder.coverMediaId);
+    return {
+      key: folder.id,
+      ratio: ratios[folder.id] ?? DEFAULT_RATIO,
+      // A video picked as the cover is premium: it takes a full-width row to itself.
+      solo: !folder.coverUrl && !!chosen?.externalUrl,
+      render: (width, height) => (
+        <FolderCard slug={slug} folder={folder} items={items} width={width} height={height} onRatio={onRatio} />
+      ),
+    };
+  });
+
   return (
-    <div className="justified">
-      {visible.map(({ folder, items }) => (
-        <FolderCard key={folder.id} slug={slug} folder={folder} items={items} />
-      ))}
-      <div aria-hidden className="justified-spacer" />
-    </div>
+    <JustifiedRows
+      items={layoutItems}
+      gap={16}
+      fallbackHeight={260}
+      // Day cards are shown larger than the media tiles, so each day reads clearly.
+      targetHeight={(width) => (width < 640 ? 260 : 360)}
+    />
   );
 }
