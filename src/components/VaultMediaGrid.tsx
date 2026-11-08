@@ -1,32 +1,14 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { MediaItem } from "@/lib/clients";
+import { DEFAULT_RATIO, JustifiedRows, clampRatio, type JustifyItem } from "@/components/JustifiedRows";
 
 export type VaultMediaItem = MediaItem & {
   downloadUrl: string;
   posterUrl?: string;
 };
-
-/** Used until a picture has loaded and its real proportions are known. */
-export const DEFAULT_RATIO = 1.25;
-
-/** Width ÷ height of a picture, kept in a sane range so one panorama can't take over a row. */
-export function clampRatio(width: number, height: number): number {
-  if (!width || !height) return DEFAULT_RATIO;
-  return Math.min(2.4, Math.max(0.6, width / height));
-}
-
-/** Flex sizing only: a tile's share of its row is proportional to its shape. */
-export function widthStyle(ratio: number): CSSProperties {
-  return { flexGrow: ratio, flexBasis: `calc(${ratio} * var(--row-h))` };
-}
-
-/** Flex sizing plus the tile's own shape, so the tile's height follows its width. */
-export function tileStyle(ratio: number): CSSProperties {
-  return { ...widthStyle(ratio), aspectRatio: `${ratio}` };
-}
 
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
@@ -90,19 +72,15 @@ function Caption({ text, isMarksmen }: { text: string | null; isMarksmen: boolea
   );
 }
 
-function ImageTile({
-  item,
-  ratio,
-  isMarksmen,
-  onRatio,
-  onOpen,
-}: {
+type TileProps = {
   item: VaultMediaItem;
-  ratio: number;
+  width: number;
+  height: number;
   isMarksmen: boolean;
   onRatio: (id: string, ratio: number) => void;
-  onOpen: (index: number) => void;
-}) {
+};
+
+function ImageTile({ item, width, height, isMarksmen, onRatio, onOpen }: TileProps & { onOpen: (index: number) => void }) {
   const [index, setIndex] = useState(0);
   const images = [item.src, ...item.variants];
   const activeSrc = images[index] ?? item.src;
@@ -110,7 +88,7 @@ function ImageTile({
   return (
     <div
       className={`justified-item group cursor-zoom-in ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
-      style={tileStyle(ratio)}
+      style={{ width, height }}
       onClick={() => onOpen(index)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,19 +107,9 @@ function ImageTile({
   );
 }
 
-function VideoTile({
-  item,
-  ratio,
-  isMarksmen,
-  onRatio,
-}: {
-  item: VaultMediaItem;
-  ratio: number;
-  isMarksmen: boolean;
-  onRatio: (id: string, ratio: number) => void;
-}) {
+function VideoTile({ item, width, height, isMarksmen, onRatio }: TileProps) {
   return (
-    <div className={`justified-item ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`} style={tileStyle(ratio)}>
+    <div className={`justified-item ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`} style={{ width, height }}>
       <video
         controls
         autoPlay
@@ -163,17 +131,7 @@ function VideoTile({
 }
 
 /** A video hosted on a cloud drive: its own thumbnail, opens the link in a new tab. */
-function LinkVideoTile({
-  item,
-  ratio,
-  isMarksmen,
-  onRatio,
-}: {
-  item: VaultMediaItem;
-  ratio: number;
-  isMarksmen: boolean;
-  onRatio: (id: string, ratio: number) => void;
-}) {
+function LinkVideoTile({ item, width, height, isMarksmen, onRatio }: TileProps) {
   return (
     <a
       href={item.externalUrl ?? "#"}
@@ -181,7 +139,7 @@ function LinkVideoTile({
       rel="noopener noreferrer"
       aria-label={`Watch ${item.label} (opens in a new tab)`}
       className={`justified-item group focus-brand ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
-      style={tileStyle(ratio)}
+      style={{ width, height }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -244,30 +202,25 @@ export function VaultMediaGrid({
 
   const lightboxImages = lightbox ? [lightbox.item.src, ...lightbox.item.variants] : [];
 
+  const layoutItems: JustifyItem[] = items.map((item) => ({
+    key: item.id,
+    ratio: ratios[item.id] ?? DEFAULT_RATIO,
+    solo: fullWidth,
+    render: (width, height) => {
+      const tile = { item, width, height, isMarksmen, onRatio: reportRatio };
+      if (item.externalUrl) return <LinkVideoTile {...tile} />;
+      if (item.type === "video") return <VideoTile {...tile} />;
+      return <ImageTile {...tile} onOpen={(index) => setLightbox({ item, index })} />;
+    },
+  }));
+
   return (
     <>
-      <div className={isMarksmen ? "justified justified--marksmen" : "justified"}>
-        {items.map((item) => {
-          const ratio = ratios[item.id] ?? DEFAULT_RATIO;
-          if (item.externalUrl) {
-            return <LinkVideoTile key={item.id} item={item} ratio={ratio} isMarksmen={isMarksmen} onRatio={reportRatio} />;
-          }
-          if (item.type === "video") {
-            return <VideoTile key={item.id} item={item} ratio={ratio} isMarksmen={isMarksmen} onRatio={reportRatio} />;
-          }
-          return (
-            <ImageTile
-              key={item.id}
-              item={item}
-              ratio={ratio}
-              isMarksmen={isMarksmen}
-              onRatio={reportRatio}
-              onOpen={(index) => setLightbox({ item, index })}
-            />
-          );
-        })}
-        {!fullWidth && <div aria-hidden className="justified-spacer" />}
-      </div>
+      <JustifiedRows
+        items={layoutItems}
+        gap={12}
+        targetHeight={(width) => (width < 640 ? 200 : width < 1024 ? 250 : 300) + (isMarksmen ? 30 : 0)}
+      />
 
       {lightbox &&
         createPortal(
