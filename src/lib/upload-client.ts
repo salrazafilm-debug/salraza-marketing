@@ -5,12 +5,26 @@
 
 // Cloudinary's plan caps a single image at 10MB — stay a little under that.
 const MAX_IMAGE_BYTES = 9.5 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 4000;
+// Photos are shrunk to at most this many pixels on the long edge before upload:
+// visually identical on screen, several times smaller and faster to upload.
+const MAX_IMAGE_DIMENSION = 3000;
 
 export async function compressImageIfNeeded(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || file.size <= MAX_IMAGE_BYTES) return file;
+  if (!file.type.startsWith("image/") || file.type === "image/gif" || file.type === "image/svg+xml") return file;
 
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    return file; // A format this browser can't decode — upload it untouched.
+  }
+
+  // Already small enough in pixels and bytes: upload the original as-is.
+  if (Math.max(bitmap.width, bitmap.height) <= MAX_IMAGE_DIMENSION && file.size <= MAX_IMAGE_BYTES) {
+    bitmap.close();
+    return file;
+  }
+
   let width = bitmap.width;
   let height = bitmap.height;
   if (Math.max(width, height) > MAX_IMAGE_DIMENSION) {
@@ -28,6 +42,7 @@ export async function compressImageIfNeeded(file: File): Promise<File> {
   for (let attempt = 0; attempt < 6; attempt++) {
     canvas.width = width;
     canvas.height = height;
+    ctx.imageSmoothingQuality = "high"; // setting width/height resets the context
     ctx.drawImage(bitmap, 0, 0, width, height);
     blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
     if (blob && blob.size <= MAX_IMAGE_BYTES) break;
