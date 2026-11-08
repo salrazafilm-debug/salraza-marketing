@@ -50,14 +50,18 @@ export function VaultFolderGrid({
         const items = media.filter((item) => item.folderId === folder.id);
         if (items.length === 0) return null;
         const cover = getFolderCoverSrc(folder, items);
-        const coverIsVideo = !!cover && items.every((item) => item.type === "video");
+        const chosen = items.find((item) => item.id === folder.coverMediaId);
+        // A video chosen as the cover is premium: it gets its own full-width row.
+        const featured = !folder.coverUrl && !!chosen?.externalUrl;
         return (
           <Link
             key={folder.id}
             href={`/clients/${slug}/vault?folder=${folder.id}`}
-            className="focus-brand group flex flex-col overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/30 transition hover:-translate-y-1"
+            className={`focus-brand group flex flex-col overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/30 transition hover:-translate-y-1 ${
+              featured ? "sm:col-span-2 lg:col-span-3" : ""
+            }`}
           >
-            <div className="relative aspect-[4/5] w-full overflow-hidden bg-black">
+            <div className={`relative w-full overflow-hidden bg-black ${featured ? "aspect-[16/9] sm:aspect-[21/9]" : "aspect-[4/5]"}`}>
               {cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -67,13 +71,6 @@ export function VaultFolderGrid({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-golden-hour/60">Photos</div>
-              )}
-              {coverIsVideo && (
-                <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-espresso/75 text-golden-hour backdrop-blur">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </span>
               )}
             </div>
             <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center">

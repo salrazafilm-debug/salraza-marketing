@@ -177,18 +177,6 @@ export default async function VaultPage({
               </RevealSection>
             )}
 
-            <RevealSection index={step++}>
-              <p className="mt-10 text-caption">
-                Don&apos;t see something you were expecting? Email us at{" "}
-                <a
-                  href="mailto:salraza.film@gmail.com"
-                  className="focus-brand text-purple-text underline"
-                >
-                  salraza.film@gmail.com
-                </a>{" "}
-                and we&apos;ll get it added.
-              </p>
-            </RevealSection>
 
             {isMarksmen && (
               <RevealSection index={step++}>
