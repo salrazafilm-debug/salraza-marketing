@@ -92,8 +92,8 @@ function ImageTile({
         alt={item.label}
         className={
           isMarksmen
-            ? `${mediaHeightClass} w-auto object-cover transition-transform duration-500 group-hover:scale-105`
-            : "block h-auto w-full"
+            ? `${mediaHeightClass} w-auto object-contain transition-transform duration-500 group-hover:scale-105`
+            : "block h-auto max-h-[420px] w-full object-contain bg-espresso"
         }
       />
       <DownloadButton href={item.downloadUrl} label={item.label} />
@@ -102,10 +102,11 @@ function ImageTile({
         total={images.length}
         onToggle={() => setIndex((current) => (current + 1) % images.length)}
       />
-      <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
-        <p className="text-subhead text-paper">{item.label}</p>
-        {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
-      </div>
+      {item.caption && (
+        <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
+          <p className="text-caption text-golden-hour/80">{item.caption}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -142,7 +143,8 @@ export function VaultMediaGrid({
   const cardClass = isMarksmen
     ? "group relative flex shrink-0 flex-col overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
     : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
-  const mediaHeightClass = "h-64 sm:h-80 lg:h-[26rem]";
+  // Smaller frames, and images are fitted (never cropped) inside them.
+  const mediaHeightClass = "h-56 sm:h-64 lg:h-72";
 
   const lightboxImages = lightbox ? [lightbox.item.src, ...lightbox.item.variants] : [];
 
@@ -177,8 +179,7 @@ export function VaultMediaGrid({
                 </svg>
               </span>
               <div className="p-4 text-center sm:p-6">
-                <p className="text-subhead text-paper">{item.label}</p>
-                <p className="text-caption mt-1 text-golden-hour/80">
+                <p className="text-caption text-golden-hour/80">
                   {item.caption ? `${item.caption} · ` : ""}Watch video ↗
                 </p>
               </div>
@@ -201,10 +202,11 @@ export function VaultMediaGrid({
                 <source src={item.src} />
               </video>
               <DownloadButton href={item.downloadUrl} label={item.label} />
-              <div className="p-4 text-center sm:p-6">
-                <p className="text-subhead text-paper">{item.label}</p>
-                {item.caption && <p className="text-caption mt-1 text-golden-hour/80">{item.caption}</p>}
-              </div>
+              {item.caption && (
+                <div className="p-4 text-center sm:p-6">
+                  <p className="text-caption text-golden-hour/80">{item.caption}</p>
+                </div>
+              )}
             </div>
           ) : (
             <ImageTile
