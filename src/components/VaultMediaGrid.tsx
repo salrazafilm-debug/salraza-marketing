@@ -114,9 +114,12 @@ function ImageTile({
 export function VaultMediaGrid({
   items,
   isMarksmen = false,
+  fullWidth = false,
 }: {
   items: VaultMediaItem[];
   isMarksmen?: boolean;
+  /** One item per row, spanning the page (used for a folder's premium cover video). */
+  fullWidth?: boolean;
 }) {
   const [lightbox, setLightbox] = useState<{ item: VaultMediaItem; index: number } | null>(null);
 
@@ -154,7 +157,9 @@ export function VaultMediaGrid({
         className={
           isMarksmen
             ? "flex flex-wrap items-start justify-center gap-6"
-            : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            : fullWidth
+              ? "grid grid-cols-1 items-start gap-6"
+              : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
         }
       >
         {items.map((item) =>

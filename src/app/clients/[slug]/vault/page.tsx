@@ -127,7 +127,20 @@ export default async function VaultPage({
                             )}
                             <h2 className="text-headline text-ink">{activeFolder.name}</h2>
                           </div>
-                          <VaultMediaGrid items={withUrls(folderItems)} isMarksmen={isMarksmen} />
+                          {(() => {
+                            // The folder's chosen video cover gets its own full-width row first.
+                            const featured =
+                              !activeFolder.coverUrl && folderItems.find((item) => item.id === activeFolder.coverMediaId && item.externalUrl);
+                            const rest = featured ? folderItems.filter((item) => item.id !== featured.id) : folderItems;
+                            return (
+                              <>
+                                {featured && (
+                                  <VaultMediaGrid items={withUrls([featured])} isMarksmen={isMarksmen} fullWidth />
+                                )}
+                                {rest.length > 0 && <VaultMediaGrid items={withUrls(rest)} isMarksmen={isMarksmen} />}
+                              </>
+                            );
+                          })()}
                         </div>
                       </RevealSection>
                     );
