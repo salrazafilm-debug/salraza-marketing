@@ -61,16 +61,16 @@ export function VaultFolderGrid({
               featured ? "sm:col-span-2 lg:col-span-3" : ""
             }`}
           >
-            <div className={`relative w-full overflow-hidden bg-black ${featured ? "aspect-[16/9] sm:aspect-[21/9]" : "aspect-[4/5]"}`}>
+            <div className="relative w-full overflow-hidden bg-black">
               {cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={cover}
                   alt=""
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="block h-auto w-full transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-golden-hour/60">Photos</div>
+                <div className="flex aspect-[4/5] w-full items-center justify-center text-golden-hour/60">Photos</div>
               )}
             </div>
             <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center">
