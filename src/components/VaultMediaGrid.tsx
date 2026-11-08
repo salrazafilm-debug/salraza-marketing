@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import type { MediaItem } from "@/lib/clients";
 
@@ -9,13 +9,30 @@ export type VaultMediaItem = MediaItem & {
   posterUrl?: string;
 };
 
+/** Used until a picture has loaded and its real proportions are known. */
+export const DEFAULT_RATIO = 1.25;
+
+/** Width ÷ height of a picture, kept in a sane range so one panorama can't take over a row. */
+export function clampRatio(width: number, height: number): number {
+  if (!width || !height) return DEFAULT_RATIO;
+  return Math.min(2.4, Math.max(0.6, width / height));
+}
+
+/** Flex sizing only: a tile's share of its row is proportional to its shape. */
+export function widthStyle(ratio: number): CSSProperties {
+  return { flexGrow: ratio, flexBasis: `calc(${ratio} * var(--row-h))` };
+}
+
+/** Flex sizing plus the tile's own shape, so the tile's height follows its width. */
+export function tileStyle(ratio: number): CSSProperties {
+  return { ...widthStyle(ratio), aspectRatio: `${ratio}` };
+}
+
 /**
  * A real download, not just "open the file": links to a Cloudinary URL with
  * the fl_attachment flag (baked into downloadUrl server-side), which makes
  * Cloudinary's own response include a Content-Disposition: attachment
- * header. That's what makes this reliable on mobile browsers too — a plain
- * <a download> on a cross-origin file like this often just opens it in a
- * new tab instead of saving it.
+ * header. That's what makes this reliable on mobile browsers too.
  */
 function DownloadButton({ href, label }: { href: string; label: string }) {
   return (
@@ -34,16 +51,8 @@ function DownloadButton({ href, label }: { href: string; label: string }) {
   );
 }
 
-/** A small "1/2"-style pill that cycles through a photo's variants on click. */
-function VariantToggle({
-  index,
-  total,
-  onToggle,
-}: {
-  index: number;
-  total: number;
-  onToggle: () => void;
-}) {
+/** A small pill that cycles through a photo's variants on click. */
+function VariantToggle({ index, total, onToggle }: { index: number; total: number; onToggle: () => void }) {
   if (total <= 1) return null;
   return (
     <button
@@ -67,17 +76,31 @@ function VariantToggle({
   );
 }
 
+/** Caption shown over the bottom of a tile — only when the admin typed one. */
+function Caption({ text, isMarksmen }: { text: string | null; isMarksmen: boolean }) {
+  if (!text) return null;
+  return (
+    <div
+      className={`absolute inset-x-0 bottom-0 bg-gradient-to-t to-transparent px-4 pb-4 pt-12 text-center ${
+        isMarksmen ? "from-burgundy/95" : "from-espresso/90"
+      }`}
+    >
+      <p className="text-caption text-golden-hour/90">{text}</p>
+    </div>
+  );
+}
+
 function ImageTile({
   item,
-  cardClass,
-  mediaHeightClass,
+  ratio,
   isMarksmen,
+  onRatio,
   onOpen,
 }: {
   item: VaultMediaItem;
-  cardClass: string;
-  mediaHeightClass: string;
+  ratio: number;
   isMarksmen: boolean;
+  onRatio: (id: string, ratio: number) => void;
   onOpen: (index: number) => void;
 }) {
   const [index, setIndex] = useState(0);
@@ -85,32 +108,110 @@ function ImageTile({
   const activeSrc = images[index] ?? item.src;
 
   return (
-    <div className={`${cardClass} cursor-zoom-in`} onClick={() => onOpen(index)}>
+    <div
+      className={`justified-item group cursor-zoom-in ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
+      style={tileStyle(ratio)}
+      onClick={() => onOpen(index)}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={activeSrc}
         alt={item.label}
-        className={
-          isMarksmen
-            ? `${mediaHeightClass} w-auto object-contain transition-transform duration-500 group-hover:scale-105`
-            : "block h-auto max-h-[420px] w-full object-contain bg-espresso"
+        onLoad={(event) =>
+          onRatio(item.id, clampRatio(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))
         }
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <DownloadButton href={item.downloadUrl} label={item.label} />
-      <VariantToggle
-        index={index}
-        total={images.length}
-        onToggle={() => setIndex((current) => (current + 1) % images.length)}
-      />
-      {item.caption && (
-        <div className={`p-4 text-center sm:p-6 ${isMarksmen ? "bg-burgundy" : ""}`}>
-          <p className="text-caption text-golden-hour/80">{item.caption}</p>
-        </div>
-      )}
+      <VariantToggle index={index} total={images.length} onToggle={() => setIndex((current) => (current + 1) % images.length)} />
+      <Caption text={item.caption} isMarksmen={isMarksmen} />
     </div>
   );
 }
 
+function VideoTile({
+  item,
+  ratio,
+  isMarksmen,
+  onRatio,
+}: {
+  item: VaultMediaItem;
+  ratio: number;
+  isMarksmen: boolean;
+  onRatio: (id: string, ratio: number) => void;
+}) {
+  return (
+    <div className={`justified-item ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`} style={tileStyle(ratio)}>
+      <video
+        controls
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        poster={item.posterUrl}
+        onLoadedMetadata={(event) =>
+          onRatio(item.id, clampRatio(event.currentTarget.videoWidth, event.currentTarget.videoHeight))
+        }
+        className="absolute inset-0 h-full w-full bg-black object-contain"
+      >
+        <source src={item.src} />
+      </video>
+      <DownloadButton href={item.downloadUrl} label={item.label} />
+      <Caption text={item.caption} isMarksmen={isMarksmen} />
+    </div>
+  );
+}
+
+/** A video hosted on a cloud drive: its own thumbnail, opens the link in a new tab. */
+function LinkVideoTile({
+  item,
+  ratio,
+  isMarksmen,
+  onRatio,
+}: {
+  item: VaultMediaItem;
+  ratio: number;
+  isMarksmen: boolean;
+  onRatio: (id: string, ratio: number) => void;
+}) {
+  return (
+    <a
+      href={item.externalUrl ?? "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Watch ${item.label} (opens in a new tab)`}
+      className={`justified-item group focus-brand ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
+      style={tileStyle(ratio)}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={item.thumbnailUrl ?? ""}
+        alt={item.label}
+        onLoad={(event) =>
+          onRatio(item.id, clampRatio(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))
+        }
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-espresso/75 text-golden-hour backdrop-blur">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </span>
+      <span className="absolute left-3 top-3 z-10 rounded-full bg-espresso/80 px-3.5 py-2 text-label font-bold text-golden-hour shadow-lg backdrop-blur">
+        Watch video ↗
+      </span>
+      <Caption text={item.caption} isMarksmen={isMarksmen} />
+    </a>
+  );
+}
+
+/**
+ * Photos and videos laid out in rows that fill the full width with no gaps.
+ * Each tile is sized from its real shape (measured as it loads), so images
+ * are never cropped and every row lines up automatically as media is added.
+ * `fullWidth` gives a single item its own full-width row (used for a
+ * folder's premium cover video).
+ */
 export function VaultMediaGrid({
   items,
   isMarksmen = false,
@@ -118,10 +219,14 @@ export function VaultMediaGrid({
 }: {
   items: VaultMediaItem[];
   isMarksmen?: boolean;
-  /** One item per row, spanning the page (used for a folder's premium cover video). */
   fullWidth?: boolean;
 }) {
   const [lightbox, setLightbox] = useState<{ item: VaultMediaItem; index: number } | null>(null);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+
+  function reportRatio(id: string, ratio: number) {
+    setRatios((prev) => (prev[id] === ratio ? prev : { ...prev, [id]: ratio }));
+  }
 
   useEffect(() => {
     if (!lightbox) return;
@@ -137,103 +242,37 @@ export function VaultMediaGrid({
     };
   }, [lightbox]);
 
-  // Marksmen: an equal-height "shelf" (flex-wrap, each media element the
-  // same height, natural width) instead of a fixed grid or column-based
-  // masonry — it packs every row using the full row width regardless of
-  // how tall or wide each photo/video naturally is, so there's no leftover
-  // gap the way a strict column layout leaves when heights don't balance,
-  // and it keeps working the same way as more photos get added later.
-  const cardClass = isMarksmen
-    ? "group relative flex shrink-0 flex-col overflow-hidden rounded-xl bg-espresso shadow-lg shadow-black/40"
-    : "relative flex flex-col overflow-hidden rounded-xl bg-espresso";
-  // Smaller frames, and images are fitted (never cropped) inside them.
-  const mediaHeightClass = "h-56 sm:h-64 lg:h-72";
-
   const lightboxImages = lightbox ? [lightbox.item.src, ...lightbox.item.variants] : [];
 
   return (
     <>
-      <div
-        className={
-          isMarksmen
-            ? "flex flex-wrap items-start justify-center gap-6"
-            : fullWidth
-              ? "grid grid-cols-1 items-start gap-6"
-              : "grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        }
-      >
-        {items.map((item) =>
-          item.externalUrl ? (
-            <a
-              key={item.id}
-              href={item.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Watch ${item.label} (opens in a new tab)`}
-              className={`${cardClass} focus-brand transition hover:-translate-y-1`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.thumbnailUrl ?? ""}
-                alt={item.label}
-                className={isMarksmen ? `${mediaHeightClass} w-auto object-cover` : "block h-auto w-full"}
-              />
-              <span className="absolute left-1/2 top-[38%] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-espresso/75 text-golden-hour backdrop-blur">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </span>
-              <div className="p-4 text-center sm:p-6">
-                <p className="text-caption text-golden-hour/80">
-                  {item.caption ? `${item.caption} · ` : ""}Watch video ↗
-                </p>
-              </div>
-            </a>
-          ) : item.type === "video" ? (
-            <div key={item.id} className={cardClass}>
-              <video
-                controls
-                autoPlay
-                muted
-                playsInline
-                preload="auto"
-                poster={item.posterUrl}
-                className={
-                  isMarksmen
-                    ? `${mediaHeightClass} w-auto bg-black object-contain`
-                    : "aspect-[4/5] w-full bg-black object-contain"
-                }
-              >
-                <source src={item.src} />
-              </video>
-              <DownloadButton href={item.downloadUrl} label={item.label} />
-              {item.caption && (
-                <div className="p-4 text-center sm:p-6">
-                  <p className="text-caption text-golden-hour/80">{item.caption}</p>
-                </div>
-              )}
-            </div>
-          ) : (
+      <div className={isMarksmen ? "justified justified--marksmen" : "justified"}>
+        {items.map((item) => {
+          const ratio = ratios[item.id] ?? DEFAULT_RATIO;
+          if (item.externalUrl) {
+            return <LinkVideoTile key={item.id} item={item} ratio={ratio} isMarksmen={isMarksmen} onRatio={reportRatio} />;
+          }
+          if (item.type === "video") {
+            return <VideoTile key={item.id} item={item} ratio={ratio} isMarksmen={isMarksmen} onRatio={reportRatio} />;
+          }
+          return (
             <ImageTile
               key={item.id}
               item={item}
-              cardClass={cardClass}
-              mediaHeightClass={mediaHeightClass}
+              ratio={ratio}
               isMarksmen={isMarksmen}
+              onRatio={reportRatio}
               onOpen={(index) => setLightbox({ item, index })}
             />
-          )
-        )}
+          );
+        })}
+        {!fullWidth && <div aria-hidden className="justified-spacer" />}
       </div>
 
       {lightbox &&
         createPortal(
-          // Rendered straight onto document.body, not in normal flow here:
-          // this grid sits inside a RevealSection, whose fade/slide-in
-          // relies on a CSS transform — and a transform on any ancestor
-          // turns `position: fixed` into "fixed to that ancestor" instead
-          // of the real viewport, which is what was pinning this off
-          // center and clipping it. A portal escapes that entirely.
+          // Rendered on document.body so the reveal animation's transform can't
+          // pull this fixed overlay out of the viewport.
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 sm:p-8"
             onClick={() => setLightbox(null)}

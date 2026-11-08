@@ -258,3 +258,38 @@ body {
   --espresso: #131619;
   --focus-ring: #2fc4de;
 }
+
+/* Justified vault layout: each tile is sized from its real photo proportions so
+   every tile in a row is the same height and each row fills the full width. */
+.justified {
+  --row-h: 200px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .justified { --row-h: 250px; gap: 1rem; }
+}
+@media (min-width: 1024px) {
+  .justified { --row-h: 300px; }
+}
+.justified--marksmen { --row-h: 230px; }
+@media (min-width: 640px) {
+  .justified--marksmen { --row-h: 280px; }
+}
+@media (min-width: 1024px) {
+  .justified--marksmen { --row-h: 340px; }
+}
+.justified-item {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: var(--espresso);
+}
+/* Absorbs leftover width on the last row so those tiles keep their size, left-aligned. */
+.justified-spacer {
+  flex: 10000 1 0;
+  height: 0;
+}
