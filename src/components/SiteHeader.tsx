@@ -170,6 +170,12 @@ export function SiteHeader({
           </Link>
         </div>
 
+        {/* Phones: Media Vault sits right in the top bar, next to the menu. */}
+        <MediaVaultLink
+          className="ml-auto mr-1 !gap-1.5 !px-3 !py-1.5 !text-[10px] md:hidden"
+          marksmenTheme={false}
+        />
+
         <button
           type="button"
           className={`focus-brand flex h-10 w-10 items-center justify-center rounded-full md:hidden ${
