@@ -17,6 +17,7 @@ import { LockedFolderGrid, type LockedFolder } from "@/components/LockedFolderGr
 import { formatEventDate, getFolderCoverSrc } from "@/lib/vault-folder-utils";
 import { SectionFrame } from "@/components/site/HomeSections";
 import { getVaultLook } from "@/lib/vault-look";
+import { resolveIntroVideo } from "@/lib/intro-video";
 import type { Section } from "@/components/site/layout-types";
 
 function withUrls(items: MediaItem[]): VaultMediaItem[] {
@@ -83,7 +84,7 @@ export default async function VaultPage({
         data-theme={isMarksmen ? "marksmen" : undefined}
         className={`min-h-[100svh] px-4 pb-20 sm:px-6 ${isMarksmen ? "pt-[150px] md:pt-[112px] bg-[#0a0a0c]" : "pt-28"}`}
       >
-        <MarksmenVaultIntro introSrc={showIntro ? "/clients/dmv-marksmen/login-intro.mp4" : null}>
+        <MarksmenVaultIntro introSrc={showIntro ? await resolveIntroVideo() : null}>
           <div className="mx-auto max-w-[1200px]">
             <RevealSection index={step++}>
               <div

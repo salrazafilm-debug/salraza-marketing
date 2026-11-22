@@ -10,6 +10,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { CreateClientForm } from "@/components/CreateClientForm";
+import { IntroVideoManager } from "@/components/IntroVideoManager";
+import { ORIGINAL_INTRO_VIDEO, getIntroVideoSetting } from "@/lib/intro-video";
 import { MediaVaultContentForm } from "@/components/MediaVaultContentForm";
 
 export const metadata: Metadata = {
@@ -63,6 +65,10 @@ export default async function AdminDashboardPage() {
               Open editor →
             </span>
           </Link>
+
+          <div className="mt-10">
+            <IntroVideoManager setting={await getIntroVideoSetting()} originalSrc={ORIGINAL_INTRO_VIDEO} />
+          </div>
 
           <div className="mt-10">
             <CreateClientForm />

@@ -70,6 +70,7 @@ export function MarksmenVaultIntro({
             playsInline
             preload="auto"
             onEnded={handleEnded}
+            onError={handleEnded}
             className="h-full w-full object-contain"
           />
         </div>
