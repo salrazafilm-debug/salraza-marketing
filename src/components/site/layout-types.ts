@@ -134,7 +134,7 @@ export type HomeLayout = {
   theme?: Theme;
   smoothBg?: boolean;
   /** 1 = the page order has been set to: ... What we do, Media Vault, ..., About us last. */
-  arranged?: 1 | 2 | 3;
+  arranged?: 1 | 2 | 3 | 4;
 };
 
 export type SlotDef = { label: string; max: number; defaults: string[] };
@@ -595,7 +595,33 @@ export function parseLayout(value: unknown): HomeLayout | null {
       else delete s.style;
     }
   }
-  out.arranged = 3;
+  if ((value as { arranged?: unknown }).arranged !== 4) {
+    // v4: remove stray "Click me" buttons, and put the SALRAZA title back to
+    // its original place and look.
+    for (const s of out.sections) {
+      if (s.els) {
+        const kept = s.els.filter((e) => !(e.kind === "button" && /^s*click mes*$/i.test(e.text ?? "")));
+        if (kept.length) s.els = kept;
+        else delete s.els;
+      }
+      if (s.type === "hero") {
+        if (s.place?.title) {
+          const place = { ...s.place };
+          delete place.title;
+          if (Object.keys(place).length) s.place = place;
+          else delete s.place;
+        }
+        if (s.fmt?.title) {
+          const fmt = { ...s.fmt };
+          delete fmt.title;
+          if (Object.keys(fmt).length) s.fmt = fmt;
+          else delete s.fmt;
+        }
+        if (s.text.title !== undefined && s.text.title.trim() !== "SALRAZA") delete s.text.title;
+      }
+    }
+  }
+  out.arranged = 4;
   return out;
 }
 

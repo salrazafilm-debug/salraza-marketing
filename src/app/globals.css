@@ -631,8 +631,8 @@ body {
   background: linear-gradient(180deg, transparent, #1a0b10);
 }
 
-/* Old camera look laid over the whole site: grain, scratches, dust, a faded
-   (lifted) tone and gentle flicker. */
+/* Old camera look laid over the whole site: grain, scratches, dust and a faded
+   (lifted) tone. All of it is a fixed image; nothing moves. */
 .film-fade {
   position: fixed;
   inset: 0;
@@ -640,7 +640,6 @@ body {
   pointer-events: none;
   background: rgba(70, 45, 40, 0.1);
   mix-blend-mode: screen;
-  animation: film-flicker 0.24s steps(2) infinite;
 }
 .film-scratches {
   position: fixed;
@@ -651,7 +650,6 @@ body {
   mix-blend-mode: screen;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='800'><g fill='none' stroke='%23fff6e8' stroke-linecap='round'><path d='M140 0 L148 800' stroke-width='0.9' opacity='.55'/><path d='M612 0 L604 460' stroke-width='0.6' opacity='.4'/><path d='M832 260 L840 800' stroke-width='1.1' opacity='.45'/><path d='M402 0 L399 800' stroke-width='0.5' opacity='.25'/><path d='M300 90 q40 30 90 18' stroke-width='0.9' opacity='.5'/><path d='M720 640 q-30 22 -70 12' stroke-width='0.8' opacity='.45'/></g><g fill='%23fff6e8'><circle cx='210' cy='330' r='1.6' opacity='.6'/><circle cx='560' cy='190' r='1.1' opacity='.5'/><circle cx='760' cy='470' r='2' opacity='.45'/><circle cx='380' cy='640' r='1.2' opacity='.55'/><circle cx='90' cy='120' r='1.4' opacity='.45'/><circle cx='900' cy='720' r='1.6' opacity='.5'/></g><g fill='%23140a0a'><circle cx='470' cy='410' r='1.8' opacity='.5'/><circle cx='660' cy='90' r='1.2' opacity='.45'/><circle cx='120' cy='560' r='1.5' opacity='.4'/></g></svg>");
   background-size: 1000px 800px;
-  animation: film-scratch 0.5s steps(3) infinite;
 }
 @keyframes film-scratch {
   0% { transform: translate(0, 0); opacity: 0.5; }
@@ -664,10 +662,6 @@ body {
   50% { opacity: 0.82; }
   100% { opacity: 1; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .film-scratches,
-  .film-fade { animation: none; }
-}
 .film-grain {
   position: fixed;
   inset: -50%;
@@ -676,7 +670,6 @@ body {
   opacity: 0.22;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.4 -0.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
-  animation: film-grain 0.9s steps(6) infinite;
 }
 .film-grain-warm {
   position: fixed;
@@ -693,9 +686,6 @@ body {
   60% { transform: translate(-5%, -2%); }
   80% { transform: translate(4%, 4%); }
   100% { transform: translate(0, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .film-grain { animation: none; }
 }
 
 /* Text stays readable on any colour: a soft halo that matches its background
