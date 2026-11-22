@@ -212,7 +212,7 @@ function ChapterTitle({ s, id }: { s: Section; id: number }) {
         k={`s${id}title`}
         as="h3"
         className={`mx-auto block max-w-[20ch] text-balance text-center font-display font-black uppercase leading-[0.95] text-ink ${
-          long ? "text-[clamp(1.6rem,6.2vw,5.25rem)]" : "text-[clamp(1.9rem,7.4vw,6.25rem)]"
+          long ? "text-[clamp(1.5rem,5vw,3.75rem)]" : "text-[clamp(1.75rem,6vw,4.5rem)]"
         }`}
       />
     </Reveal>
@@ -255,7 +255,7 @@ export function Showcases({ s }: { s: Section }) {
             <Txt s={s} k="eyebrow" />
           </Reveal>
           <Reveal delay={80}>
-            <Txt s={s} k="title" as="h2" className="title-lit mx-auto mt-3 block max-w-4xl font-display text-[clamp(2rem,6vw,4.5rem)] font-black uppercase leading-[1.02]" />
+            <Txt s={s} k="title" as="h2" className="title-lit mx-auto mt-3 block max-w-4xl font-display text-[clamp(1.75rem,4.6vw,3.5rem)] font-black uppercase leading-[1.02]" />
           </Reveal>
         </Movable>
       </div>
@@ -270,11 +270,10 @@ export function Showcases({ s }: { s: Section }) {
           return (
             // Photography: a dark band so the photos pop.
             <div key={id} data-mode="dark" className="relative text-ink">
-              <div aria-hidden className="vintage band-fade-soft pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse 70% 45% at 50% 12%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)" }}
+                style={{ background: "radial-gradient(ellipse 70% 40% at 50% 10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%)" }}
               />
               <div className="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6 sm:py-24">
                 {title}

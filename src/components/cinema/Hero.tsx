@@ -38,13 +38,13 @@ export function Hero({ s }: { s: Section }) {
 
       <div className="relative z-10 w-full max-w-5xl px-4">
         <Movable s={s} id="title" label="Title">
-          <div className="relative mx-auto flex h-[130px] items-center justify-center sm:h-[190px]">
+          <div className="relative mx-auto flex h-[150px] items-center justify-center sm:h-[230px] lg:h-[260px]">
             <ScribbleCanvas style={SCRIBBLE} />
             <Txt
               s={s}
               k="title"
               as="h1"
-              className="title-lit relative text-center font-display text-[14.5vw] font-black leading-none tracking-tight sm:text-[7.5rem]"
+              className="hero-word relative text-center font-display text-[17vw] font-black leading-none tracking-tight sm:text-[9.5rem] lg:text-[11.5rem]"
             />
           </div>
         </Movable>

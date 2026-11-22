@@ -47,8 +47,19 @@ export function hasOwnBg(s: Section) {
   return !!styleOf(s).bg && styleOf(s).bg !== "page";
 }
 
-export function SectionFrame({ s, children, fadeOut = false }: { s: Section; children: ReactNode; fadeOut?: boolean }) {
-  const st = styleOf(s);
+export function SectionFrame({
+  s,
+  children,
+  fadeOut = false,
+  plain = false,
+}: {
+  s: Section;
+  children: ReactNode;
+  fadeOut?: boolean;
+  /** Page-wide smooth background: skip this section's own colour. */
+  plain?: boolean;
+}) {
+  const st = plain ? { ...styleOf(s), bg: undefined } : styleOf(s);
   const { editing, selSection, setFixedH, zoom, moveMode, sel } = useEdit();
   // Layout guides: a grid plus a centre line while arranging things in this section.
   const guides = editing && (moveMode || sel?.sectionId === s.id) && selSection === s.id;
@@ -253,81 +264,35 @@ function Gallery({ s, slot }: { s: Section; slot: ReactNode }) {
   );
 }
 
-/** The Media Vault invite: its own cinematic section, text on one side and a
- * "vault" of stacked work behind frosted glass on the other. */
+/** The Media Vault invite: one calm, centred card — no pictures. */
 function Vault({ s }: { s: Section }) {
   return (
-    <section className="relative overflow-hidden px-4 py-20 sm:px-6 sm:py-28">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(ellipse 55% 60% at 75% 50%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)" }}
-      />
-      <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 md:grid-cols-[1.05fr_1fr] md:gap-16">
-        <Movable s={s} id="text" label="Text" className="max-md:text-center">
-          <Reveal>
-            <Txt s={s} k="eyebrow" as="p" className="block text-xs uppercase tracking-[0.3em] text-warm-text" />
-          </Reveal>
-          <Reveal delay={80} as="h2" className="mt-4 font-display text-4xl font-black uppercase leading-[0.98] text-ink sm:text-6xl">
-            <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" className="title-lit" />
-          </Reveal>
-          <Reveal delay={160}>
-            <Txt s={s} k="body" as="p" className="mt-5 block max-w-md text-base text-ink/80 max-md:mx-auto sm:text-lg" />
-          </Reveal>
-          <Reveal delay={220} className="mt-6 flex flex-wrap gap-2 max-md:justify-center">
-            {["Photos", "Videos", "Edits", "Private & secure"].map((t) => (
-              <span key={t} className="rounded-full border border-ink/15 bg-ink/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-ink/80">
-                {t}
-              </span>
-            ))}
-          </Reveal>
-          <Reveal delay={280} className="mt-8">
-            <Link
-              href="/clients"
-              className="focus-brand group inline-flex items-center gap-3 rounded-full bg-[#f5c84c] px-7 py-4 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] shadow-[0_18px_40px_-18px_rgba(245,200,76,.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#8e1b3a] hover:text-white"
-            >
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+    <section className="relative px-4 py-20 sm:px-6 sm:py-28">
+      <Movable s={s} id="card" label="Vault card" className="mx-auto max-w-[760px]">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-14 text-center shadow-[0_40px_90px_-40px_rgba(0,0,0,.8)] backdrop-blur-md sm:px-14 sm:py-16">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f5c84c]/60 to-transparent" />
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#f5c84c]/40 text-[#f5c84c]">
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
                 <rect x="4" y="9" width="12" height="9" rx="2" />
                 <path d="M7 9V6a3 3 0 0 1 6 0v3" />
               </svg>
+            </span>
+            <Txt s={s} k="eyebrow" as="p" className="mt-6 block text-xs uppercase tracking-[0.3em] text-warm-text" />
+            <h2 className="mt-3 font-display text-3xl font-black uppercase leading-[1] text-ink sm:text-5xl">
+              <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" className="text-[#f5c84c]" />
+            </h2>
+            <Txt s={s} k="body" as="p" className="mx-auto mt-5 block max-w-md text-base text-ink/75 sm:text-lg" />
+            <Link
+              href="/clients"
+              className="focus-brand mt-8 inline-flex items-center gap-3 rounded-full bg-[#f5c84c] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+            >
               <Txt s={s} k="cta" />
-              <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
+              <span aria-hidden>→</span>
             </Link>
-          </Reveal>
-        </Movable>
-
-        <Movable s={s} id="visual" label="Vault picture">
-          <Reveal delay={120}>
-            <div className="group relative mx-auto aspect-[4/3.4] w-full max-w-[520px]">
-              {/* Stacked prints peeking out from behind the vault card. */}
-              <div className="absolute left-[6%] top-[4%] h-[62%] w-[52%] -rotate-6 overflow-hidden rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-700 group-hover:-translate-x-3 group-hover:-rotate-[9deg]">
-                <img src="/client-work-vault.webp" alt="" className="h-full w-full object-cover [filter:sepia(.25)_saturate(.9)]" />
-              </div>
-              <div className="absolute right-[4%] top-0 h-[58%] w-[48%] rotate-[5deg] overflow-hidden rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-700 group-hover:translate-x-3 group-hover:rotate-[8deg]">
-                <img src="/client-work-vault.webp" alt="" className="h-full w-full object-cover object-right [filter:saturate(1.1)]" />
-              </div>
-              {/* The vault card itself: frosted glass with a lock. */}
-              <div
-                data-mode="dark"
-                className="absolute inset-x-[8%] bottom-0 flex h-[52%] flex-col items-center justify-center gap-3 rounded-2xl border border-white/15 bg-[#160b0d]/70 text-center text-[#f4efe9] shadow-[0_40px_80px_-30px_rgba(0,0,0,.8)] backdrop-blur-xl"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5c84c] text-[#160b0d] shadow-[0_0_40px_rgba(245,200,76,.5)]">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                    <rect x="4" y="9" width="12" height="9" rx="2" />
-                    <path d="M7 9V6a3 3 0 0 1 6 0v3" />
-                  </svg>
-                </span>
-                <p className="font-display text-lg font-black uppercase tracking-wide">Your private gallery</p>
-                <p className="flex gap-1.5" aria-hidden>
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <span key={i} className="h-2 w-2 rounded-full bg-[#f4efe9]/60" />
-                  ))}
-                </p>
-              </div>
-            </div>
-          </Reveal>
-        </Movable>
-      </div>
+          </div>
+        </Reveal>
+      </Movable>
     </section>
   );
 }
@@ -578,7 +543,8 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
     <ThemeScope theme={layout.theme}>
       {list.map((s, i) => {
         const next = list.slice(i + 1).find((n) => canvas || !n.hidden);
-        const fadeOut = hasOwnBg(s) && (!next || !hasOwnBg(next));
+        const plain = !layout.ownBgs;
+        const fadeOut = !plain && hasOwnBg(s) && (!next || !hasOwnBg(next));
         return canvas ? (
           <div
             key={s.id}
@@ -599,11 +565,11 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
               </span>
             )}
             <div className={s.hidden ? "opacity-40 grayscale" : undefined}>
-              <SectionFrame s={s} fadeOut={fadeOut}>{renderSection(s, slots)}</SectionFrame>
+              <SectionFrame s={s} fadeOut={fadeOut} plain={plain}>{renderSection(s, slots)}</SectionFrame>
             </div>
           </div>
         ) : (
-          <SectionFrame key={s.id} s={s} fadeOut={fadeOut}>
+          <SectionFrame key={s.id} s={s} fadeOut={fadeOut} plain={plain}>
             {renderSection(s, slots)}
           </SectionFrame>
         );

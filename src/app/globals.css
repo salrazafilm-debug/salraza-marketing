@@ -118,11 +118,17 @@ body {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  /* One smooth, symmetric backdrop: deep burgundy that settles evenly into
+     near-black. It is fixed, so every part of the page sits on the same light. */
   background:
-    radial-gradient(ellipse 90% 55% at 50% -10%, var(--atmo-top), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, var(--atmo-top), transparent 70%),
-    radial-gradient(ellipse 45% 35% at 100% 70%, var(--atmo-top), transparent 70%),
-    var(--color-paper);
+    radial-gradient(ellipse 120% 70% at 50% 0%, var(--atmo-top), transparent 75%),
+    radial-gradient(ellipse 120% 60% at 50% 100%, color-mix(in srgb, var(--atmo-top) 70%, transparent), transparent 75%),
+    linear-gradient(180deg, #1a0b10 0%, #120a0c 50%, #170a0f 100%);
+}
+/* The old side light-leak and angled beam made one side brighter. */
+.atmo-leak,
+.atmo-beam {
+  display: none;
 }
 .atmo-beam {
   position: absolute;
@@ -224,7 +230,7 @@ body {
 .atmo-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 80% 75% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(ellipse 90% 85% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.45) 100%);
 }
 [data-mode="light"] .atmo-vignette {
   background: radial-gradient(ellipse 80% 75% at 50% 45%, transparent 60%, rgba(92, 15, 36, 0.12) 100%);
@@ -580,4 +586,13 @@ body {
     linear-gradient(to right, rgb(245 200 76 / 0.22) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(245 200 76 / 0.16) 1px, transparent 1px);
   background-size: calc(100% / 12) 100%, 100% calc(100cqw / 24);
+}
+
+/* SALRAZA: the boldest thing on the page, lit evenly from top to bottom. */
+.hero-word {
+  background: linear-gradient(180deg, #ffffff 0%, #fbf3ea 45%, #e6d3c4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgba(194, 58, 92, 0.45)) drop-shadow(0 6px 30px rgba(0, 0, 0, 0.6));
 }

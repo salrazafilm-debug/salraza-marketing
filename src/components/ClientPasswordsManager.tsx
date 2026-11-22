@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { makePassword } from "@/lib/make-password";
 import { useState, type FormEvent } from "react";
 
 type PasswordEntry = { id: string; createdAt: string };
@@ -86,13 +87,22 @@ export function ClientPasswordsManager({
       <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex flex-1 flex-col gap-2">
           <span className="text-label text-ink">Add a password</span>
-          <input
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            minLength={6}
-            required
-            className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
-          />
+          <span className="flex gap-2">
+            <input
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              minLength={6}
+              required
+              className="focus-brand flex-1 rounded border border-line bg-paper px-4 py-3 text-body text-ink"
+            />
+            <button
+              type="button"
+              onClick={() => setNewPassword(makePassword())}
+              className="focus-brand rounded-full border border-line px-4 text-label text-ink hover:bg-paper"
+            >
+              Generate
+            </button>
+          </span>
         </label>
         <button
           type="submit"

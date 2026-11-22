@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { makePassword } from "@/lib/make-password";
 import { useState, type FormEvent } from "react";
 
 function slugify(value: string): string {
@@ -101,13 +102,26 @@ export function CreateClientForm() {
 
       <label className="flex flex-col gap-2">
         <span className="text-label text-ink">Media Vault password</span>
-        <input
-          required
-          minLength={6}
-          type="text"
-          name="password"
-          className="focus-brand rounded border border-line bg-paper px-4 py-3 text-body text-ink"
-        />
+        <span className="flex gap-2">
+          <input
+            required
+            minLength={6}
+            type="text"
+            name="password"
+            id="new-vault-password"
+            className="focus-brand flex-1 rounded border border-line bg-paper px-4 py-3 text-body text-ink"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const input = document.getElementById("new-vault-password") as HTMLInputElement | null;
+              if (input) input.value = makePassword();
+            }}
+            className="focus-brand rounded-full border border-line px-4 text-label text-ink hover:bg-paper"
+          >
+            Generate
+          </button>
+        </span>
       </label>
 
       <label className="flex flex-col gap-2">

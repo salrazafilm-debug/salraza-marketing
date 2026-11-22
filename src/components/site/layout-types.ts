@@ -126,7 +126,9 @@ export function showOrderOf(s: Section): number[] {
 
 export type Theme = { preset?: string; accent?: string; accentBright?: string; spark?: string };
 
-export type HomeLayout = { version: 1; sections: Section[]; theme?: Theme };
+/** ownBgs: true = each section paints its own background colour; otherwise the
+ * whole page shares one smooth backdrop (the default). */
+export type HomeLayout = { version: 1; sections: Section[]; theme?: Theme; ownBgs?: boolean };
 
 export type SlotDef = { label: string; max: number; defaults: string[] };
 
@@ -528,7 +530,9 @@ export function parseLayout(value: unknown): HomeLayout | null {
     sections.push(sec);
   }
   const theme = parseTheme((value as { theme?: unknown }).theme);
-  return theme ? { version: 1, sections, theme } : { version: 1, sections };
+  const out: HomeLayout = theme ? { version: 1, sections, theme } : { version: 1, sections };
+  if ((value as { ownBgs?: unknown }).ownBgs === true) out.ownBgs = true;
+  return out;
 }
 
 /**
