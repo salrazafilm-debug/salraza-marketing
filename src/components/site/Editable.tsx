@@ -30,6 +30,8 @@ type EditApi = {
   selectEl: (sel: Sel) => void;
   updateEl: (sectionId: string, id: string, patch: Partial<El>) => void;
   setFixedH: (sectionId: string, h: number | null) => void;
+  /** How much the editor shrinks the page to fit between its panels (1 = real size). */
+  zoom: number;
 };
 
 const noop = () => {};
@@ -45,6 +47,7 @@ const EditContext = createContext<EditApi>({
   selectEl: noop,
   updateEl: noop,
   setFixedH: noop,
+  zoom: 1,
 });
 
 export function EditProvider({ value, children }: { value: EditApi; children: ReactNode }) {
@@ -143,10 +146,10 @@ export function Movable({
   className?: string;
   children: ReactNode;
 }) {
-  const { editing, moveMode, sel, setPlace, selectEl } = useContext(EditContext);
+  const { editing, moveMode, sel, setPlace, selectEl, zoom } = useContext(EditContext);
   const saved = s.place?.[id];
   const [live, setLive] = useState<Placement | null>(null);
-  const drag = useRef<{ kind: "move" | "resize"; x: number; y: number; start: Placement; w: number } | null>(null);
+  const drag = useRef<{ kind: "move" | "resize"; x: number; y: number; start: Placement; w: number; secW: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const cur = live ?? saved ?? { x: 0, y: 0, scale: 1 };
   const isSel = !!sel && sel.sectionId === s.id && sel.id === id && sel.builtin;
@@ -170,7 +173,7 @@ export function Movable({
   const placed = !!saved || !!live;
   const style: CSSProperties = {
     ...(placed
-      ? ({ ["--mx" as string]: `${cur.x}px`, ["--my" as string]: `${cur.y}px`, ["--ms" as string]: cur.scale } as CSSProperties)
+      ? ({ ["--mx" as string]: offset(cur, cur.x), ["--my" as string]: offset(cur, cur.y), ["--ms" as string]: cur.scale } as CSSProperties)
       : {}),
     // A layer above neighbouring sections' backgrounds: moved pieces always sit in front.
     ...(placed ? { zIndex: (saved as Placement | undefined)?.z ?? 5 } : {}),
@@ -191,7 +194,10 @@ export function Movable({
     e.stopPropagation();
     selectEl({ sectionId: s.id, id, builtin: true });
     const kind = (e.target as HTMLElement).dataset.handle === "resize" ? "resize" : "move";
-    drag.current = { kind, x: e.clientX, y: e.clientY, start: cur, w: ref.current?.offsetWidth || 300 };
+    const secW = (ref.current?.closest("[data-sec]") as HTMLElement | null)?.offsetWidth || 1200;
+    // Older placements were saved in pixels; switch them to section-width units.
+    const start: Placement = cur.u ? cur : { ...cur, x: (cur.x / secW) * 1000, y: (cur.y / secW) * 1000, u: 1 };
+    drag.current = { kind, x: e.clientX, y: e.clientY, start, w: ref.current?.offsetWidth || 300, secW };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
@@ -199,12 +205,14 @@ export function Movable({
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d) return;
-    const dx = e.clientX - d.x;
-    const dy = e.clientY - d.y;
+    // Pointer moves are on screen; the page inside the editor is zoomed.
+    const dx = (e.clientX - d.x) / zoom;
+    const dy = (e.clientY - d.y) / zoom;
     if (d.kind === "move") {
-      // Snap to an 8px grid unless Alt is held.
-      const snap = (v: number) => (e.altKey ? v : Math.round(v / 8) * 8);
-      setLive({ ...d.start, x: snap(d.start.x + dx), y: snap(d.start.y + dy) });
+      // Positions are in 1/1000s of the section width so they hold on every screen size.
+      const toU = (px: number) => (px / d.secW) * 1000;
+      const snap = (v: number) => (e.altKey ? Math.round(v * 10) / 10 : Math.round(v / 4) * 4);
+      setLive({ ...d.start, x: snap(d.start.x + toU(dx)), y: snap(d.start.y + toU(dy)) });
     } else {
       const scale = Math.max(0.3, Math.min(3, d.start.scale * (1 + dx / d.w)));
       setLive({ ...d.start, scale: Math.round(scale * 100) / 100 });
@@ -243,6 +251,11 @@ export function Movable({
       />
     </div>
   );
+}
+
+/** CSS offset for a placement: section-width units (new) or plain pixels (older saves). */
+function offset(p: Placement, v: number) {
+  return p.u ? `calc(${v} * 100cqw / 1000)` : `${v}px`;
 }
 
 /* ---------- free elements ---------- */
@@ -337,7 +350,7 @@ export function ElBody({ el, editingText, onText }: { el: El; editingText?: bool
  * into (double-click).
  */
 export function ElementsLayer({ s }: { s: Section }) {
-  const { editing, sel, selectEl, updateEl } = useContext(EditContext);
+  const { editing, sel, selectEl, updateEl, zoom } = useContext(EditContext);
   const els = s.els ?? [];
   const layerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: string; kind: "move" | "resize"; px: number; py: number; el: El; w: number } | null>(null);
@@ -364,9 +377,9 @@ export function ElementsLayer({ s }: { s: Section }) {
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d) return;
-    const dxPct = ((e.clientX - d.px) / d.w) * 100;
+    const dxPct = ((e.clientX - d.px) / zoom / d.w) * 100;
     // Vertical movement in 1/1000s of the section width (see El in layout-types).
-    const dy = ((e.clientY - d.py) / d.w) * 1000;
+    const dy = ((e.clientY - d.py) / zoom / d.w) * 1000;
     if (d.kind === "move") {
       const snapX = (v: number) => (e.altKey ? v : Math.round(v * 2) / 2);
       const snapY = (v: number) => (e.altKey ? Math.round(v) : Math.round(v / 4) * 4);

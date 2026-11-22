@@ -56,7 +56,9 @@ export type TextFmt = {
 
 /** Desktop-only nudge for one built-in piece: offset in px, a size multiplier,
  * a layer (z) and whether it has been removed from the page. */
-export type Placement = { x: number; y: number; scale: number; z?: number; hidden?: boolean };
+export type Placement = {
+  /** 1 = x/y are in 1/1000s of the section width (older saves are pixels). */
+  u?: 1; x: number; y: number; scale: number; z?: number; hidden?: boolean };
 
 export type ElKind = "text" | "image" | "button" | "shape";
 
@@ -92,6 +94,8 @@ export type El = {
 
 export type Section = {
   id: string;
+  /** 1 = an older hand-placed "What we do" has been folded into the design. */
+  tidy?: 1;
   type: SectionType;
   hidden?: boolean;
   text: Record<string, string>;
@@ -184,6 +188,8 @@ export const SECTION_LIBRARY: Record<SectionType, LibraryEntry> = {
       s3line: "Logos, posters and a look people remember anywhere they see it.",
       s4title: "Social media",
       s4line: "Content your audience follows, loves and shares — and growth you can see.",
+      s3tag: "stand out.\nbe remembered.",
+      s4tag: "Short-form content\nBehind the scenes footage\nContent that grows with you",
       statsLabel: "Audience growth",
       n1value: "+312%",
       n1label: "Reach growth",
@@ -193,9 +199,9 @@ export const SECTION_LIBRARY: Record<SectionType, LibraryEntry> = {
       n3label: "New followers",
     },
     slots: {
-      site: { label: "Website mock-up", max: 4, defaults: THUMBS.slice(0, 4) },
+      site: { label: "Websites (3 screenshots)", max: 3, defaults: THUMBS.slice(0, 3) },
       photos: { label: "Photography", max: 8, defaults: THUMBS.slice(0, 8) },
-      brand: { label: "Branding", max: 3, defaults: [THUMBS[4], THUMBS[6], THUMBS[7]] },
+      brand: { label: "Branding board", max: 1, defaults: [THUMBS[4]] },
     },
   },
   about: {
@@ -423,7 +429,7 @@ export function parseLayout(value: unknown): HomeLayout | null {
   const ids = new Set<string>();
   for (const s of raw) {
     if (!s || typeof s !== "object") return null;
-    const { id, type, hidden, text, style, images, place, els, fmt, showOrder } = s as Record<string, unknown>;
+    const { id, type, hidden, text, style, images, place, els, fmt, showOrder, tidy } = s as Record<string, unknown>;
     if (typeof id !== "string" || !/^[a-z0-9-]{1,40}$/i.test(id) || ids.has(id)) return null;
     if (typeof type !== "string" || !ALL_TYPES.includes(type as SectionType)) return null;
     const lib = SECTION_LIBRARY[type as SectionType];
@@ -449,15 +455,18 @@ export function parseLayout(value: unknown): HomeLayout | null {
     if (place && typeof place === "object") {
       for (const [el, p] of Object.entries(place as Record<string, unknown>)) {
         if (!/^[a-z0-9-]{1,30}$/i.test(el) || !p || typeof p !== "object") continue;
-        const { x, y, scale, z, hidden: gone } = p as Record<string, unknown>;
+        const { x, y, scale, z, hidden: gone, u } = p as Record<string, unknown>;
         const px = typeof x === "number" ? x : 0;
         const py = typeof y === "number" ? y : 0;
         const ps = typeof scale === "number" ? scale : 1;
+        const lim = u === 1 ? 3000 : 1200;
+        const r = (v: number) => (u === 1 ? Math.round(v * 10) / 10 : Math.round(v));
         const place: Placement = {
-          x: Math.max(-1200, Math.min(1200, Math.round(px))),
-          y: Math.max(-1200, Math.min(1200, Math.round(py))),
+          x: Math.max(-lim, Math.min(lim, r(px))),
+          y: Math.max(-lim, Math.min(lim, r(py))),
           scale: Math.max(0.3, Math.min(3, Math.round(ps * 100) / 100)),
         };
+        if (u === 1) place.u = 1;
         if (typeof z === "number") place.z = Math.max(1, Math.min(99, Math.round(z)));
         if (gone === true) place.hidden = true;
         cleanPlace[el] = place;
@@ -502,8 +511,50 @@ export function parseLayout(value: unknown): HomeLayout | null {
       }
       if (list.length) sec.els = list;
     }
+    if (sec.type === "showcases") {
+      if (tidy !== 1) tidyShowcases(sec);
+      sec.tidy = 1;
+    }
     sections.push(sec);
   }
   const theme = parseTheme((value as { theme?: unknown }).theme);
   return theme ? { version: 1, sections, theme } : { version: 1, sections };
+}
+
+/**
+ * "What we do" now lays itself out (it lines up on every screen). Older saves
+ * built it from loose pieces placed by hand; fold those into the design once:
+ * screenshots side by side become the website slot, the next picture the
+ * branding board, and the loose taglines become the section's own words.
+ */
+function tidyShowcases(sec: Section) {
+  const els = sec.els ?? [];
+  const imgs = els.filter((e) => e.kind === "image" && e.src).sort((a, b) => a.y - b.y);
+  if (imgs.length) {
+    const top = imgs[0].y;
+    const row = imgs.filter((e) => e.y - top < 120).sort((a, b) => a.x - b.x);
+    const rest = imgs.filter((e) => !row.includes(e));
+    const images = { ...(sec.images ?? {}) };
+    if (row.length >= 2) {
+      images.site = row.slice(0, 3).map((e) => e.src!);
+      if (rest[0]) images.brand = [rest[0].src!];
+    } else {
+      images.brand = [imgs[0].src!];
+    }
+    sec.images = images;
+  }
+  for (const e of els) {
+    const t = (e.text ?? "").trim();
+    if (/stand out/i.test(t)) sec.text.s3tag = t;
+    else if (/short-form|behind the scenes/i.test(t)) sec.text.s4tag = t;
+  }
+  delete sec.els;
+  delete sec.place;
+  if (sec.style) {
+    const st = { ...sec.style };
+    delete st.fixedH;
+    delete st.spill;
+    sec.style = Object.keys(st).length ? st : undefined;
+    if (!sec.style) delete sec.style;
+  }
 }

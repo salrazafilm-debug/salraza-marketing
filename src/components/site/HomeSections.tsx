@@ -45,7 +45,7 @@ function luminance(hex: string) {
  * z 1-2 behind content → content (z 3) → z 4+ in front. */
 export function SectionFrame({ s, children }: { s: Section; children: ReactNode }) {
   const st = styleOf(s);
-  const { editing, selSection, setFixedH } = useEdit();
+  const { editing, selSection, setFixedH, zoom } = useEdit();
   let mode: "light" | "dark" | undefined;
   let background: string | undefined;
   const cls: string[] = [];
@@ -89,7 +89,7 @@ export function SectionFrame({ s, children }: { s: Section; children: ReactNode 
       data-mode={mode}
       data-sec={s.id}
       className={`group/sec relative ${cls.join(" ")}`}
-      style={st.fixedH ? { height: st.fixedH } : undefined}
+      style={{ containerType: "inline-size", ...(st.fixedH ? { height: st.fixedH } : {}) }}
     >
       {background && (
         <div
@@ -119,7 +119,7 @@ export function SectionFrame({ s, children }: { s: Section; children: ReactNode 
           }}
           onPointerMove={(e) => {
             if (!drag.current) return;
-            const raw = drag.current.h + (e.clientY - drag.current.y);
+            const raw = drag.current.h + (e.clientY - drag.current.y) / zoom;
             const h = Math.max(16, Math.min(3000, e.altKey ? raw : Math.round(raw / 8) * 8));
             setFixedH(s.id, h);
           }}

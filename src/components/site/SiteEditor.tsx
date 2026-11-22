@@ -673,9 +673,26 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
     return () => window.removeEventListener("beforeunload", onLeave);
   }, [unpublished]);
 
+  // The page is laid out at the real screen width, then shrunk to fit between
+  // the panels — so what you arrange here is exactly what the live site shows.
+  const [view, setView] = useState({ w: 0, zoom: 1 });
+  useEffect(() => {
+    const measure = () => {
+      const w = document.documentElement.clientWidth;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const wide = window.innerWidth >= 1280;
+      const pad = wide ? (showLayers ? 17 * rem : 0) + (showPanel ? 19.5 * rem : 0) : 0;
+      setView({ w, zoom: Math.max(0.3, (w - pad) / w) });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [showLayers, showPanel]);
+
   const editApi = useMemo(
     () => ({
       editing: true,
+      zoom: view.zoom,
       moveMode,
       sel,
       textSel,
@@ -714,7 +731,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
           return { ...s, place: Object.keys(nextPlace).length ? nextPlace : undefined };
         }),
     }),
-    [moveMode, sel, textSel, selectedId, updateEl, updateSection]
+    [moveMode, sel, textSel, selectedId, updateEl, updateSection, view.zoom]
   );
 
   /* ----- section actions ----- */
@@ -846,9 +863,11 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
         style={{ paddingLeft: showLayers ? "var(--ed-left)" : 0, paddingRight: showPanel ? "var(--ed-right)" : 0 }}
       >
         <style>{`@media (min-width: 1280px){:root{--ed-left:17rem;--ed-right:19.5rem}}`}</style>
-        <EditProvider value={editApi}>
-          <HomeSections layout={layout} slots={slots} canvas={{ selectedId, select }} />
-        </EditProvider>
+        <div style={view.w ? { width: view.w, zoom: view.zoom } : undefined}>
+          <EditProvider value={editApi}>
+            <HomeSections layout={layout} slots={slots} canvas={{ selectedId, select }} />
+          </EditProvider>
+        </div>
       </div>
 
       {/* ----- Layers ----- */}
