@@ -11,6 +11,9 @@ import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { ClientSettingsForm } from "@/components/ClientSettingsForm";
 import { ClientPasswordsManager } from "@/components/ClientPasswordsManager";
 import { listGuestPasswords } from "@/lib/guest-access";
+import { IntroVideoManager } from "@/components/IntroVideoManager";
+import { ORIGINAL_INTRO_VIDEO, getIntroVideoSetting } from "@/lib/intro-video";
+import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { AdminVault, INDIVIDUAL } from "@/components/admin/AdminVault";
 import { ClientPreview } from "@/components/admin/ClientPreview";
 import { VaultLookEditor } from "@/components/admin/VaultLookEditor";
@@ -26,7 +29,7 @@ const TABS = [
   { id: "preview", label: "Client view & customize" },
   { id: "access", label: "Passwords" },
 ] as const;
-type Tab = (typeof TABS)[number]["id"];
+type Tab = (typeof TABS)[number]["id"] | "intro";
 
 export default async function AdminClientPage({
   params,
@@ -42,10 +45,12 @@ export default async function AdminClientPage({
 
   const { slug } = await params;
   const { tab: tabParam, folder } = await searchParams;
-  const tab: Tab = TABS.some((t) => t.id === tabParam) ? (tabParam as Tab) : "folders";
-
   const client = await findClientBySlug(slug);
   if (!client) notFound();
+  // The intro video belongs to DMV Marksmen, the vault that plays one.
+  const hasIntro = client.slug === MARKSMEN_SLUG;
+  const tabs: readonly { id: Tab; label: string }[] = hasIntro ? [...TABS, { id: "intro", label: "Intro video" }] : TABS;
+  const tab: Tab = tabs.some((t) => t.id === tabParam) ? (tabParam as Tab) : "folders";
   const [extraPasswords, guestPasswords, variantsByItem, look] = await Promise.all([
     listClientPasswords(client.slug),
     listGuestPasswords(client.slug),
@@ -89,7 +94,7 @@ export default async function AdminClientPage({
 
           <nav className="sticky top-20 z-20 -mx-4 mb-8 overflow-x-auto border-b border-line bg-paper/95 px-4 backdrop-blur sm:mx-0 sm:px-0">
             <div className="flex gap-1">
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <Link
                   key={t.id}
                   href={`?tab=${t.id}`}
@@ -142,9 +147,20 @@ export default async function AdminClientPage({
             </div>
           )}
 
+          {tab === "intro" && hasIntro && (
+            <div className="max-w-3xl">
+              <IntroVideoManager setting={await getIntroVideoSetting()} originalSrc={ORIGINAL_INTRO_VIDEO} />
+            </div>
+          )}
+
           {tab === "access" && (
             <div className="max-w-xl">
-              <ClientPasswordsManager clientSlug={client.slug} passwords={extraPasswords} guestPasswords={guestPasswords} />
+              <ClientPasswordsManager
+                clientSlug={client.slug}
+                passwords={extraPasswords}
+                guestPasswords={guestPasswords}
+                folders={client.folders.map((f) => ({ id: f.id, name: f.name, count: client.media.filter((m) => m.folderId === f.id).length }))}
+              />
             </div>
           )}
         </div>

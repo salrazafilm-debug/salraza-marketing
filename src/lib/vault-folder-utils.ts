@@ -24,3 +24,13 @@ export function getFolderCoverSrc(folder: Folder, items: MediaItem[]): string | 
   if (firstImage) return firstImage.src;
   return items.map(thumbOf).find((src): src is string => Boolean(src)) ?? null;
 }
+
+/** "12 photos · 2 videos" */
+export function folderCountLabel(items: MediaItem[]): string {
+  const photos = items.filter((item) => item.type === "image").length;
+  const videos = items.length - photos;
+  const parts: string[] = [];
+  if (photos) parts.push(`${photos} photo${photos === 1 ? "" : "s"}`);
+  if (videos) parts.push(`${videos} video${videos === 1 ? "" : "s"}`);
+  return parts.join(" · ");
+}

@@ -19,8 +19,8 @@ function base64url(input: Buffer | string): string {
 }
 
 /** Signs a client vault session token. A "guest" token can only see folder covers. */
-export function signSession(slug: string, access: "full" | "guest" = "full"): string {
-  const payload = JSON.stringify({ slug, exp: Date.now() + SESSION_TTL_MS, ...(access === "guest" ? { access } : {}) });
+export function signSession(slug: string, access: "full" | "guest" = "full", gid?: string): string {
+  const payload = JSON.stringify({ slug, exp: Date.now() + SESSION_TTL_MS, ...(access === "guest" ? { access, gid } : {}) });
   const encodedPayload = base64url(payload);
   const signature = createHmac("sha256", getSecret()).update(encodedPayload).digest("base64url");
   return `${encodedPayload}.${signature}`;
@@ -30,7 +30,7 @@ export function signSession(slug: string, access: "full" | "guest" = "full"): st
  * Verifies a session token and returns what it grants: the client slug and
  * whether it is a full or guest (covers only) session. Null if invalid or expired.
  */
-export function verifySessionAccess(token: string | undefined | null): { slug: string; access: "full" | "guest" } | null {
+export function verifySessionAccess(token: string | undefined | null): { slug: string; access: "full" | "guest"; gid?: string } | null {
   if (!token) return null;
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
@@ -49,7 +49,11 @@ export function verifySessionAccess(token: string | undefined | null): { slug: s
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
     if (typeof payload.slug !== "string" || typeof payload.exp !== "number") return null;
     if (Date.now() > payload.exp) return null;
-    return { slug: payload.slug, access: payload.access === "guest" ? "guest" : "full" };
+    return {
+      slug: payload.slug,
+      access: payload.access === "guest" ? "guest" : "full",
+      gid: typeof payload.gid === "string" ? payload.gid : undefined,
+    };
   } catch {
     return null;
   }

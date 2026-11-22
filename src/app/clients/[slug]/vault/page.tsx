@@ -14,7 +14,8 @@ import { RevealSection } from "@/components/RevealSection";
 import { VaultMediaGrid, type VaultMediaItem } from "@/components/VaultMediaGrid";
 import { VaultFolderGrid } from "@/components/VaultFolderGrid";
 import { LockedFolderGrid, type LockedFolder } from "@/components/LockedFolderGrid";
-import { formatEventDate, getFolderCoverSrc } from "@/lib/vault-folder-utils";
+import { folderCountLabel, formatEventDate, getFolderCoverSrc } from "@/lib/vault-folder-utils";
+import { getGuestFolders } from "@/lib/guest-access";
 import { SectionFrame } from "@/components/site/HomeSections";
 import { getVaultLook } from "@/lib/vault-look";
 import { resolveIntroVideo } from "@/lib/intro-video";
@@ -50,7 +51,11 @@ export default async function VaultPage({
   }
   // A guest (covers-only password) sees locked folder covers and nothing else.
   const isGuest = !isAdmin && session?.access === "guest";
-  if (isGuest && folderParam) redirect(`/clients/${slug}/vault`);
+  // Which folders this guest password may open, set per password in Admin.
+  // null = that password was removed, so the session no longer counts.
+  const guestAllowed = isGuest ? await getGuestFolders(slug, session?.gid ?? "").catch(() => null) : null;
+  if (isGuest && guestAllowed === null) redirect("/clients?error=session");
+  if (isGuest && folderParam && !guestAllowed?.includes(folderParam)) redirect(`/clients/${slug}/vault`);
 
   const activeFolder = folderParam ? client.folders.find((folder) => folder.id === folderParam) : undefined;
   const lockedFolders: LockedFolder[] = isGuest
@@ -62,6 +67,9 @@ export default async function VaultPage({
           name: folder.name,
           dateLabel: folder.eventDate ? formatEventDate(folder.eventDate) : null,
           cover: getFolderCoverSrc(folder, items),
+          open: !!guestAllowed?.includes(folder.id),
+          href: `/clients/${slug}/vault?folder=${folder.id}`,
+          countLabel: folderCountLabel(items),
         }))
     : [];
   const showIntro = slug === MARKSMEN_SLUG && intro === "1";
@@ -117,13 +125,13 @@ export default async function VaultPage({
               </div>
             </RevealSection>
 
-            {isGuest ? (
+            {isGuest && !activeFolder ? (
               <RevealSection index={step++}>
                 <div className="mt-10 flex flex-col gap-6">
                   <div className="mx-auto flex max-w-xl flex-col items-center gap-2 rounded-xl bg-cream px-6 py-5 text-center">
                     <p className="text-subhead text-ink">Guest preview</p>
                     <p className="text-body text-ink-muted">
-                      You can see the covers of each folder. The photos and videos inside are private and locked.
+                      You can see the cover of every folder. Folders with a lock are private; folders without one you can open.
                     </p>
                   </div>
                   {lockedFolders.length > 0 ? (

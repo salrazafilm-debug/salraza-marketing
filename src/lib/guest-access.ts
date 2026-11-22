@@ -7,7 +7,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
  * Stored per client in the existing site_content table (one JSON row per
  * client), so no database change is needed. Only password hashes are kept.
  */
-type Guest = { id: string; hash: string; createdAt: string };
+type Guest = { id: string; hash: string; createdAt: string; /** Folder ids this password may open; everything else stays locked. */ folders: string[] };
 
 const PREFIX = "guest-pw:";
 const keyFor = (slug: string) => `${PREFIX}${slug}`;
@@ -17,7 +17,9 @@ function parse(value: string | null): Guest[] {
   try {
     const list = JSON.parse(value);
     return Array.isArray(list)
-      ? list.filter((g): g is Guest => g && typeof g.id === "string" && typeof g.hash === "string" && typeof g.createdAt === "string")
+      ? list
+          .filter((g) => g && typeof g.id === "string" && typeof g.hash === "string" && typeof g.createdAt === "string")
+          .map((g): Guest => ({ id: g.id, hash: g.hash, createdAt: g.createdAt, folders: Array.isArray(g.folders) ? g.folders.filter((f: unknown) => typeof f === "string") : [] }))
       : [];
   } catch {
     return [];
@@ -41,9 +43,9 @@ async function save(slug: string, list: Guest[]): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function listGuestPasswords(slug: string): Promise<{ id: string; createdAt: string }[]> {
+export async function listGuestPasswords(slug: string): Promise<{ id: string; createdAt: string; folders: string[] }[]> {
   try {
-    return (await load(slug)).map((g) => ({ id: g.id, createdAt: g.createdAt }));
+    return (await load(slug)).map((g) => ({ id: g.id, createdAt: g.createdAt, folders: g.folders }));
   } catch {
     return [];
   }
@@ -51,7 +53,7 @@ export async function listGuestPasswords(slug: string): Promise<{ id: string; cr
 
 export async function addGuestPassword(slug: string, password: string): Promise<void> {
   const list = await load(slug);
-  list.push({ id: randomBytes(6).toString("hex"), hash: hashPassword(password), createdAt: new Date().toISOString() });
+  list.push({ id: randomBytes(6).toString("hex"), hash: hashPassword(password), createdAt: new Date().toISOString(), folders: [] });
   await save(slug, list);
 }
 
@@ -60,8 +62,20 @@ export async function deleteGuestPassword(slug: string, id: string): Promise<voi
   await save(slug, list.filter((g) => g.id !== id));
 }
 
-/** The vault slug whose guest password matches, or null. */
-export async function findGuestSlugByPassword(password: string): Promise<string | null> {
+/** Which folders this guest password may open (null = the password no longer exists). */
+export async function getGuestFolders(slug: string, id: string): Promise<string[] | null> {
+  const g = (await load(slug)).find((x) => x.id === id);
+  return g ? g.folders : null;
+}
+
+export async function setGuestFolders(slug: string, id: string, folders: string[]): Promise<void> {
+  const list = await load(slug);
+  if (!list.some((g) => g.id === id)) throw new Error("Guest password not found.");
+  await save(slug, list.map((g) => (g.id === id ? { ...g, folders } : g)));
+}
+
+/** The vault and guest password id that match, or null. */
+export async function findGuestByPassword(password: string): Promise<{ slug: string; id: string } | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("site_content")
@@ -70,7 +84,8 @@ export async function findGuestSlugByPassword(password: string): Promise<string 
     .returns<{ key: string; value: string | null }[]>();
   if (error || !data) return null;
   for (const row of data) {
-    if (parse(row.value).some((g) => verifyPassword(password, g.hash))) return row.key.slice(PREFIX.length);
+    const hit = parse(row.value).find((g) => verifyPassword(password, g.hash));
+    if (hit) return { slug: row.key.slice(PREFIX.length), id: hit.id };
   }
   return null;
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findClientSlugByPassword } from "@/lib/clients";
-import { findGuestSlugByPassword } from "@/lib/guest-access";
+import { findGuestByPassword } from "@/lib/guest-access";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 
 export async function POST(request: Request) {
@@ -18,16 +18,16 @@ export async function POST(request: Request) {
 
   const slug = await findClientSlugByPassword(password);
   // A guest password opens the same vault, but only shows locked folder covers.
-  const guestSlug = slug ? null : await findGuestSlugByPassword(password).catch(() => null);
+  const guest = slug ? null : await findGuestByPassword(password).catch(() => null);
   const access = slug ? "full" : "guest";
-  const target = slug ?? guestSlug;
+  const target = slug ?? guest?.slug ?? null;
 
   if (!target) {
     return NextResponse.json({ error: "That password didn't match a Media Vault." }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true, slug: target, guest: access === "guest" });
-  response.cookies.set(SESSION_COOKIE, signSession(target, access), {
+  response.cookies.set(SESSION_COOKIE, signSession(target, access, guest?.id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
