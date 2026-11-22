@@ -1,7 +1,6 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import Image from "next/image";
 import Link from "next/link";
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Hero } from "@/components/cinema/Hero";
@@ -254,35 +253,81 @@ function Gallery({ s, slot }: { s: Section; slot: ReactNode }) {
   );
 }
 
+/** The Media Vault invite: its own cinematic section, text on one side and a
+ * "vault" of stacked work behind frosted glass on the other. */
 function Vault({ s }: { s: Section }) {
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-20">
-      <Movable s={s} id="card" label="Vault card" className="mx-auto max-w-[1200px]">
-        <div className="vintage relative overflow-hidden rounded-2xl border border-line">
-          <Image
-            src="/client-work-vault.webp"
-            alt=""
-            aria-hidden
-            fill
-            sizes="(min-width: 1200px) 1200px, 100vw"
-            className="object-cover [filter:sepia(.35)_contrast(1.1)_saturate(.8)]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0d090a] via-[#0d090a]/85 to-[#5c0f24]/60" />
-          <div className="relative flex flex-col items-start gap-5 px-6 py-14 sm:gap-6 sm:px-14 sm:py-20">
-            <Txt s={s} k="eyebrow" as="p" className="block text-xs uppercase tracking-[0.3em] text-[#e6b98f]" />
-            <h2 className="font-display text-3xl font-black uppercase text-[#f4efe9] sm:text-6xl">
-              <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" className="text-[#f5c84c]" />
-            </h2>
-            <Txt s={s} k="body" as="p" className="block max-w-lg text-base text-[#f4efe9]/85 sm:text-lg" />
+    <section className="relative overflow-hidden px-4 py-20 sm:px-6 sm:py-28">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse 55% 60% at 75% 50%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)" }}
+      />
+      <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 md:grid-cols-[1.05fr_1fr] md:gap-16">
+        <Movable s={s} id="text" label="Text" className="max-md:text-center">
+          <Reveal>
+            <Txt s={s} k="eyebrow" as="p" className="block text-xs uppercase tracking-[0.3em] text-warm-text" />
+          </Reveal>
+          <Reveal delay={80} as="h2" className="mt-4 font-display text-4xl font-black uppercase leading-[0.98] text-ink sm:text-6xl">
+            <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" className="title-lit" />
+          </Reveal>
+          <Reveal delay={160}>
+            <Txt s={s} k="body" as="p" className="mt-5 block max-w-md text-base text-ink/80 max-md:mx-auto sm:text-lg" />
+          </Reveal>
+          <Reveal delay={220} className="mt-6 flex flex-wrap gap-2 max-md:justify-center">
+            {["Photos", "Videos", "Edits", "Private & secure"].map((t) => (
+              <span key={t} className="rounded-full border border-ink/15 bg-ink/5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-ink/80">
+                {t}
+              </span>
+            ))}
+          </Reveal>
+          <Reveal delay={280} className="mt-8">
             <Link
               href="/clients"
-              className="focus-brand rounded-full bg-[#f5c84c] px-7 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] transition-colors duration-300 hover:bg-[#8e1b3a] hover:text-white"
+              className="focus-brand group inline-flex items-center gap-3 rounded-full bg-[#f5c84c] px-7 py-4 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] shadow-[0_18px_40px_-18px_rgba(245,200,76,.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#8e1b3a] hover:text-white"
             >
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <rect x="4" y="9" width="12" height="9" rx="2" />
+                <path d="M7 9V6a3 3 0 0 1 6 0v3" />
+              </svg>
               <Txt s={s} k="cta" />
+              <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
             </Link>
-          </div>
-        </div>
-      </Movable>
+          </Reveal>
+        </Movable>
+
+        <Movable s={s} id="visual" label="Vault picture">
+          <Reveal delay={120}>
+            <div className="group relative mx-auto aspect-[4/3.4] w-full max-w-[520px]">
+              {/* Stacked prints peeking out from behind the vault card. */}
+              <div className="absolute left-[6%] top-[4%] h-[62%] w-[52%] -rotate-6 overflow-hidden rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-700 group-hover:-translate-x-3 group-hover:-rotate-[9deg]">
+                <img src="/client-work-vault.webp" alt="" className="h-full w-full object-cover [filter:sepia(.25)_saturate(.9)]" />
+              </div>
+              <div className="absolute right-[4%] top-0 h-[58%] w-[48%] rotate-[5deg] overflow-hidden rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-700 group-hover:translate-x-3 group-hover:rotate-[8deg]">
+                <img src="/client-work-vault.webp" alt="" className="h-full w-full object-cover object-right [filter:saturate(1.1)]" />
+              </div>
+              {/* The vault card itself: frosted glass with a lock. */}
+              <div
+                data-mode="dark"
+                className="absolute inset-x-[8%] bottom-0 flex h-[52%] flex-col items-center justify-center gap-3 rounded-2xl border border-white/15 bg-[#160b0d]/70 text-center text-[#f4efe9] shadow-[0_40px_80px_-30px_rgba(0,0,0,.8)] backdrop-blur-xl"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5c84c] text-[#160b0d] shadow-[0_0_40px_rgba(245,200,76,.5)]">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <rect x="4" y="9" width="12" height="9" rx="2" />
+                    <path d="M7 9V6a3 3 0 0 1 6 0v3" />
+                  </svg>
+                </span>
+                <p className="font-display text-lg font-black uppercase tracking-wide">Your private gallery</p>
+                <p className="flex gap-1.5" aria-hidden>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <span key={i} className="h-2 w-2 rounded-full bg-[#f4efe9]/60" />
+                  ))}
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        </Movable>
+      </div>
     </section>
   );
 }
@@ -302,8 +347,8 @@ function Quote({ s, slot }: { s: Section; slot: ReactNode }) {
         </Movable>
         <Movable s={s} id="form" label="Form" className="mt-12">
           <div
-            data-mode="dark"
-            className="vintage relative overflow-hidden rounded-2xl bg-paper p-4 text-ink shadow-[0_40px_80px_-40px_rgba(40,8,20,.7)] sm:p-8"
+            data-mode="light"
+            className="relative overflow-hidden rounded-2xl bg-[#fbf7f2] p-4 text-ink shadow-[0_50px_100px_-40px_rgba(20,4,10,.75)] ring-1 ring-black/5 sm:p-8"
           >
             {slot}
           </div>

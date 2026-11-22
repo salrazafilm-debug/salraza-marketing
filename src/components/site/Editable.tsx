@@ -83,45 +83,49 @@ export function Txt({ s, k, as: Tag = "span", className = "" }: { s: Section; k:
   const { editing, moveMode, textSel, selectText, setText } = useContext(EditContext);
   const value = textOf(s, k);
   const f = s.fmt?.[k];
-  // The text's own look (colour, font, size, weight) on top of the design's.
+  // The text's own look sits on an inner span so it layers on top of the
+  // design: size is a multiple of the design's size (em), so the box, line
+  // wrapping and phone sizing all keep working.
   const style: CSSProperties | undefined = f
     ? {
-        ...(f.color ? { color: f.color, WebkitTextFillColor: f.color, background: "none" } : {}),
+        ...(f.color ? { color: f.color, WebkitTextFillColor: f.color } : {}),
         ...(f.font ? { fontFamily: FMT_FONT[f.font] } : {}),
-        ...(f.size ? { zoom: f.size } : {}),
+        ...(f.size ? { fontSize: `${f.size}em` } : {}),
         ...(f.weight ? { fontWeight: f.weight } : {}),
         ...(f.italic ? { fontStyle: "italic" } : {}),
       }
     : undefined;
   if (!editing || moveMode) {
     return (
-      <Tag className={className} style={style}>
-        {value}
+      <Tag className={className}>
+        <span style={style}>{value}</span>
       </Tag>
     );
   }
   const isSel = textSel?.sectionId === s.id && textSel.key === k;
   return (
-    <Tag
-      data-txt={`${s.id}:${k}`}
-      className={`${className} cursor-text rounded-sm outline-dashed outline-1 outline-offset-4 transition-[outline-color] ${
-        isSel ? "outline-spark" : "outline-transparent hover:outline-spark/70"
-      }`}
-      style={style}
-      contentEditable
-      suppressContentEditableWarning
-      spellCheck
-      onFocus={() => selectText({ sectionId: s.id, key: k })}
-      onClick={(e: React.MouseEvent) => e.preventDefault()}
-      onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
-        if (e.key === "Escape") e.currentTarget.blur();
-      }}
-      onBlur={(e: React.FocusEvent<HTMLElement>) => {
-        const next = e.currentTarget.innerText.trim();
-        if (next !== value) setText(s.id, k, next);
-      }}
-    >
-      {value}
+    <Tag className={className}>
+      <span
+        data-txt={`${s.id}:${k}`}
+        className={`cursor-text rounded-sm outline-dashed outline-1 outline-offset-4 transition-[outline-color] ${
+          isSel ? "outline-spark" : "outline-transparent hover:outline-spark/70"
+        }`}
+        style={style}
+        contentEditable
+        suppressContentEditableWarning
+        spellCheck
+        onFocus={() => selectText({ sectionId: s.id, key: k })}
+        onClick={(e: React.MouseEvent) => e.preventDefault()}
+        onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
+          if (e.key === "Escape") e.currentTarget.blur();
+        }}
+        onBlur={(e: React.FocusEvent<HTMLElement>) => {
+          const next = e.currentTarget.innerText.trim();
+          if (next !== value) setText(s.id, k, next);
+        }}
+      >
+        {value}
+      </span>
     </Tag>
   );
 }
@@ -180,7 +184,7 @@ export function Movable({
   };
   const cls = `${className} relative md:[translate:var(--mx,0px)_var(--my,0px)] md:[scale:var(--ms,1)]`;
 
-  if (!editing || !moveMode) {
+  if (!editing) {
     return (
       <div className={cls} style={style} data-el={`${s.id}:${id}`} data-label={label ?? id}>
         {children}
@@ -190,10 +194,15 @@ export function Movable({
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
+    const handle = (e.target as HTMLElement).closest("[data-handle]")?.getAttribute("data-handle");
+    if (handle === "delete") return;
+    // Outside "Move & resize" mode only the grip and corner handle drag, so
+    // clicking the words still edits them.
+    if (!moveMode && !handle) return;
     e.preventDefault();
     e.stopPropagation();
     selectEl({ sectionId: s.id, id, builtin: true });
-    const kind = (e.target as HTMLElement).dataset.handle === "resize" ? "resize" : "move";
+    const kind = handle === "resize" ? "resize" : "move";
     const secEl = ref.current?.closest("[data-sec]") as HTMLElement | null;
     const secW = secEl?.offsetWidth || 1200;
     // How far (on screen) the middle of this piece is from the middle of the section.
@@ -238,25 +247,62 @@ export function Movable({
       ref={ref}
       data-el={`${s.id}:${id}`}
       data-label={label ?? id}
-      className={`${cls} cursor-move touch-none outline-dashed outline-2 outline-offset-4 ${
-        isSel ? "outline-[#f5c84c]" : "outline-[#f5c84c]/40 hover:outline-[#f5c84c]"
+      className={`${cls} group/mv ${moveMode ? "cursor-move touch-none" : ""} outline-dashed outline-2 outline-offset-4 ${
+        isSel || live ? "outline-[#f5c84c]" : moveMode ? "outline-[#f5c84c]/40 hover:outline-[#f5c84c]" : "outline-transparent hover:outline-[#f5c84c]/50"
       }`}
       style={style}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onDoubleClick={() => setPlace(s.id, id, saved?.z ? { x: 0, y: 0, scale: 1, z: saved.z } : null)}
-      title="Drag to move · drag the corner to resize · double-click to reset"
+      onDoubleClick={() => moveMode && setPlace(s.id, id, saved?.z ? { x: 0, y: 0, scale: 1, z: saved.z } : null)}
+      title={moveMode ? "Drag to move · drag the corner to resize · double-click to reset" : undefined}
     >
-      <div className="pointer-events-none select-none">{children}</div>
-      <span className="pointer-events-none absolute -top-6 left-0 z-20 rounded bg-[#f5c84c] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black">
-        {label ?? id}
-        {cur.scale !== 1 ? ` · ${Math.round(cur.scale * 100)}%` : ""}
+      <div className={moveMode ? "pointer-events-none select-none" : ""}>{children}</div>
+      {/* Tab with the piece's name, a grip to drag it and a button to remove it. */}
+      <span
+        data-mode="dark"
+        className={`absolute -top-7 left-0 z-[70] flex items-center overflow-hidden rounded-md bg-[#f5c84c] text-[10px] font-bold uppercase tracking-wider text-black shadow-lg transition-opacity ${
+          isSel || moveMode ? "opacity-100" : "opacity-0 group-hover/mv:opacity-100"
+        }`}
+      >
+        <span data-handle="move" className="flex cursor-grab touch-none items-center gap-1 px-1.5 py-1 hover:bg-black/10 active:cursor-grabbing" title="Drag to move">
+          ⠿ {label ?? id}
+          {cur.scale !== 1 ? ` · ${Math.round(cur.scale * 100)}%` : ""}
+        </span>
+        {placed && (
+          <button
+            type="button"
+            data-handle="delete"
+            title="Put back where it was"
+            className="border-l border-black/20 px-1.5 py-1 hover:bg-black/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPlace(s.id, id, saved?.z ? { x: 0, y: 0, scale: 1, z: saved.z } : null);
+            }}
+          >
+            ↺
+          </button>
+        )}
+        <button
+          type="button"
+          data-handle="delete"
+          title="Remove from the page (you can restore it)"
+          className="border-l border-black/20 px-1.5 py-1 hover:bg-[#8e1b3a] hover:text-white"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPlace(s.id, id, { ...cur, hidden: true });
+          }}
+        >
+          ✕
+        </button>
       </span>
       <span
         data-handle="resize"
-        className="absolute -bottom-2 -right-2 z-20 h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-black bg-[#f5c84c]"
+        title="Drag to resize"
+        className={`absolute -bottom-2 -right-2 z-[70] h-4 w-4 cursor-nwse-resize touch-none rounded-sm border-2 border-black bg-[#f5c84c] transition-opacity ${
+          isSel || moveMode ? "opacity-100" : "opacity-0 group-hover/mv:opacity-100"
+        }`}
       />
     </div>
   );
@@ -302,10 +348,12 @@ export function ElBody({ el, editingText, onText }: { el: El; editingText?: bool
     );
   }
   const textStyle: CSSProperties = {
-    fontSize: `${el.size ?? 2.4}cqw`,
+    // Scales with the section, but never below a readable size on phones.
+    fontSize: `max(${el.size ?? 2.4}cqw, 10px)`,
     fontWeight: el.weight ?? 700,
-    color: el.color ?? "var(--ink)",
+    color: el.color ?? (el.tone === "warm" ? "var(--warm-text)" : "var(--ink)"),
     textAlign: el.align ?? "left",
+    letterSpacing: el.track ? `${el.track}em` : undefined,
     fontFamily: FONTS[el.font ?? "sans"],
     textTransform: el.upper ? "uppercase" : undefined,
     lineHeight: 1.15,
@@ -332,7 +380,7 @@ export function ElBody({ el, editingText, onText }: { el: El; editingText?: bool
           color: el.color ?? "#160b0d",
           borderRadius: `${el.radius ?? 999}px`,
           padding: "0.6em 1.4em",
-          fontSize: `${el.size ?? 1.3}cqw`,
+          fontSize: `max(${el.size ?? 1.3}cqw, 11px)`,
           fontWeight: el.weight ?? 700,
           fontFamily: FONTS[el.font ?? "sans"],
           textTransform: el.upper === false ? undefined : "uppercase",

@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Reveal } from "./Reveal";
 import { photoTitle } from "./photos";
-import { Txt, textOf, useEditing } from "@/components/site/Editable";
+import { Movable, Txt, textOf, useEditing } from "@/components/site/Editable";
 import { imagesOf, showOrderOf, styleOf, type Section } from "@/components/site/layout-types";
 
 function useInView<T extends Element>(threshold = 0.35) {
@@ -211,7 +211,7 @@ function ChapterTitle({ s, id }: { s: Section; id: number }) {
         s={s}
         k={`s${id}title`}
         as="h3"
-        className={`mx-auto block max-w-[16ch] text-balance text-center font-display font-black uppercase leading-[0.95] text-ink ${
+        className={`mx-auto block max-w-[20ch] text-balance text-center font-display font-black uppercase leading-[0.95] text-ink ${
           long ? "text-[clamp(1.6rem,6.2vw,5.25rem)]" : "text-[clamp(1.9rem,7.4vw,6.25rem)]"
         }`}
       />
@@ -230,57 +230,82 @@ function Tagline({ s, k, small }: { s: Section; k: string; small?: boolean }) {
   );
 }
 
+/** Shown only in the editor where a photo spot has been emptied. */
+function EmptySpot({ what }: { what: string }) {
+  const editing = useEditing();
+  if (!editing) return null;
+  return (
+    <div data-mode="dark" className="flex min-h-32 items-center justify-center rounded-xl border-2 border-dashed border-[#f5c84c]/60 bg-black/20 p-6 text-center text-xs font-bold uppercase tracking-[0.15em] text-[#f5c84c]">
+      Empty — add {what} in the right panel → Images
+    </div>
+  );
+}
+
 export function Showcases({ s }: { s: Section }) {
   const order = showOrderOf(s);
   const look = styleOf(s).photos ?? "polaroid";
+  const site = imagesOf(s, "site");
+  const photos = imagesOf(s, "photos");
+  const brand = imagesOf(s, "brand");
   return (
     <section id="services" className="relative">
       <div className="mx-auto max-w-[1200px] px-4 pb-8 pt-16 text-center sm:px-6 sm:pb-12 sm:pt-24">
-        <Reveal as="p" className="text-[10px] uppercase tracking-[0.3em] text-warm-text sm:text-xs">
-          <Txt s={s} k="eyebrow" />
-        </Reveal>
-        <Reveal delay={80}>
-          <Txt s={s} k="title" as="h2" className="title-lit mx-auto mt-3 block max-w-4xl font-display text-[clamp(2rem,6vw,4.5rem)] font-black uppercase leading-[1.02]" />
-        </Reveal>
+        <Movable s={s} id="heading" label="Heading">
+          <Reveal as="p" className="text-[10px] uppercase tracking-[0.3em] text-warm-text sm:text-xs">
+            <Txt s={s} k="eyebrow" />
+          </Reveal>
+          <Reveal delay={80}>
+            <Txt s={s} k="title" as="h2" className="title-lit mx-auto mt-3 block max-w-4xl font-display text-[clamp(2rem,6vw,4.5rem)] font-black uppercase leading-[1.02]" />
+          </Reveal>
+        </Movable>
       </div>
 
       {order.map((id) => {
+        const title = (
+          <Movable s={s} id={`title${id}`} label={`${textOf(s, `s${id}title`) || "Title"}`}>
+            <ChapterTitle s={s} id={id} />
+          </Movable>
+        );
         if (id === 2)
           return (
             // Photography: a dark band so the photos pop.
             <div key={id} data-mode="dark" className="relative text-ink">
-              <div aria-hidden className="vintage band-fade pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
+              <div aria-hidden className="vintage band-fade-soft pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)" }}
+                style={{ background: "radial-gradient(ellipse 70% 45% at 50% 12%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%)" }}
               />
-              <div className="relative mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
-                <ChapterTitle s={s} id={id} />
-                <div className="mt-6 sm:mt-12">{<PhotoSpread images={imagesOf(s, "photos")} look={look} />}</div>
+              <div className="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6 sm:py-24">
+                {title}
+                <Movable s={s} id="photos" label="Photos" className="mt-6 sm:mt-12">
+                  {photos.length ? <PhotoSpread images={photos} look={look} /> : <EmptySpot what="photos" />}
+                </Movable>
               </div>
             </div>
           );
         if (id === 1)
           return (
             <div key={id} className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
-              <ChapterTitle s={s} id={id} />
-              <div className="mt-6 sm:mt-12">
-                <SiteFan images={imagesOf(s, "site")} />
-              </div>
+              {title}
+              <Movable s={s} id="sites" label="Website screenshots" className="mt-6 sm:mt-12">
+                {site.length ? <SiteFan images={site} /> : <EmptySpot what="up to 3 website screenshots" />}
+              </Movable>
             </div>
           );
         const flip = id === 4;
         return (
           <div key={id} className={`mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20 ${flip ? "mt-10 sm:mt-24" : ""}`}>
-            <ChapterTitle s={s} id={id} />
+            {title}
             <div className="mt-6 grid items-center gap-6 sm:mt-12 md:grid-cols-[1fr_1.15fr] md:gap-12">
-              <Reveal className={flip ? "md:order-2" : ""}>
-                <Tagline s={s} k={`s${id}tag`} small={id === 4} />
-              </Reveal>
-              <Reveal delay={120} className={flip ? "md:order-1" : ""}>
-                {SIDE[id](s)}
-              </Reveal>
+              <Movable s={s} id={`tag${id}`} label="Tagline" className={flip ? "md:order-2" : ""}>
+                <Reveal>
+                  <Tagline s={s} k={`s${id}tag`} small={id === 4} />
+                </Reveal>
+              </Movable>
+              <Movable s={s} id={`visual${id}`} label={id === 3 ? "Brand board" : "Growth chart"} className={flip ? "md:order-1" : ""}>
+                <Reveal delay={120}>{id === 3 && !brand.length ? <EmptySpot what="a brand board" /> : SIDE[id](s)}</Reveal>
+              </Movable>
             </div>
           </div>
         );

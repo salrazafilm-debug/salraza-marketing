@@ -90,12 +90,16 @@ export type El = {
   rotate?: number;
   fit?: "cover" | "contain";
   on?: "all" | "desktop" | "phone";
+  /** Letter spacing in em (e.g. 0.3 for the small spaced labels). */
+  track?: number;
+  /** "warm" = the site's accent text colour, which follows light/dark mode. */
+  tone?: "warm";
 };
 
 export type Section = {
   id: string;
   /** 1 = an older hand-placed "What we do" has been folded into the design. */
-  tidy?: 1;
+  tidy?: 1 | 2;
   type: SectionType;
   hidden?: boolean;
   text: Record<string, string>;
@@ -328,8 +332,9 @@ export function styleOf(s: Section): SectionStyle {
 
 /** Images for one slot, or the defaults. */
 export function imagesOf(s: Section, slot: string): string[] {
+  // A slot that was emptied on purpose stays empty (no sample photos).
   const chosen = s.images?.[slot];
-  if (chosen && chosen.length) return chosen;
+  if (chosen) return chosen;
   return SECTION_LIBRARY[s.type].slots?.[slot]?.defaults ?? [];
 }
 
@@ -408,6 +413,9 @@ function parseEl(v: unknown): El | null {
   const font = pick(o.font, ["display", "sans", "script"] as const);
   if (font) el.font = font;
   if (typeof o.upper === "boolean") el.upper = o.upper;
+  const track = num(o.track, 0, 1);
+  if (track !== undefined) el.track = track;
+  if (o.tone === "warm") el.tone = "warm";
   const radius = num(o.radius, 0, 200);
   if (radius !== undefined) el.radius = radius;
   const opacity = num(o.opacity, 0, 1);
@@ -447,7 +455,7 @@ export function parseLayout(value: unknown): HomeLayout | null {
         const def = lib.slots[slot];
         if (!def || !Array.isArray(list)) continue;
         const urls = list.map(safeUrl).filter((u): u is string => !!u).slice(0, def.max);
-        if (urls.length) cleanImages[slot] = urls;
+        cleanImages[slot] = urls;
       }
     }
 
@@ -512,8 +520,10 @@ export function parseLayout(value: unknown): HomeLayout | null {
       if (list.length) sec.els = list;
     }
     if (sec.type === "showcases") {
-      if (tidy !== 1) tidyShowcases(sec);
-      sec.tidy = 1;
+      if (tidy !== 1 && tidy !== 2) tidyShowcases(sec);
+      // v2: the website screenshots were cleared on request, to be re-added later.
+      if (tidy !== 2) sec.images = { ...(sec.images ?? {}), site: [] };
+      sec.tidy = 2;
     }
     sections.push(sec);
   }

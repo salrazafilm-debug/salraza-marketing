@@ -43,12 +43,12 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
   }
 
   const buttonLabel =
-    status === "loading" ? "Loading Media…" : status === "entering" ? "Entering vault…" : "Enter";
+    status === "loading" ? "Loading Media…" : status === "entering" ? "Entering vault…" : "Enter vault";
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-sm flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <span className="text-label text-ink">Enter your password here</span>
+        <span className="text-xs font-bold uppercase tracking-[0.15em] text-ink/70">Password</span>
         <div className="relative">
           <input
             required
@@ -56,7 +56,8 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
             type={showPassword ? "text" : "password"}
             name="password"
             autoComplete="current-password"
-            className="focus-brand w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 pr-14 text-body text-ink"
+            placeholder="Your vault password"
+            className="focus-brand w-full rounded-xl border border-black/15 bg-white px-5 py-4 pr-14 text-base text-[#1a0f10] placeholder:text-[#1a0f10]/35 shadow-inner"
           />
           <button
             type="button"
@@ -85,7 +86,7 @@ export function ClientLoginForm({ initialError }: { initialError?: string }) {
       <button
         type="submit"
         disabled={status !== "idle"}
-        className="focus-brand inline-flex items-center justify-center gap-2 rounded-full bg-highlighter px-10 py-4 font-display text-lg font-extrabold tracking-wide text-on-highlighter transition hover:brightness-95 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+        className="focus-brand inline-flex items-center justify-center gap-2 rounded-full bg-[#160b0d] px-10 py-4 text-sm font-bold uppercase tracking-[0.15em] text-white transition hover:-translate-y-0.5 hover:bg-[#8e1b3a] disabled:opacity-60 disabled:hover:translate-y-0"
       >
         {buttonLabel}
         {status === "idle" && (

@@ -162,11 +162,10 @@ function ImagePicker({
             </button>
             <button
               type="button"
-              disabled={chosen.length === 0}
               onClick={() => onSave(chosen)}
-              className="rounded-full bg-[#f5c84c] px-5 py-2 text-xs font-bold text-black disabled:opacity-40"
+              className="rounded-full bg-[#f5c84c] px-5 py-2 text-xs font-bold text-black"
             >
-              Use these photos
+              {chosen.length ? "Use these photos" : "Leave this spot empty"}
             </button>
           </div>
         </div>
@@ -229,11 +228,13 @@ function TextFormatBar({
         <input
           type="color"
           value={liveColor ?? fmt?.color ?? "#1a0f10"}
-          onChange={(e) => setLiveColor(e.target.value)}
-          onBlur={(e) => {
+          // Saved as you pick (quick changes merge into one undo step), so the
+          // colour sticks even if the picker is closed by clicking elsewhere.
+          onChange={(e) => {
+            setLiveColor(e.target.value);
             onChange({ color: e.target.value });
-            setLiveColor(null);
           }}
+          onBlur={() => setLiveColor(null)}
           className="sr-only"
         />
       </label>
@@ -420,7 +421,9 @@ function newElId() {
   return `e${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const ELEMENT_DEFAULTS: Record<"text" | "button" | "shape", Omit<El, "id">> = {
+const ELEMENT_DEFAULTS: Record<"text" | "button" | "shape" | "signature", Omit<El, "id">> = {
+  // The small spaced "Bruce & Elena" label (same size and colour as the section labels).
+  signature: { kind: "text", x: 35, y: 30, w: 30, z: 10, text: "Bruce & Elena", size: 0.85, weight: 400, font: "sans", upper: true, track: 0.3, tone: "warm", align: "center" },
   text: { kind: "text", x: 12, y: 80, w: 40, z: 10, text: "New text — double-click to edit", size: 2.6, weight: 700, font: "display", upper: true },
   button: { kind: "button", x: 12, y: 80, w: 20, z: 10, text: "Click me", size: 1.2, weight: 700, font: "sans", radius: 999, href: "/#quote" },
   shape: { kind: "shape", x: 12, y: 80, w: 24, h: 120, z: 2, fill: "#8e1b3a", radius: 16, opacity: 0.9 },
@@ -536,7 +539,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
     setShowPanel(true);
     setAddingEl(false);
   };
-  const addElement = (kind: "text" | "button" | "shape" | "image") => {
+  const addElement = (kind: "text" | "button" | "shape" | "image" | "signature") => {
     const sectionId = targetSectionId();
     if (!sectionId) return;
     if (kind === "image") setPicker({ mode: "new", sectionId });
@@ -1180,19 +1183,34 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                         <div key={slot} className="rounded-lg bg-white/5 p-2.5">
                           <div className="mb-2 flex items-center justify-between">
                             <span className="text-xs font-bold">{def.label}</span>
-                            <button
-                              type="button"
-                              onClick={() => setPicker({ mode: "slot", sectionId: selected.id, slot })}
-                              className="rounded-full bg-[#f5c84c] px-3 py-1 text-[10px] font-bold uppercase text-black"
-                            >
-                              Choose
-                            </button>
+                            <span className="flex gap-1">
+                              {imgs.length > 0 && (
+                                <button
+                                  type="button"
+                                  title="Remove these photos (the spot stays empty until you add new ones)"
+                                  onClick={() =>
+                                    updateSection(selected.id, (x) => ({ ...x, images: { ...(x.images ?? {}), [slot]: [] } }))
+                                  }
+                                  className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-[#ff9a9a] hover:bg-white/10"
+                                >
+                                  Remove all
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setPicker({ mode: "slot", sectionId: selected.id, slot })}
+                                className="rounded-full bg-[#f5c84c] px-3 py-1 text-[10px] font-bold uppercase text-black"
+                              >
+                                {imgs.length ? "Choose" : "+ Add"}
+                              </button>
+                            </span>
                           </div>
                           <div className="flex gap-1 overflow-hidden">
                             {imgs.slice(0, 6).map((u, i) => (
                               <img key={u + i} src={u} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
                             ))}
                             {imgs.length > 6 && <span className="self-center text-[10px] text-[#b3a5a2]">+{imgs.length - 6}</span>}
+                            {!imgs.length && <span className="text-[10px] text-[#b3a5a2]">Empty — nothing shows on the site</span>}
                           </div>
                         </div>
                       );
@@ -1243,13 +1261,14 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
 
                 <div className="space-y-2">
                   <p className={label}>Add to this section</p>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {(
                       [
                         ["text", "Text"],
                         ["image", "Image"],
                         ["button", "Button"],
                         ["shape", "Shape"],
+                        ["signature", "Signature"],
                       ] as const
                     ).map(([k, t]) => (
                       <button
@@ -1698,7 +1717,8 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
               onSave={(urls) => {
                 updateSection(s.id, (x) => {
                   const images = { ...(x.images ?? {}) };
-                  if (urls && urls.length) images[slot] = urls;
+                  // null = back to the sample photos; [] = leave the spot empty.
+                  if (urls) images[slot] = urls;
                   else delete images[slot];
                   return { ...x, images: Object.keys(images).length ? images : undefined };
                 });
@@ -1743,13 +1763,14 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
 
       {/* ----- Add element menu ----- */}
       {addingEl && (
-        <div data-mode="dark" className={`${panel} fixed bottom-20 left-1/2 z-[97] grid -translate-x-1/2 grid-cols-4 gap-1.5 p-2`}>
+        <div data-mode="dark" className={`${panel} fixed bottom-20 left-1/2 z-[97] grid -translate-x-1/2 grid-cols-5 gap-1.5 p-2`}>
           {(
             [
               ["text", "Text"],
               ["image", "Image"],
               ["button", "Button"],
               ["shape", "Shape"],
+              ["signature", "Signature"],
             ] as const
           ).map(([k, t]) => (
             <button key={k} type="button" onClick={() => addElement(k)} className="rounded-lg px-4 py-2 text-xs font-bold hover:bg-[#f5c84c] hover:text-black">
