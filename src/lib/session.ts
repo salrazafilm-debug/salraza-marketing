@@ -30,7 +30,7 @@ export function signSession(slug: string, access: "full" | "guest" = "full", gid
  * Verifies a session token and returns what it grants: the client slug and
  * whether it is a full or guest (covers only) session. Null if invalid or expired.
  */
-export function verifySessionAccess(token: string | undefined | null): { slug: string; access: "full" | "guest"; gid?: string } | null {
+export function verifySessionAccess(token: string | undefined | null): { slug: string; access: "full" | "guest"; gid?: string; exp: number } | null {
   if (!token) return null;
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
@@ -53,6 +53,7 @@ export function verifySessionAccess(token: string | undefined | null): { slug: s
       slug: payload.slug,
       access: payload.access === "guest" ? "guest" : "full",
       gid: typeof payload.gid === "string" ? payload.gid : undefined,
+      exp: payload.exp,
     };
   } catch {
     return null;

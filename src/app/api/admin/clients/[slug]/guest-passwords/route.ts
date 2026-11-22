@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { findClientBySlug } from "@/lib/clients";
+import { findClientBySlug, findClientSlugByPassword } from "@/lib/clients";
 import { addGuestPassword, deleteGuestPassword, setGuestFolders } from "@/lib/guest-access";
 
 /** Adds a guest password: opens the vault but only shows locked folder covers. */
@@ -12,6 +12,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const password = typeof body.password === "string" ? body.password : "";
   if (password.length < 6) return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
   if (!(await findClientBySlug(slug))) return NextResponse.json({ error: "Family not found." }, { status: 404 });
+  // A guest password must differ from every full vault password. If they matched,
+  // the full one would win at login and the guest would get everything.
+  if (await findClientSlugByPassword(password).catch(() => null)) {
+    return NextResponse.json(
+      { error: "That password is already a full-access vault password. Choose a different one for guests." },
+      { status: 400 }
+    );
+  }
   try {
     await addGuestPassword(slug, password);
   } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { makePassword } from "@/lib/make-password";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 type PasswordEntry = { id: string; createdAt: string };
 type GuestEntry = PasswordEntry & { folders: string[] };
@@ -22,6 +22,7 @@ export function ClientPasswordsManager({
 }) {
   // Which folders each guest password may open (saved the moment a box is ticked).
   const [allowed, setAllowed] = useState<Record<string, string[]>>(() => Object.fromEntries(guestPasswords.map((g) => [g.id, g.folders])));
+  const allowedRef = useRef(allowed); // always the latest ticks, even between renders
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [guestPw, setGuestPw] = useState("");
@@ -75,7 +76,8 @@ export function ClientPasswordsManager({
   }
 
   async function saveFolders(id: string, next: string[]) {
-    const previous = allowed[id] ?? [];
+    const previous = allowedRef.current[id] ?? [];
+    allowedRef.current = { ...allowedRef.current, [id]: next };
     setAllowed((a) => ({ ...a, [id]: next }));
     setSavingId(id);
     setGuestError(undefined);
@@ -86,6 +88,7 @@ export function ClientPasswordsManager({
     });
     setSavingId(null);
     if (!res.ok) {
+      allowedRef.current = { ...allowedRef.current, [id]: previous };
       setAllowed((a) => ({ ...a, [id]: previous }));
       const data = await res.json().catch(() => ({}));
       setGuestError(data.error || "Could not save folder access.");
@@ -225,7 +228,7 @@ export function ClientPasswordsManager({
                                   type="checkbox"
                                   checked={on}
                                   onChange={() => {
-                                    const cur = allowed[entry.id] ?? [];
+                                    const cur = allowedRef.current[entry.id] ?? [];
                                     void saveFolders(entry.id, on ? cur.filter((f) => f !== folder.id) : [...cur, folder.id]);
                                   }}
                                   className="h-4 w-4 accent-[#8e1b3a]"

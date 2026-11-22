@@ -1,5 +1,5 @@
 import { verifyPassword } from "@/lib/password";
-import { signSession, verifySession } from "@/lib/session";
+import { signSession, verifySession, verifySessionAccess } from "@/lib/session";
 
 export const ADMIN_SESSION_COOKIE = "salraza_admin_session";
 
@@ -13,6 +13,12 @@ export function signAdminSession(): string {
 
 export function verifyAdminSession(token: string | undefined | null): boolean {
   return verifySession(token) === ADMIN_SLUG;
+}
+
+/** When the admin session expires (it is issued for a fixed time, so a later expiry means a later login), or null. */
+export function adminSessionExpiry(token: string | undefined | null): number | null {
+  const s = verifySessionAccess(token);
+  return s && s.slug === ADMIN_SLUG && s.access === "full" ? s.exp : null;
 }
 
 /** Checks a plaintext password against ADMIN_PASSWORD_HASH from the environment. */

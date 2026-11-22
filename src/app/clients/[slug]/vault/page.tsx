@@ -5,7 +5,7 @@ import { findClientBySlug, type MediaItem } from "@/lib/clients";
 import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
 import { SESSION_COOKIE, verifySessionAccess } from "@/lib/session";
-import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
+import { ADMIN_SESSION_COOKIE, adminSessionExpiry } from "@/lib/admin-session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -45,7 +45,12 @@ export default async function VaultPage({
   const session = verifySessionAccess(cookieStore.get(SESSION_COOKIE)?.value);
   const sessionSlug = session?.slug;
   // The admin can open any vault too — that's what powers the "Client view" preview.
-  const isAdmin = verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+  // If this browser holds BOTH an admin session and a client login for this vault,
+  // the more recent login wins, so logging in as a guest to test it really
+  // shows the guest view (not the admin's everything-open view).
+  const adminExp = adminSessionExpiry(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+  const clientExp = session && session.slug === slug ? session.exp : null;
+  const isAdmin = adminExp !== null && (clientExp === null || adminExp > clientExp);
   if (sessionSlug !== slug && !isAdmin) {
     redirect("/clients?error=session");
   }
