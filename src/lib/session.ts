@@ -18,16 +18,19 @@ function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
 }
 
-/** Signs a client vault session token for the given client slug. */
-export function signSession(slug: string): string {
-  const payload = JSON.stringify({ slug, exp: Date.now() + SESSION_TTL_MS });
+/** Signs a client vault session token. A "guest" token can only see folder covers. */
+export function signSession(slug: string, access: "full" | "guest" = "full"): string {
+  const payload = JSON.stringify({ slug, exp: Date.now() + SESSION_TTL_MS, ...(access === "guest" ? { access } : {}) });
   const encodedPayload = base64url(payload);
   const signature = createHmac("sha256", getSecret()).update(encodedPayload).digest("base64url");
   return `${encodedPayload}.${signature}`;
 }
 
-/** Verifies a session token and returns the client slug if valid and unexpired. */
-export function verifySession(token: string | undefined | null): string | null {
+/**
+ * Verifies a session token and returns what it grants: the client slug and
+ * whether it is a full or guest (covers only) session. Null if invalid or expired.
+ */
+export function verifySessionAccess(token: string | undefined | null): { slug: string; access: "full" | "guest" } | null {
   if (!token) return null;
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
@@ -46,8 +49,19 @@ export function verifySession(token: string | undefined | null): string | null {
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
     if (typeof payload.slug !== "string" || typeof payload.exp !== "number") return null;
     if (Date.now() > payload.exp) return null;
-    return payload.slug;
+    return { slug: payload.slug, access: payload.access === "guest" ? "guest" : "full" };
   } catch {
     return null;
   }
+}
+
+/**
+ * Returns the client slug only for FULL sessions. Guest sessions return null
+ * here on purpose, so every place that serves real files (downloads, the admin
+ * check) refuses guests by default; only code that opts in with
+ * verifySessionAccess() can let a guest see covers.
+ */
+export function verifySession(token: string | undefined | null): string | null {
+  const s = verifySessionAccess(token);
+  return s && s.access === "full" ? s.slug : null;
 }

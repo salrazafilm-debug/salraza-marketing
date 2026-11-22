@@ -10,10 +10,15 @@ type PasswordEntry = { id: string; createdAt: string };
 export function ClientPasswordsManager({
   clientSlug,
   passwords,
+  guestPasswords = [],
 }: {
   clientSlug: string;
   passwords: PasswordEntry[];
+  guestPasswords?: PasswordEntry[];
 }) {
+  const [guestPw, setGuestPw] = useState("");
+  const [guestError, setGuestError] = useState<string | undefined>();
+  const [guestBusy, setGuestBusy] = useState(false);
   const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | undefined>();
@@ -39,6 +44,37 @@ export function ClientPasswordsManager({
     }
 
     setNewPassword("");
+    router.refresh();
+  }
+
+  async function addGuest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setGuestBusy(true);
+    setGuestError(undefined);
+    const res = await fetch(`/api/admin/clients/${clientSlug}/guest-passwords`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: guestPw }),
+    });
+    const data = await res.json();
+    setGuestBusy(false);
+    if (!res.ok) {
+      setGuestError(data.error || "Could not add guest password.");
+      return;
+    }
+    setGuestPw("");
+    router.refresh();
+  }
+
+  async function removeGuest(id: string) {
+    if (!confirm("Remove this guest password? It will stop opening the vault.")) return;
+    setBusyId(id);
+    await fetch(`/api/admin/clients/${clientSlug}/guest-passwords`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    setBusyId(null);
     router.refresh();
   }
 
@@ -114,6 +150,63 @@ export function ClientPasswordsManager({
       </form>
 
       {error && <p className="text-caption text-red-700">{error}</p>}
+
+      <div className="mt-4 flex flex-col gap-3 border-t border-line pt-5">
+        <div>
+          <p className="text-subhead text-ink">Guest passwords</p>
+          <p className="text-caption text-ink-muted">
+            A guest password opens this vault but only shows the folder covers, each with a lock. Folders can&apos;t be opened.
+          </p>
+        </div>
+        {guestPasswords.length === 0 ? (
+          <p className="text-caption text-ink-muted">No guest passwords yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {guestPasswords.map((entry) => (
+              <li key={entry.id} className="flex items-center justify-between rounded border border-line bg-paper px-3 py-2">
+                <span className="text-caption text-ink-muted">Guest · added {new Date(entry.createdAt).toLocaleDateString()}</span>
+                <button
+                  type="button"
+                  onClick={() => removeGuest(entry.id)}
+                  disabled={busyId === entry.id}
+                  className="focus-brand text-label text-red-700 underline disabled:opacity-60"
+                >
+                  {busyId === entry.id ? "Removing…" : "Remove"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form onSubmit={addGuest} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex flex-1 flex-col gap-2">
+            <span className="text-label text-ink">Add a guest password</span>
+            <span className="flex gap-2">
+              <input
+                value={guestPw}
+                onChange={(event) => setGuestPw(event.target.value)}
+                minLength={6}
+                required
+                className="focus-brand flex-1 rounded border border-line bg-paper px-4 py-3 text-body text-ink"
+              />
+              <button
+                type="button"
+                onClick={() => setGuestPw(makePassword())}
+                className="focus-brand rounded-full border border-line px-4 text-label text-ink hover:bg-paper"
+              >
+                Generate
+              </button>
+            </span>
+          </label>
+          <button
+            type="submit"
+            disabled={guestBusy}
+            className="focus-brand rounded-full bg-highlighter px-6 py-3 text-label text-on-highlighter transition hover:brightness-95 disabled:opacity-60"
+          >
+            {guestBusy ? "Adding…" : "Add guest"}
+          </button>
+        </form>
+        {guestError && <p className="text-caption text-red-700">{guestError}</p>}
+      </div>
     </div>
   );
 }

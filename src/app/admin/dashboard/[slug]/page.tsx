@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 import { ClientSettingsForm } from "@/components/ClientSettingsForm";
 import { ClientPasswordsManager } from "@/components/ClientPasswordsManager";
+import { listGuestPasswords } from "@/lib/guest-access";
 import { AdminVault, INDIVIDUAL } from "@/components/admin/AdminVault";
 import { ClientPreview } from "@/components/admin/ClientPreview";
 import { VaultLookEditor } from "@/components/admin/VaultLookEditor";
@@ -45,8 +46,9 @@ export default async function AdminClientPage({
 
   const client = await findClientBySlug(slug);
   if (!client) notFound();
-  const [extraPasswords, variantsByItem, look] = await Promise.all([
+  const [extraPasswords, guestPasswords, variantsByItem, look] = await Promise.all([
     listClientPasswords(client.slug),
+    listGuestPasswords(client.slug),
     listMediaVariantsByClient(client.slug),
     getVaultLook(client.slug),
   ]);
@@ -142,7 +144,7 @@ export default async function AdminClientPage({
 
           {tab === "access" && (
             <div className="max-w-xl">
-              <ClientPasswordsManager clientSlug={client.slug} passwords={extraPasswords} />
+              <ClientPasswordsManager clientSlug={client.slug} passwords={extraPasswords} guestPasswords={guestPasswords} />
             </div>
           )}
         </div>

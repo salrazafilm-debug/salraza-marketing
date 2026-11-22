@@ -4,7 +4,7 @@ import Link from "next/link";
 import { findClientBySlug, type MediaItem } from "@/lib/clients";
 import { MARKSMEN_SLUG } from "@/lib/clientConstants";
 import { getDownloadUrl, getVideoThumbnailUrl } from "@/lib/cloudinary";
-import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { SESSION_COOKIE, verifySessionAccess } from "@/lib/session";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Footer } from "@/components/Footer";
@@ -12,7 +12,9 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
 import { VaultMediaGrid, type VaultMediaItem } from "@/components/VaultMediaGrid";
-import { VaultFolderGrid, formatEventDate } from "@/components/VaultFolderGrid";
+import { VaultFolderGrid } from "@/components/VaultFolderGrid";
+import { LockedFolderGrid, type LockedFolder } from "@/components/LockedFolderGrid";
+import { formatEventDate, getFolderCoverSrc } from "@/lib/vault-folder-utils";
 import { SectionFrame } from "@/components/site/HomeSections";
 import { getVaultLook } from "@/lib/vault-look";
 import type { Section } from "@/components/site/layout-types";
@@ -38,14 +40,29 @@ export default async function VaultPage({
   if (!client) notFound();
 
   const cookieStore = await cookies();
-  const sessionSlug = verifySession(cookieStore.get(SESSION_COOKIE)?.value);
+  const session = verifySessionAccess(cookieStore.get(SESSION_COOKIE)?.value);
+  const sessionSlug = session?.slug;
   // The admin can open any vault too — that's what powers the "Client view" preview.
   const isAdmin = verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
   if (sessionSlug !== slug && !isAdmin) {
     redirect("/clients?error=session");
   }
+  // A guest (covers-only password) sees locked folder covers and nothing else.
+  const isGuest = !isAdmin && session?.access === "guest";
+  if (isGuest && folderParam) redirect(`/clients/${slug}/vault`);
 
   const activeFolder = folderParam ? client.folders.find((folder) => folder.id === folderParam) : undefined;
+  const lockedFolders: LockedFolder[] = isGuest
+    ? client.folders
+        .map((folder) => ({ folder, items: client.media.filter((item) => item.folderId === folder.id) }))
+        .filter(({ items }) => items.length > 0)
+        .map(({ folder, items }) => ({
+          id: folder.id,
+          name: folder.name,
+          dateLabel: folder.eventDate ? formatEventDate(folder.eventDate) : null,
+          cover: getFolderCoverSrc(folder, items),
+        }))
+    : [];
   const showIntro = slug === MARKSMEN_SLUG && intro === "1";
   const isMarksmen = slug === MARKSMEN_SLUG;
   // The look chosen in Admin → "Client view & customize" (Marksmen keeps its own theme).
@@ -99,7 +116,23 @@ export default async function VaultPage({
               </div>
             </RevealSection>
 
-            {client.media.length === 0 ? (
+            {isGuest ? (
+              <RevealSection index={step++}>
+                <div className="mt-10 flex flex-col gap-6">
+                  <div className="mx-auto flex max-w-xl flex-col items-center gap-2 rounded-xl bg-cream px-6 py-5 text-center">
+                    <p className="text-subhead text-ink">Guest preview</p>
+                    <p className="text-body text-ink-muted">
+                      You can see the covers of each folder. The photos and videos inside are private and locked.
+                    </p>
+                  </div>
+                  {lockedFolders.length > 0 ? (
+                    <LockedFolderGrid folders={lockedFolders} />
+                  ) : (
+                    <p className="text-center text-body text-ink-muted">Nothing to preview yet.</p>
+                  )}
+                </div>
+              </RevealSection>
+            ) : client.media.length === 0 ? (
               <RevealSection index={step++}>
                 <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
                   <p className="text-subhead text-ink">Nothing here yet</p>
@@ -183,7 +216,7 @@ export default async function VaultPage({
               </div>
             )}
 
-            {!activeFolder && client.media.some((item) => item.type === "image") && (
+            {!isGuest && !activeFolder && client.media.some((item) => item.type === "image") && (
               <RevealSection index={step++}>
                 <div className="mt-10 flex justify-center">
                   <a

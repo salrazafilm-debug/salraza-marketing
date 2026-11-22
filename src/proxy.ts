@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySession } from "@/lib/session";
+import { SESSION_COOKIE, verifySessionAccess } from "@/lib/session";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session";
 
 export function proxy(request: NextRequest) {
@@ -9,7 +9,9 @@ export function proxy(request: NextRequest) {
 
   const slug = match[1];
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const sessionSlug = verifySession(token);
+  // Full and guest sessions may both open the vault page; the page itself
+  // decides what a guest is allowed to see.
+  const sessionSlug = verifySessionAccess(token)?.slug;
 
   // The admin can view any vault (powers the admin "Client view" preview).
   const isAdmin = verifyAdminSession(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
