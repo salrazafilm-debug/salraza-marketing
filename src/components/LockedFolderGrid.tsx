@@ -18,16 +18,16 @@ export type LockedFolder = {
 function GuestCard({ folder }: { folder: LockedFolder }) {
   const inner = (
     <>
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black sm:aspect-[16/9] sm:max-h-[78svh]">
+      <div className="relative w-full overflow-hidden bg-black sm:aspect-[16/9] sm:max-h-[78svh]">
         {folder.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={folder.cover}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            className="block h-auto w-full transition-transform duration-500 group-hover:scale-[1.02] sm:absolute sm:inset-0 sm:h-full sm:object-cover"
           />
         ) : (
-          <div className="h-full w-full bg-[#1d0b11]" />
+          <div className="aspect-[4/3] w-full bg-[#1d0b11] sm:aspect-auto sm:h-full" />
         )}
       </div>
       <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center sm:p-6">

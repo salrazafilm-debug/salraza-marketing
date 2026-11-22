@@ -576,6 +576,33 @@ body {
   border-radius: 0.75rem;
   background: var(--espresso);
 }
+/* Phones: one column, each photo at its full natural size (nothing cropped,
+   nothing shrunk to share a row); the page simply scrolls. */
+@media (max-width: 639px) {
+  .justified {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+  .justified-item {
+    flex: none !important;
+    width: 100% !important;
+  }
+  .justified-spacer {
+    display: none;
+  }
+  .justified-item--natural {
+    aspect-ratio: auto !important;
+  }
+  .justified-item--natural > img:first-child {
+    position: static !important;
+    display: block;
+    width: 100%;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+}
 /* Absorbs leftover width on the last row so those tiles keep their size, left-aligned. */
 .justified-spacer {
   flex: 10000 1 0;

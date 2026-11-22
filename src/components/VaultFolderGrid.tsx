@@ -16,16 +16,16 @@ function FolderCard({ slug, folder, items }: { slug: string; folder: Folder; ite
       href={`/clients/${slug}/vault?folder=${folder.id}`}
       className="focus-brand group flex w-full flex-col shadow-lg shadow-black/30 transition hover:-translate-y-1"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black sm:aspect-[16/9] sm:max-h-[78svh]">
+      <div className="relative w-full overflow-hidden bg-black sm:aspect-[16/9] sm:max-h-[78svh]">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            className="block h-auto w-full transition-transform duration-500 group-hover:scale-[1.02] sm:absolute sm:inset-0 sm:h-full sm:object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-golden-hour/60">Photos</div>
+          <div className="flex aspect-[4/3] w-full items-center justify-center text-golden-hour/60 sm:aspect-auto sm:h-full">Photos</div>
         )}
       </div>
       <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center sm:p-6">

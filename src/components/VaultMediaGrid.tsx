@@ -109,7 +109,7 @@ function ImageTile({
 
   return (
     <div
-      className={`justified-item group cursor-zoom-in ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
+      className={`justified-item justified-item--natural group cursor-zoom-in ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
       style={tileStyle(ratio)}
       onClick={() => onOpen(index)}
     >
@@ -180,7 +180,7 @@ function LinkVideoTile({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Watch ${item.label} (opens in a new tab)`}
-      className={`justified-item group focus-brand ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
+      className={`justified-item justified-item--natural group focus-brand ${isMarksmen ? "shadow-lg shadow-black/40" : ""}`}
       style={tileStyle(ratio)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
