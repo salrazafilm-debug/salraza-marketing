@@ -35,13 +35,36 @@ export default async function AdminDashboardPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="flex flex-col gap-4 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-caption uppercase tracking-wide text-warm-text">Admin</p>
-              <h1 className="text-headline mt-2 text-ink">The Media Vault</h1>
+              <p className="text-xs uppercase tracking-[0.3em] text-warm-text">Admin · Salraza</p>
+              <h1 className="title-lit mt-3 font-display text-4xl font-black uppercase sm:text-5xl">Control room</h1>
             </div>
             <AdminLogoutButton />
           </div>
 
-          <div className="mt-8">
+          {/* The site editor: the main way to change the homepage. */}
+          <Link
+            href="/admin/dashboard/site"
+            className="focus-brand group relative mt-8 flex flex-col gap-4 overflow-hidden rounded-2xl border border-line p-6 transition hover:border-spark sm:flex-row sm:items-center sm:justify-between sm:p-8"
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "radial-gradient(ellipse 60% 120% at 0% 50%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70%)" }}
+            />
+            <div className="relative">
+              <p className="text-xs uppercase tracking-[0.3em] text-warm-text">Website</p>
+              <p className="title-lit mt-2 font-display text-2xl font-black uppercase sm:text-3xl">Edit the homepage</p>
+              <p className="mt-2 max-w-xl text-sm text-ink-muted">
+                See the real page, click any words to change them, and add, hide, reorder or delete sections.
+                Preview it on a phone, then save to publish.
+              </p>
+            </div>
+            <span className="relative w-fit rounded-full bg-spark px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] transition-colors group-hover:bg-accent group-hover:text-white">
+              Open editor →
+            </span>
+          </Link>
+
+          <div className="mt-10">
             <CreateClientForm />
           </div>
 
@@ -50,7 +73,7 @@ export default async function AdminDashboardPage() {
               <Link
                 key={client.slug}
                 href={`/admin/dashboard/${client.slug}`}
-                className="focus-brand flex flex-col gap-2 rounded-xl bg-paper-raised p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+                className="focus-brand flex flex-col gap-2 rounded-xl border border-line bg-paper-raised/70 p-6 backdrop-blur transition hover:-translate-y-0.5 hover:border-spark"
               >
                 <p className="text-subhead text-ink">{client.name}</p>
                 <p className="text-caption mt-2 text-warm-text">
@@ -67,7 +90,7 @@ export default async function AdminDashboardPage() {
           <div className="mt-10">
             <Link
               href="/admin/dashboard/portfolio"
-              className="focus-brand flex items-center justify-between gap-4 rounded-xl bg-paper-raised p-6 transition hover:-translate-y-0.5 hover:shadow-md"
+              className="focus-brand flex items-center justify-between gap-4 rounded-xl border border-line bg-paper-raised/70 p-6 backdrop-blur transition hover:-translate-y-0.5 hover:border-spark"
             >
               <div>
                 <p className="text-subhead text-ink">Portfolio</p>
@@ -82,7 +105,7 @@ export default async function AdminDashboardPage() {
             </Link>
           </div>
 
-          <div className="mt-10 flex flex-col gap-6 rounded-xl bg-paper-raised p-6">
+          <div className="mt-10 flex flex-col gap-6 rounded-xl border border-line bg-paper-raised/70 p-6 backdrop-blur">
             <div>
               <p className="text-subhead text-ink">Media Vault Page</p>
               <p className="text-caption mt-1 text-warm-text">

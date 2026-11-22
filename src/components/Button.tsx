@@ -4,11 +4,13 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "secondary";
 
 const base =
-  "focus-brand inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-display text-sm font-extrabold tracking-wide transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed";
+  "focus-brand inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-xs font-bold uppercase tracking-[0.15em] transition-colors duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed";
 
+// Velvet buttons: gold pill that turns burgundy on hover; secondary is an
+// outline that picks up the accent.
 const variants: Record<Variant, string> = {
-  primary: "bg-highlighter text-on-highlighter hover:brightness-95 active:brightness-90",
-  secondary: "bg-ink text-paper hover:opacity-90 active:opacity-80",
+  primary: "bg-spark text-[#160b0d] hover:bg-accent hover:text-white",
+  secondary: "border border-ink/30 text-ink hover:border-accent-bright hover:text-accent-bright",
 };
 
 export function LinkButton({

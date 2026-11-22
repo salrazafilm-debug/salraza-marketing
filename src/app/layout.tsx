@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { unbounded, bricolage, caveatBrush } from "./fonts";
+import Script from "next/script";
 import "./globals.css";
+import { SiteAtmosphere } from "@/components/cinema/SiteAtmosphere";
+import { MODE_BOOT_SCRIPT } from "@/components/cinema/mode";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const title = "Salraza Marketing — Social media, photography & video";
@@ -34,9 +37,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-mode="light"
+      suppressHydrationWarning
       className={`${unbounded.variable} ${bricolage.variable} ${caveatBrush.variable} antialiased`}
     >
-      <body>{children}</body>
+      <body>
+        {/* Sets light/dark mode before hydration (see cinema/mode.ts). */}
+        <Script id="salraza-mode" strategy="beforeInteractive">
+          {MODE_BOOT_SCRIPT}
+        </Script>
+        <SiteAtmosphere />
+        {children}
+      </body>
     </html>
   );
 }

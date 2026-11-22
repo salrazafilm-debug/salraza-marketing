@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { ModeToggle } from "@/components/cinema/ModeToggle";
 
 const NAV_LINKS = [
   { href: "/#services", label: "Services" },
@@ -24,10 +25,10 @@ function MediaVaultLink({
     <Link
       href={MEDIA_VAULT_LINK.href}
       onClick={onClick}
-      className={`focus-brand inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide transition hover:brightness-110 ${
+      className={`focus-brand inline-flex items-center gap-2 rounded-full transition ${
         marksmenTheme
-          ? "border border-[#2fc4de]/50 bg-[#111823] text-[#2fc4de]"
-          : "bg-espresso text-golden-hour"
+          ? "border border-[#2fc4de]/50 bg-[#111823] px-5 py-2.5 font-display text-sm font-extrabold tracking-wide text-[#2fc4de] hover:brightness-110"
+          : "border border-ink/25 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.15em] text-ink hover:border-spark hover:text-spark"
       } ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -57,16 +58,10 @@ export function SiteHeader({
   useEffect(() => {
     if (revealImmediately) return;
 
-    // Reveal once the hero video (HeroVideo, a separate component) settles
-    // on its still end frame — on both mobile and desktop — rather than
-    // sitting over the cinematic intro. Scrolling past the hero is kept as
-    // a fallback in case that event is ever missed (e.g. a JS error
-    // elsewhere), so navigation can never get permanently stuck hidden.
-    //
-    // (A previous version of this made mobile reveal immediately, since
-    // mobile video loads used to be flakier. That's been hardened
-    // separately in HeroVideo.tsx now, and the header should behave the
-    // same on both — hidden during the intro, revealed once it settles.)
+    // Pages that don't pass revealImmediately show the header once a
+    // "hero-settled" event fires or once the visitor scrolls past #hero; with
+    // no #hero on the page it shows straight away, so navigation can never
+    // get stuck hidden.
     let settled = false;
     let scrolledPast = false;
     const update = () => setRevealed(settled || scrolledPast);
@@ -118,25 +113,15 @@ export function SiteHeader({
         revealed
           ? marksmenTheme
             ? "translate-y-0 opacity-100 border-transparent bg-[#0a0a0c]/95 backdrop-blur"
-            : "translate-y-0 opacity-100 border-line bg-paper/95 backdrop-blur"
+            : "translate-y-0 opacity-100 border-line/70 bg-paper/90"
           : "pointer-events-none -translate-y-2 opacity-0 border-transparent"
       }`}
     >
-      {/*
-        Mobile-only: taller vertical padding than desktop. The hero video
-        below (HeroVideo.tsx) is deliberately shorter on mobile (h-[82svh])
-        and its object-fit:contain letterboxing leaves an empty bg-espresso
-        strip above the zoomed logo — the video's own centering/zoom is
-        locked and must not change (see HeroVideo.tsx), so instead this
-        fixed header is grown taller to overlay that strip, closing the gap
-        with more of the cream header band rather than moving the video.
-        md:py-3 keeps desktop's confirmed, untouched sizing. The logo below
-        is bigger on mobile for the same reason (h-16 vs desktop's h-12) —
-        padding was shrunk to py-[26px] to compensate, so the header's total
-        height stays ~117px either way (logo + padding), still lined up with
-        where the video's visible content begins.
-      */}
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-[26px] sm:px-6 md:py-3">
+      <div
+        className={`mx-auto flex max-w-[1200px] items-center justify-between px-4 sm:px-6 md:py-3 ${
+          marksmenTheme ? "py-[26px]" : "py-4"
+        }`}
+      >
         <Link href="/" className="flex items-center" aria-label="Salraza Marketing home">
           {/*
             The regular wordmark is dark ink, drawn for a light header — on
@@ -144,27 +129,27 @@ export function SiteHeader({
             so that theme uses a variant with its own white cloud backdrop
             baked in instead.
           */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={
-              marksmenTheme
-                ? "/clients/dmv-marksmen/salraza-cloud-logo.png"
-                : "/logos/salraza-logo-transparent.png"
-            }
-            alt="Salraza Marketing"
-            className={marksmenTheme ? "h-24 w-auto md:h-20" : "h-16 w-auto md:h-12"}
-          />
+          {marksmenTheme ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/clients/dmv-marksmen/salraza-cloud-logo.png" alt="Salraza Marketing" className="h-24 w-auto md:h-20" />
+          ) : (
+            // Velvet wordmark: text, so it reads in both light and dark mode.
+            <span className="flex items-center gap-2 font-display text-lg font-black tracking-wider text-ink">
+              SALRAZA
+              <span className="rec-blink h-2 w-2 rounded-full bg-spark shadow-[0_0_8px_var(--spark)]" />
+            </span>
+          )}
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-10 md:flex">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`focus-brand text-label transition ${
+              className={`focus-brand transition ${
                 marksmenTheme
-                  ? "text-white hover:text-[#2fc4de]"
-                  : "text-ink hover:text-purple-text"
+                  ? "text-label text-white hover:text-[#2fc4de]"
+                  : "text-[11px] font-bold uppercase tracking-[0.2em] text-ink hover:text-accent-bright"
               }`}
             >
               {link.label}
@@ -173,23 +158,25 @@ export function SiteHeader({
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          {!marksmenTheme && <ModeToggle />}
           <MediaVaultLink marksmenTheme={marksmenTheme} />
           <Link
             href="/#quote"
-            className={`focus-brand inline-flex items-center rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide transition ${
+            className={`focus-brand inline-flex items-center rounded-full transition ${
               marksmenTheme
-                ? "bg-[#2fc4de] text-[#04141a] hover:brightness-95"
-                : "bg-highlighter text-on-highlighter hover:brightness-95"
+                ? "bg-[#2fc4de] px-5 py-2.5 font-display text-sm font-extrabold tracking-wide text-[#04141a] hover:brightness-95"
+                : "bg-spark px-5 py-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#160b0d] hover:bg-accent hover:text-white"
             }`}
           >
             Start
           </Link>
         </div>
 
+        {!marksmenTheme && <ModeToggle className="ml-auto mr-2 md:hidden" />}
         <button
           type="button"
           className={`focus-brand flex h-10 w-10 items-center justify-center rounded-full md:hidden ${
-            marksmenTheme ? "text-white" : ""
+            marksmenTheme ? "text-white" : "text-ink"
           }`}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
@@ -232,7 +219,7 @@ export function SiteHeader({
           <Link
             href="/#quote"
             className={`focus-brand mt-1 inline-flex items-center justify-center rounded-full px-5 py-2.5 font-display text-sm font-extrabold tracking-wide ${
-              marksmenTheme ? "bg-[#2fc4de] text-[#04141a]" : "bg-highlighter text-on-highlighter"
+              marksmenTheme ? "bg-[#2fc4de] text-[#04141a]" : "bg-spark text-[#160b0d]"
             }`}
             onClick={() => setMenuOpen(false)}
           >
