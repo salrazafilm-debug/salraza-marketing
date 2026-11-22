@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { Reveal } from "./Reveal";
 import { photoTitle } from "./photos";
 import { Movable, Txt, textOf, useEditing } from "@/components/site/Editable";
-import { imagesOf, type Section } from "@/components/site/layout-types";
+import { imagesOf, showOrderOf, styleOf, type Section } from "@/components/site/layout-types";
 
 function useInView<T extends Element>(threshold = 0.35) {
   const ref = useRef<T>(null);
@@ -68,7 +68,7 @@ function WebsiteDemo({ images }: { images: string[] }) {
 }
 
 /* ---------- 02 Photography: photos come out of a pile and lay out in full view ---------- */
-function PhotoSpread({ images }: { images: string[] }) {
+function PhotoSpread({ images, look }: { images: string[]; look: "polaroid" | "original" }) {
   const [ref, inView] = useInView<HTMLDivElement>(0.2);
   const shots = images.slice(0, 8).map((url) => ({ src: url, thumb: url, title: photoTitle(url) }));
   const tilt = ["-rotate-2", "rotate-1", "rotate-2", "-rotate-1"];
@@ -96,14 +96,25 @@ function PhotoSpread({ images }: { images: string[] }) {
               } as CSSProperties
             }
           >
-            <div
-              className={`group relative bg-[#f4efe9] p-2 pb-8 shadow-[0_28px_55px_-22px_rgba(0,0,0,.75)] transition-transform duration-500 hover:z-20 hover:!rotate-0 hover:scale-[1.04] sm:p-2.5 sm:pb-10 ${tilt[col4]} ${col4 % 2 ? "md:translate-y-8" : ""}`}
-            >
-              <img src={p.thumb} alt={p.title} className="aspect-[3/4] w-full object-cover" />
-              <figcaption className="absolute inset-x-0 bottom-1.5 text-center font-script text-base text-black/70 sm:bottom-2.5 sm:text-lg">
-                {p.title}
-              </figcaption>
-            </div>
+            {look === "original" ? (
+              // Plain photos: no white frame, no tilt, no caption.
+              <div
+                className={`group relative overflow-hidden rounded-lg shadow-[0_28px_55px_-22px_rgba(0,0,0,.75)] transition-transform duration-500 hover:z-20 hover:scale-[1.04] ${col4 % 2 ? "md:translate-y-8" : ""}`}
+              >
+                <img src={p.thumb} alt={p.title} className="aspect-[3/4] w-full object-cover" />
+              </div>
+            ) : (
+              <div
+                className={`group relative bg-[#f4efe9] p-2 pb-8 shadow-[0_28px_55px_-22px_rgba(0,0,0,.75)] transition-transform duration-500 hover:z-20 hover:!rotate-0 hover:scale-[1.04] sm:p-2.5 sm:pb-10 ${tilt[col4]} ${col4 % 2 ? "md:translate-y-8" : ""}`}
+              >
+                <img src={p.thumb} alt={p.title} className="aspect-[3/4] w-full object-cover" />
+                {p.title && (
+                  <figcaption className="absolute inset-x-0 bottom-1.5 text-center font-script text-base text-black/70 sm:bottom-2.5 sm:text-lg">
+                    {p.title}
+                  </figcaption>
+                )}
+              </div>
+            )}
           </figure>
         );
       })}
@@ -215,24 +226,28 @@ function SocialStats({ s }: { s: Section }) {
   );
 }
 
-const DEMOS: { n: string; render: (s: Section) => ReactNode }[] = [
-  { n: "01", render: (s) => <WebsiteDemo images={imagesOf(s, "site")} /> },
-  { n: "02", render: (s) => <PhotoSpread images={imagesOf(s, "photos")} /> },
-  { n: "03", render: (s) => <BrandBoard images={imagesOf(s, "brand")} /> },
-  { n: "04", render: (s) => <SocialStats s={s} /> },
-];
+/** What each of the four showcases shows (ids stay with their words and photos
+ * even when the order changes). */
+const ITEMS: Record<number, (s: Section, look: "polaroid" | "original") => ReactNode> = {
+  1: (s) => <WebsiteDemo images={imagesOf(s, "site")} />,
+  2: (s, look) => <PhotoSpread images={imagesOf(s, "photos")} look={look} />,
+  3: (s) => <BrandBoard images={imagesOf(s, "brand")} />,
+  4: (s) => <SocialStats s={s} />,
+};
 
-function ShowcaseText({ s, i, n }: { s: Section; i: number; n: string }) {
+function ShowcaseText({ s, id, n }: { s: Section; id: number; n: string }) {
   return (
     <>
       <span className="font-display text-sm text-spark">{n}</span>
-      <Txt s={s} k={`s${i + 1}title`} as="h3" className="mt-4 block font-display text-3xl font-black uppercase text-ink sm:text-4xl" />
-      <Txt s={s} k={`s${i + 1}line`} as="p" className="mt-4 block max-w-sm text-base text-ink-muted" />
+      <Txt s={s} k={`s${id}title`} as="h3" className="mt-4 block font-display text-3xl font-black uppercase text-ink sm:text-4xl" />
+      <Txt s={s} k={`s${id}line`} as="p" className="mt-4 block max-w-sm text-base text-ink-muted" />
     </>
   );
 }
 
 export function Showcases({ s }: { s: Section }) {
+  const order = showOrderOf(s);
+  const look = styleOf(s).photos ?? "polaroid";
   return (
     <section id="services" className="relative">
       <div className="mx-auto max-w-[1200px] px-4 pb-20 pt-24 sm:px-6 sm:pb-24 sm:pt-28">
@@ -246,13 +261,14 @@ export function Showcases({ s }: { s: Section }) {
         </Movable>
       </div>
 
-      {DEMOS.map((d, i) =>
-        i === 1 ? (
+      {order.map((id, pos) => {
+        const n = String(pos + 1).padStart(2, "0");
+        return id === 2 ? (
           // Photography: a dark full-width band so the photos get the whole
-          // width and pop against the light page around it.
-          // The dark background and its edge fade live on their own layer so
-          // the fade never dims the heading or photos above it.
-          <div key={d.n} data-mode="dark" className="relative text-ink">
+          // width and pop against the light page around it. The dark background
+          // and its edge fade live on their own layer so the fade never dims
+          // the heading or photos above it.
+          <div key={id} data-mode="dark" className="relative text-ink">
             <div aria-hidden className="vintage band-fade pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
             <div
               aria-hidden
@@ -260,31 +276,31 @@ export function Showcases({ s }: { s: Section }) {
               style={{ background: "radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)" }}
             />
             <div className="relative mx-auto max-w-[1200px] px-4 py-20 sm:px-6 sm:py-28">
-              <Movable s={s} id="text2" label="Text 02">
+              <Movable s={s} id="text2" label={`Text ${n}`}>
                 <Reveal>
-                  <ShowcaseText s={s} i={i} n={d.n} />
+                  <ShowcaseText s={s} id={id} n={n} />
                 </Reveal>
               </Movable>
               <Movable s={s} id="demo2" label="Photos" className="mt-12 sm:mt-16">
-                {d.render(s)}
+                {ITEMS[id](s, look)}
               </Movable>
             </div>
           </div>
         ) : (
-          <div key={d.n} className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-20">
+          <div key={id} className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-20">
             <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-              <Movable s={s} id={`text${i + 1}`} label={`Text ${d.n}`} className={i % 2 ? "lg:order-2" : ""}>
+              <Movable s={s} id={`text${id}`} label={`Text ${n}`} className={pos % 2 ? "lg:order-2" : ""}>
                 <Reveal>
-                  <ShowcaseText s={s} i={i} n={d.n} />
+                  <ShowcaseText s={s} id={id} n={n} />
                 </Reveal>
               </Movable>
-              <Movable s={s} id={`demo${i + 1}`} label={`Visual ${d.n}`} className={i % 2 ? "lg:order-1" : ""}>
-                <Reveal delay={120}>{d.render(s)}</Reveal>
+              <Movable s={s} id={`demo${id}`} label={`Visual ${n}`} className={pos % 2 ? "lg:order-1" : ""}>
+                <Reveal delay={120}>{ITEMS[id](s, look)}</Reveal>
               </Movable>
             </div>
           </div>
-        )
-      )}
+        );
+      })}
       <div className="h-12 sm:h-16" />
     </section>
   );

@@ -41,6 +41,17 @@ export type SectionStyle = {
   spill?: boolean;
   entrance?: Entrance;
   hover?: Hover;
+  /** How the "Photography" showcase shows its photos. */
+  photos?: "polaroid" | "original";
+};
+
+/** A piece of text's own look: colour, font, size (a multiplier), weight. */
+export type TextFmt = {
+  color?: string;
+  font?: "display" | "sans" | "script";
+  size?: number;
+  weight?: 400 | 700 | 900;
+  italic?: boolean;
 };
 
 /** Desktop-only nudge for one built-in piece: offset in px, a size multiplier,
@@ -91,7 +102,19 @@ export type Section = {
   place?: Record<string, Placement>;
   /** Free elements added on top of the section. */
   els?: El[];
+  /** Per-text look overrides, keyed by the text's key. */
+  fmt?: Record<string, TextFmt>;
+  /** "What we do" only: the order of the four showcases (ids 1-4). */
+  showOrder?: number[];
 };
+
+/** Website, Photography, Branding, Social media: photography leads by default. */
+export const DEFAULT_SHOW_ORDER = [2, 1, 3, 4];
+export function showOrderOf(s: Section): number[] {
+  const o = s.showOrder;
+  if (o && o.length === 4 && [1, 2, 3, 4].every((n) => o.includes(n))) return o;
+  return DEFAULT_SHOW_ORDER;
+}
 
 export type Theme = { preset?: string; accent?: string; accentBright?: string; spark?: string };
 
@@ -326,6 +349,7 @@ function parseStyle(v: unknown): SectionStyle | undefined {
     spill: typeof o.spill === "boolean" ? o.spill : undefined,
     entrance: pick(o.entrance, ["rise", "fade", "zoom", "slide", "none"] as const),
     hover: pick(o.hover, ["none", "zoom", "tilt", "lift"] as const),
+    photos: pick(o.photos, ["polaroid", "original"] as const),
   };
   for (const k of Object.keys(st) as (keyof SectionStyle)[]) if (st[k] === undefined) delete st[k];
   return Object.keys(st).length ? st : undefined;
@@ -399,7 +423,7 @@ export function parseLayout(value: unknown): HomeLayout | null {
   const ids = new Set<string>();
   for (const s of raw) {
     if (!s || typeof s !== "object") return null;
-    const { id, type, hidden, text, style, images, place, els } = s as Record<string, unknown>;
+    const { id, type, hidden, text, style, images, place, els, fmt, showOrder } = s as Record<string, unknown>;
     if (typeof id !== "string" || !/^[a-z0-9-]{1,40}$/i.test(id) || ids.has(id)) return null;
     if (typeof type !== "string" || !ALL_TYPES.includes(type as SectionType)) return null;
     const lib = SECTION_LIBRARY[type as SectionType];
@@ -446,6 +470,26 @@ export function parseLayout(value: unknown): HomeLayout | null {
     if (st) sec.style = st;
     if (Object.keys(cleanImages).length) sec.images = cleanImages;
     if (Object.keys(cleanPlace).length) sec.place = cleanPlace;
+    if (fmt && typeof fmt === "object") {
+      const cleanFmt: Record<string, TextFmt> = {};
+      for (const [k, v] of Object.entries(fmt as Record<string, unknown>)) {
+        if (!(k in lib.defaults) || !v || typeof v !== "object") continue;
+        const o = v as Record<string, unknown>;
+        const f: TextFmt = {};
+        if (typeof o.color === "string" && HEX.test(o.color)) f.color = o.color;
+        const font = pick(o.font, ["display", "sans", "script"] as const);
+        if (font) f.font = font;
+        const size = num(o.size, 0.4, 3);
+        if (size !== undefined) f.size = size;
+        if (o.weight === 400 || o.weight === 700 || o.weight === 900) f.weight = o.weight;
+        if (typeof o.italic === "boolean") f.italic = o.italic;
+        if (Object.keys(f).length) cleanFmt[k] = f;
+      }
+      if (Object.keys(cleanFmt).length) sec.fmt = cleanFmt;
+    }
+    if (Array.isArray(showOrder) && showOrder.length === 4 && [1, 2, 3, 4].every((n) => showOrder.includes(n))) {
+      sec.showOrder = showOrder.map(Number);
+    }
     if (Array.isArray(els)) {
       const seen = new Set<string>();
       const list: El[] = [];

@@ -3,13 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EditProvider, type Sel } from "./Editable";
+import { EditProvider, textOf, type Sel, type TextSel } from "./Editable";
 import { PHOTOS } from "@/components/cinema/photos";
 import { HomeSections, type Slots } from "./HomeSections";
 import {
   SECTION_LIBRARY,
   THEME_PRESETS,
   imagesOf,
+  showOrderOf,
   styleOf,
   type Background,
   type Entrance,
@@ -18,6 +19,7 @@ import {
   type HomeLayout,
   type Hover,
   type Placement,
+  type TextFmt,
   type Section,
   type SectionStyle,
   type SectionType,
@@ -172,6 +174,100 @@ function ImagePicker({
           To add new photos, upload them in Admin → Portfolio; they appear here automatically, resized for speed.
         </p>
       </div>
+    </div>
+  );
+}
+
+/* ---------- text format bar ---------- */
+
+/** Floating bar above the text being edited: its own colour, font, size, weight. */
+function TextFormatBar({
+  target,
+  fmt,
+  onChange,
+  onReset,
+}: {
+  target: NonNullable<TextSel>;
+  fmt: TextFmt | undefined;
+  onChange: (patch: Partial<TextFmt>) => void;
+  onReset: () => void;
+}) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [liveColor, setLiveColor] = useState<string | null>(null);
+  useEffect(() => {
+    const place = () => {
+      const node = document.querySelector<HTMLElement>(`[data-txt="${target.sectionId}:${target.key}"]`);
+      if (!node) return setPos(null);
+      const r = node.getBoundingClientRect();
+      setPos({ x: Math.max(8, Math.min(window.innerWidth - 470, r.left)), y: Math.max(64, r.top - 54) });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    const id = setInterval(place, 400);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+      clearInterval(id);
+    };
+  }, [target.sectionId, target.key]);
+  if (!pos) return null;
+  const b = (on: boolean) => `rounded-md px-2 py-1.5 text-[11px] font-bold ${on ? "bg-[#f5c84c] text-black" : "hover:bg-white/10"}`;
+  return (
+    <div
+      data-mode="dark"
+      className="fixed z-[98] flex items-center gap-1 rounded-xl border border-[#3a2a2d] bg-[#120c0e] p-1.5 text-[#f4efe9] shadow-2xl"
+      style={{ left: pos.x, top: pos.y }}
+      onMouseDown={(e) => {
+        // keep the text selected while using the bar (but let the colour picker open)
+        if ((e.target as HTMLElement).tagName !== "INPUT") e.preventDefault();
+      }}
+    >
+      <label className="flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-white/10" title="Text colour">
+        <span className="h-5 w-5 rounded-full ring-1 ring-white/30" style={{ background: liveColor ?? fmt?.color ?? "#f4efe9" }} />
+        <span className="text-[11px] font-bold">Colour</span>
+        <input
+          type="color"
+          value={liveColor ?? fmt?.color ?? "#1a0f10"}
+          onChange={(e) => setLiveColor(e.target.value)}
+          onBlur={(e) => {
+            onChange({ color: e.target.value });
+            setLiveColor(null);
+          }}
+          className="sr-only"
+        />
+      </label>
+      <span className="h-4 w-px bg-white/15" />
+      {(
+        [
+          ["display", "Bold"],
+          ["sans", "Clean"],
+          ["script", "Script"],
+        ] as const
+      ).map(([k, t]) => (
+        <button key={k} type="button" className={b(fmt?.font === k)} onClick={() => onChange({ font: fmt?.font === k ? undefined : k })}>
+          {t}
+        </button>
+      ))}
+      <span className="h-4 w-px bg-white/15" />
+      <button type="button" className={b(fmt?.weight === 900)} onClick={() => onChange({ weight: fmt?.weight === 900 ? undefined : 900 })} title="Extra bold">
+        B
+      </button>
+      <button type="button" className={b(!!fmt?.italic)} onClick={() => onChange({ italic: !fmt?.italic || undefined })} title="Italic">
+        <i>I</i>
+      </button>
+      <span className="h-4 w-px bg-white/15" />
+      <button type="button" className={b(false)} onClick={() => onChange({ size: Math.max(0.4, Math.round(((fmt?.size ?? 1) - 0.1) * 10) / 10) })} title="Smaller">
+        A−
+      </button>
+      <span className="w-9 text-center text-[11px] tabular-nums text-[#b3a5a2]">{Math.round((fmt?.size ?? 1) * 100)}%</span>
+      <button type="button" className={b(false)} onClick={() => onChange({ size: Math.min(3, Math.round(((fmt?.size ?? 1) + 0.1) * 10) / 10) })} title="Bigger">
+        A+
+      </button>
+      <span className="h-4 w-px bg-white/15" />
+      <button type="button" className={b(false)} onClick={onReset} title="Back to the design's look">
+        Reset
+      </button>
     </div>
   );
 }
@@ -341,6 +437,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
   const [moveMode, setMoveMode] = useState(false);
   const [tab, setTab] = useState<"section" | "element" | "site" | "versions">("section");
   const [sel, setSel] = useState<Sel>(null);
+  const [textSel, setTextSel] = useState<TextSel>(null);
   const [clip, setClip] = useState<Omit<El, "id"> | null>(null);
   const [addingEl, setAddingEl] = useState(false);
   const [showLayers, setShowLayers] = useState(true);
@@ -555,7 +652,8 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
       } else if (e.key === "m" && !mod) {
         setMoveMode((m) => !m);
       } else if (e.key === "Escape") {
-        if (sel) setSel(null);
+        if (textSel) setTextSel(null);
+        else if (sel) setSel(null);
         else {
           setMoveMode(false);
           setSelectedId(null);
@@ -565,7 +663,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, saveDraft, undo, redo, sel, clip, selectedId]);
+  }, [layout, saveDraft, undo, redo, sel, textSel, clip, selectedId]);
 
   // Warn before leaving with unpublished work.
   useEffect(() => {
@@ -580,9 +678,18 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
       editing: true,
       moveMode,
       sel,
+      textSel,
+      selectText: (t: TextSel) => {
+        setTextSel(t);
+        if (t) {
+          setSel(null);
+          setSelectedId(t.sectionId);
+        }
+      },
       selSection: selectedId,
       selectEl: (next: Sel) => {
         setSel(next);
+        if (next) setTextSel(null);
         if (next) {
           setSelectedId(next.sectionId);
           setTab("element");
@@ -607,13 +714,14 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
           return { ...s, place: Object.keys(nextPlace).length ? nextPlace : undefined };
         }),
     }),
-    [moveMode, sel, selectedId, updateEl, updateSection]
+    [moveMode, sel, textSel, selectedId, updateEl, updateSection]
   );
 
   /* ----- section actions ----- */
   const select = (id: string) => {
     setSelectedId(id);
     setSel(null);
+    setTextSel(null);
     setTab("section");
     setShowPanel(true);
   };
@@ -659,6 +767,27 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
   const setStyle = (id: string, patch: Partial<SectionStyle>) =>
     updateSection(id, (s) => ({ ...s, style: { ...(s.style ?? {}), ...patch } }));
   const setTheme = (t: Theme | undefined) => commit((l) => ({ ...l, theme: t }));
+  const setFmt = (sectionId: string, key: string, patch: Partial<TextFmt> | null) =>
+    updateSection(sectionId, (s) => {
+      const fmt = { ...(s.fmt ?? {}) };
+      if (patch === null) delete fmt[key];
+      else {
+        const merged: TextFmt = { ...(fmt[key] ?? {}), ...patch };
+        (Object.keys(merged) as (keyof TextFmt)[]).forEach((k) => merged[k] === undefined && delete merged[k]);
+        if (Object.keys(merged).length) fmt[key] = merged;
+        else delete fmt[key];
+      }
+      return { ...s, fmt: Object.keys(fmt).length ? fmt : undefined };
+    });
+  const moveShowcase = (sectionId: string, id: number, dir: -1 | 1) =>
+    updateSection(sectionId, (s) => {
+      const order = [...showOrderOf(s)];
+      const i = order.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= order.length) return s;
+      [order[i], order[j]] = [order[j], order[i]];
+      return { ...s, showOrder: order };
+    });
 
   async function publish() {
     if (!confirm("Publish these changes to the live website?")) return;
@@ -752,6 +881,30 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
               >
                 <span className="cursor-grab select-none text-xs opacity-50">⋮⋮</span>
                 <span className="flex-1 truncate font-bold">{SECTION_LIBRARY[s.type].label}</span>
+                <button
+                  type="button"
+                  title="Move up"
+                  disabled={i === 0}
+                  className="text-xs opacity-60 hover:opacity-100 disabled:opacity-20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveTo(i, i - 1);
+                  }}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  title="Move down"
+                  disabled={i === layout.sections.length - 1}
+                  className="text-xs opacity-60 hover:opacity-100 disabled:opacity-20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveTo(i, i + 1);
+                  }}
+                >
+                  ↓
+                </button>
                 <button
                   type="button"
                   title={s.hidden ? "Show on site" : "Hide from site"}
@@ -1025,6 +1178,47 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {selected.type === "showcases" && (
+                  <div className="space-y-2">
+                    <p className={label}>Order of the four</p>
+                    <ol className="space-y-1">
+                      {showOrderOf(selected).map((id, pos, arr) => (
+                        <li key={id} className="flex items-center gap-2 rounded-md bg-white/5 px-2 py-1.5 text-xs">
+                          <span className="w-5 font-black text-[#f5c84c]">{pos + 1}</span>
+                          <span className="flex-1 truncate font-bold">{textOf(selected, `s${id}title`)}</span>
+                          <button
+                            type="button"
+                            disabled={pos === 0}
+                            onClick={() => moveShowcase(selected.id, id, -1)}
+                            className="rounded px-1.5 py-0.5 hover:bg-white/10 disabled:opacity-20"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pos === arr.length - 1}
+                            onClick={() => moveShowcase(selected.id, id, 1)}
+                            className="rounded px-1.5 py-0.5 hover:bg-white/10 disabled:opacity-20"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                    <p className={label}>Photography photos</p>
+                    <Seg<"polaroid" | "original">
+                      value={selectedStyle.photos ?? "polaroid"}
+                      options={[
+                        ["original", "Original photos"],
+                        ["polaroid", "Polaroid frames"],
+                      ]}
+                      onChange={(photos) => setStyle(selected.id, { photos })}
+                    />
                   </div>
                 )}
 
@@ -1494,6 +1688,16 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
             />
           );
         })()}
+
+      {/* ----- Text look bar ----- */}
+      {textSel && (
+        <TextFormatBar
+          target={textSel}
+          fmt={layout.sections.find((s) => s.id === textSel.sectionId)?.fmt?.[textSel.key]}
+          onChange={(patch) => setFmt(textSel.sectionId, textSel.key, patch)}
+          onReset={() => setFmt(textSel.sectionId, textSel.key, null)}
+        />
+      )}
 
       {/* ----- Selected element toolbar ----- */}
       {sel && (

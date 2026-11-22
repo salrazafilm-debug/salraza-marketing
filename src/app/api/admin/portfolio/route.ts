@@ -21,7 +21,8 @@ export async function POST(request: Request) {
   const image = String(body.image ?? "").trim();
   const cloudinaryPublicId = String(body.cloudinaryPublicId ?? "").trim();
 
-  if (!title || !category || !image || !cloudinaryPublicId) {
+  // The name is optional: photos without one simply show no name.
+  if (!category || !image || !cloudinaryPublicId) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 

@@ -223,7 +223,7 @@ export function PortfolioManager({
   }
 
   async function deleteItem(item: PortfolioItem) {
-    if (!confirm(`Remove "${item.title}" from the portfolio?`)) return;
+    if (!confirm(`Remove ${item.title ? `"${item.title}"` : "this photo"} from the portfolio?`)) return;
     setBusyId(item.id);
     await fetch(`/api/admin/portfolio/${item.id}`, { method: "DELETE" });
     setBusyId(null);
@@ -271,7 +271,7 @@ export function PortfolioManager({
             <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover" />
           </div>
           <div>
-            <p className="text-label text-ink">{item.title}</p>
+            <p className="text-label text-ink">{item.title || <span className="text-ink-muted">No name</span>}</p>
             <p className="text-caption text-warm-text">{item.category}</p>
           </div>
           <button

@@ -13,6 +13,8 @@ import {
 import { SECTION_LIBRARY, type El, type Entrance, type Placement, type Section } from "./layout-types";
 
 /** What is selected on the canvas: a built-in piece of a section, or a free element. */
+export type TextSel = { sectionId: string; key: string } | null;
+
 export type Sel = { sectionId: string; id: string; builtin: boolean } | null;
 
 type EditApi = {
@@ -20,6 +22,8 @@ type EditApi = {
   /** "Move & resize" mode: built-in pieces can be dragged and scaled instead of typed in. */
   moveMode: boolean;
   sel: Sel;
+  textSel: TextSel;
+  selectText: (t: TextSel) => void;
   selSection: string | null;
   setText: (sectionId: string, key: string, value: string) => void;
   setPlace: (sectionId: string, elId: string, place: Placement | null) => void;
@@ -33,6 +37,8 @@ const EditContext = createContext<EditApi>({
   editing: false,
   moveMode: false,
   sel: null,
+  textSel: null,
+  selectText: noop,
   selSection: null,
   setText: noop,
   setPlace: noop,
@@ -64,16 +70,45 @@ export function textOf(s: Section, k: string) {
  * One editable piece of text. On the live site it's plain text; inside the
  * admin editor it becomes click-to-edit (saved into the layout on blur).
  */
+const FMT_FONT = {
+  display: "var(--font-display)",
+  sans: "var(--font-sans)",
+  script: "var(--font-script)",
+} as const;
+
 export function Txt({ s, k, as: Tag = "span", className = "" }: { s: Section; k: string; as?: ElementType; className?: string }) {
-  const { editing, moveMode, setText } = useContext(EditContext);
+  const { editing, moveMode, textSel, selectText, setText } = useContext(EditContext);
   const value = textOf(s, k);
-  if (!editing || moveMode) return <Tag className={className}>{value}</Tag>;
+  const f = s.fmt?.[k];
+  // The text's own look (colour, font, size, weight) on top of the design's.
+  const style: CSSProperties | undefined = f
+    ? {
+        ...(f.color ? { color: f.color, WebkitTextFillColor: f.color, background: "none" } : {}),
+        ...(f.font ? { fontFamily: FMT_FONT[f.font] } : {}),
+        ...(f.size ? { zoom: f.size } : {}),
+        ...(f.weight ? { fontWeight: f.weight } : {}),
+        ...(f.italic ? { fontStyle: "italic" } : {}),
+      }
+    : undefined;
+  if (!editing || moveMode) {
+    return (
+      <Tag className={className} style={style}>
+        {value}
+      </Tag>
+    );
+  }
+  const isSel = textSel?.sectionId === s.id && textSel.key === k;
   return (
     <Tag
-      className={`${className} cursor-text rounded-sm outline-dashed outline-1 outline-offset-4 outline-transparent transition-[outline-color] hover:outline-spark/70 focus:outline-spark`}
+      data-txt={`${s.id}:${k}`}
+      className={`${className} cursor-text rounded-sm outline-dashed outline-1 outline-offset-4 transition-[outline-color] ${
+        isSel ? "outline-spark" : "outline-transparent hover:outline-spark/70"
+      }`}
+      style={style}
       contentEditable
       suppressContentEditableWarning
       spellCheck
+      onFocus={() => selectText({ sectionId: s.id, key: k })}
       onClick={(e: React.MouseEvent) => e.preventDefault()}
       onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === "Escape") e.currentTarget.blur();
