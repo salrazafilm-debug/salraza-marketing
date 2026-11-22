@@ -257,25 +257,33 @@ function Gallery({ s, slot }: { s: Section; slot: ReactNode }) {
   );
 }
 
-/** The Media Vault invite: one calm, centred card — no pictures. */
+/** The Media Vault: one small, simple card. Solid colour with plain white text
+ * so it reads easily and stands out; a soft glow blends its edges into the page. */
 function Vault({ s }: { s: Section }) {
   return (
-    <section className="relative px-4 py-20 sm:px-6 sm:py-28">
-      <Movable s={s} id="card" label="Vault card" className="mx-auto max-w-[760px]">
+    <section id="vault" className="relative px-4 py-20 sm:px-6 sm:py-28">
+      <Movable s={s} id="card" label="Media Vault" className="mx-auto max-w-[720px]">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-14 text-center shadow-[0_40px_90px_-40px_rgba(0,0,0,.8)] backdrop-blur-md sm:px-14 sm:py-16">
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f5c84c]/60 to-transparent" />
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#f5c84c]/40 text-[#f5c84c]">
+          <div
+            data-mode="dark"
+            className="relative rounded-3xl px-6 py-12 text-center sm:px-14 sm:py-16"
+            style={{
+              background: "linear-gradient(180deg, #4a1730 0%, #36111f 100%)",
+              // Soft glow around the card so its edges melt into the page.
+              boxShadow: "0 0 0 1px rgba(245,200,76,.35), 0 0 70px 14px rgba(142,27,58,.55), 0 40px 90px -30px rgba(0,0,0,.85)",
+            }}
+          >
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#f5c84c]/60 text-[#f5c84c]">
               <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
                 <rect x="4" y="9" width="12" height="9" rx="2" />
                 <path d="M7 9V6a3 3 0 0 1 6 0v3" />
               </svg>
             </span>
-            <Txt s={s} k="eyebrow" as="p" className="mt-6 block text-xs uppercase tracking-[0.3em] text-warm-text" />
-            <h2 className="mt-3 font-display text-3xl font-black uppercase leading-[1] text-ink sm:text-5xl">
-              <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" className="text-[#f5c84c]" />
+            <Txt s={s} k="eyebrow" as="p" className="mt-6 block text-xs uppercase tracking-[0.3em] text-white" />
+            <h2 className="mt-3 font-display text-3xl font-black uppercase leading-[1] text-white sm:text-5xl">
+              <Txt s={s} k="title" /> <Txt s={s} k="titleSpark" />
             </h2>
-            <Txt s={s} k="body" as="p" className="mx-auto mt-5 block max-w-md text-base text-ink/75 sm:text-lg" />
+            <Txt s={s} k="body" as="p" className="mx-auto mt-5 block max-w-md text-base text-white sm:text-lg" />
             <Link
               href="/clients"
               className="focus-brand mt-8 inline-flex items-center gap-3 rounded-full bg-[#f5c84c] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] transition duration-300 hover:-translate-y-0.5 hover:bg-white"

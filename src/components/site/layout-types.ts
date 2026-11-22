@@ -128,7 +128,14 @@ export type Theme = { preset?: string; accent?: string; accentBright?: string; s
 
 /** ownBgs: true = each section paints its own background colour; otherwise the
  * whole page shares one smooth backdrop (the default). */
-export type HomeLayout = { version: 1; sections: Section[]; theme?: Theme; ownBgs?: boolean };
+export type HomeLayout = {
+  version: 1;
+  sections: Section[];
+  theme?: Theme;
+  ownBgs?: boolean;
+  /** 1 = the page order has been set to: ... What we do, Media Vault, ..., About us last. */
+  arranged?: 1;
+};
 
 export type SlotDef = { label: string; max: number; defaults: string[] };
 
@@ -322,7 +329,7 @@ const ALL_TYPES = Object.keys(SECTION_LIBRARY) as SectionType[];
 
 export const DEFAULT_LAYOUT: HomeLayout = {
   version: 1,
-  sections: (["hero", "statement", "showcases", "about", "gallery", "vault", "quote"] as SectionType[]).map(
+  sections: (["hero", "statement", "showcases", "vault", "gallery", "quote", "about"] as SectionType[]).map(
     (type) => ({ id: type, type, text: {} })
   ),
 };
@@ -541,6 +548,19 @@ export function parseLayout(value: unknown): HomeLayout | null {
   const theme = parseTheme((value as { theme?: unknown }).theme);
   const out: HomeLayout = theme ? { version: 1, sections, theme } : { version: 1, sections };
   if ((value as { ownBgs?: unknown }).ownBgs === true) out.ownBgs = true;
+  // One-time page order: the Media Vault follows "What we do", About us comes last.
+  if ((value as { arranged?: unknown }).arranged !== 1) {
+    const list = out.sections;
+    const vault = list.findIndex((s) => s.type === "vault");
+    const show = list.findIndex((s) => s.type === "showcases");
+    if (vault >= 0 && show >= 0) {
+      const [v] = list.splice(vault, 1);
+      list.splice(list.findIndex((s) => s.type === "showcases") + 1, 0, v);
+    }
+    const about = list.findIndex((s) => s.type === "about");
+    if (about >= 0) list.push(...list.splice(about, 1));
+  }
+  out.arranged = 1;
   return out;
 }
 
