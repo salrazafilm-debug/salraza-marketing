@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
-  { href: "/#services", label: "Services" },
-  { href: "/#about", label: "About" },
-  { href: "/portfolio", label: "Gallery" },
+  { href: "/#services", label: "What we do" },
+  { href: "/portfolio", label: "Photography" },
 ];
 
 const MEDIA_VAULT_LINK = { href: "/clients", label: "Media Vault" };
@@ -166,7 +165,7 @@ export function SiteHeader({
                 : "bg-spark px-5 py-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#160b0d] hover:bg-accent hover:text-white"
             }`}
           >
-            Start
+            Contact us
           </Link>
         </div>
 
@@ -226,7 +225,7 @@ export function SiteHeader({
             }`}
             onClick={() => setMenuOpen(false)}
           >
-            Start
+            Contact us
           </Link>
         </nav>
       )}

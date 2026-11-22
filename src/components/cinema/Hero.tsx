@@ -31,6 +31,9 @@ export function Hero({ s }: { s: Section }) {
       <Corners />
 
       <div className="relative z-10 w-full max-w-5xl px-4">
+        <Movable s={s} id="sig" label="Signature" className="mb-2 text-center sm:mb-4">
+          <Txt s={s} k="sig" as="p" className="block text-[10px] uppercase tracking-[0.4em] text-warm-text sm:text-xs" />
+        </Movable>
         <Movable s={s} id="title" label="Title">
           <div className="relative mx-auto flex h-[150px] items-center justify-center sm:h-[230px] lg:h-[260px]">
             <ScribbleCanvas style={SCRIBBLE} />

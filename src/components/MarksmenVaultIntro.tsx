@@ -52,6 +52,8 @@ export function MarksmenVaultIntro({
 
   return (
     <RevealContext.Provider value={revealed}>
+      {/* No site header on top of the intro: hidden until the intro has gone. */}
+      {introSrc && overlayVisible && <style>{"header{visibility:hidden!important}"}</style>}
       {introSrc && overlayVisible && (
         <div
           aria-hidden={revealed}

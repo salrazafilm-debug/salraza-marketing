@@ -134,7 +134,7 @@ export type HomeLayout = {
   theme?: Theme;
   ownBgs?: boolean;
   /** 1 = the page order has been set to: ... What we do, Media Vault, ..., About us last. */
-  arranged?: 1;
+  arranged?: 1 | 2;
 };
 
 export type SlotDef = { label: string; max: number; defaults: string[] };
@@ -166,6 +166,7 @@ export const SECTION_LIBRARY: Record<SectionType, LibraryEntry> = {
     description: "Big SALRAZA title, scribbles and the photo strip.",
     single: true,
     defaults: {
+      sig: "Bruce & Elena",
       title: "SALRAZA",
       tagline: "Social media, photography & websites.",
       spark: "The sky is the limit.",
@@ -560,7 +561,26 @@ export function parseLayout(value: unknown): HomeLayout | null {
     const about = list.findIndex((s) => s.type === "about");
     if (about >= 0) list.push(...list.splice(about, 1));
   }
-  out.arranged = 1;
+  if ((value as { arranged?: unknown }).arranged !== 2) {
+    // v2: remove a stray "Bruce & Elena" left under the vault card, and the
+    // fixed height that left an empty gap before the quote form.
+    const vault = out.sections.find((s) => s.type === "vault");
+    if (vault) {
+      if (vault.els) {
+        const kept = vault.els.filter((e) => !/bruce\s*&\s*elena/i.test(e.text ?? ""));
+        if (kept.length) vault.els = kept;
+        else delete vault.els;
+      }
+      if (vault.style?.fixedH) {
+        const st = { ...vault.style };
+        delete st.fixedH;
+        delete st.spill;
+        if (Object.keys(st).length) vault.style = st;
+        else delete vault.style;
+      }
+    }
+  }
+  out.arranged = 2;
   return out;
 }
 

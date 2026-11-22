@@ -49,11 +49,12 @@ export function Reveal({
   );
 }
 
-/** Live HH:MM:SS clock. */
+/** Live 12-hour clock with seconds, e.g. 2:37:05 PM. */
 export function useClock() {
   const [time, setTime] = useState("");
   useEffect(() => {
-    const f = () => setTime(new Date().toLocaleTimeString("en-GB", { hour12: false }));
+    const f = () =>
+      setTime(new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true }));
     const first = setTimeout(f, 0);
     const id = setInterval(f, 1000);
     return () => {
