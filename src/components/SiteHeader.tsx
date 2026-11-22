@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ModeToggle } from "@/components/cinema/ModeToggle";
 
 const NAV_LINKS = [
   { href: "/#services", label: "Services" },
@@ -158,7 +157,6 @@ export function SiteHeader({
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          {!marksmenTheme && <ModeToggle />}
           <MediaVaultLink marksmenTheme={marksmenTheme} />
           <Link
             href="/#quote"
@@ -172,7 +170,6 @@ export function SiteHeader({
           </Link>
         </div>
 
-        {!marksmenTheme && <ModeToggle className="ml-auto mr-2 md:hidden" />}
         <button
           type="button"
           className={`focus-brand flex h-10 w-10 items-center justify-center rounded-full md:hidden ${

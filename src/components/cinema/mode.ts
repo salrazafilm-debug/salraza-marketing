@@ -3,6 +3,6 @@
 // not the value).
 export const MODE_STORAGE_KEY = "salraza-mode";
 
-/** Runs before paint (loaded from layout.tsx) so there is no flash of the
- * wrong mode. Saved choice wins, otherwise light. */
-export const MODE_BOOT_SCRIPT = `try{var d=document.documentElement,m=localStorage.getItem("${MODE_STORAGE_KEY}");if(m!=="light"&&m!=="dark")m="light";d.dataset.mode=m}catch(e){}`;
+/** The site is always dark (the design is built for it); this also clears any
+ * light choice saved by the old light/dark switch. */
+export const MODE_BOOT_SCRIPT = `try{document.documentElement.dataset.mode="dark";localStorage.removeItem("${MODE_STORAGE_KEY}")}catch(e){}`;

@@ -37,12 +37,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-mode="light"
+      data-mode="dark"
       suppressHydrationWarning
       className={`${unbounded.variable} ${bricolage.variable} ${caveatBrush.variable} antialiased`}
     >
       <body>
-        {/* Sets light/dark mode before hydration (see cinema/mode.ts). */}
+        {/* Keeps the site in dark mode (see cinema/mode.ts). */}
         <Script id="salraza-mode" strategy="beforeInteractive">
           {MODE_BOOT_SCRIPT}
         </Script>
