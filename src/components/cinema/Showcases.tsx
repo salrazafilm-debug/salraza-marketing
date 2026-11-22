@@ -28,24 +28,26 @@ function useInView<T extends Element>(threshold = 0.35) {
   return [ref, inView] as const;
 }
 
-/* ---------- Website creation: three real sites fanned out, the middle one in front ---------- */
+/* ---------- Website creation: three sites in a row, the middle one in front ---------- */
 function SiteFan({ images }: { images: string[] }) {
   const [ref, inView] = useInView<HTMLDivElement>(0.25);
-  const [l, m, r] = [images[0], images[1] ?? images[0], images[2] ?? images[0]];
-  const card = "absolute aspect-[16/10] object-cover object-top overflow-hidden rounded-md shadow-[0_30px_60px_-25px_rgba(0,0,0,.8)] ring-1 ring-white/10 transition-[transform,opacity] duration-[1100ms] ease-[cubic-bezier(.16,1,.3,1)] hover:z-30 hover:!scale-[1.04]";
+  const shots = [images[0], images[1] ?? images[0], images[2] ?? images[0]];
+  // Each card is 36% wide, so the middle one overlaps its neighbours by ~4%.
+  const spots = ["left-0 z-10", "left-1/2 z-20 -translate-x-1/2 scale-[1.06]", "right-0 z-10"];
+  const from = ["translateX(30%)", "translateY(10%)", "translateX(-30%)"];
   return (
-    <div ref={ref} className="relative mx-auto aspect-[16/7] w-full max-w-[1100px]">
-      {l && (
-        <img src={l} alt="" className={`${card} left-0 top-0 z-10 w-[36%]`}
-          style={{ transform: inView ? "none" : "translateX(40%) scale(.9)", opacity: inView ? 1 : 0 }} />
-      )}
-      {r && (
-        <img src={r} alt="" className={`${card} right-0 top-0 z-10 w-[36%]`}
-          style={{ transform: inView ? "none" : "translateX(-40%) scale(.9)", opacity: inView ? 1 : 0 }} />
-      )}
-      {m && (
-        <img src={m} alt="" className={`${card} left-1/2 top-[14%] z-20 w-[42%] -translate-x-1/2`}
-          style={{ transform: inView ? "translateX(-50%)" : "translateX(-50%) translateY(12%)", opacity: inView ? 1 : 0, transitionDelay: "150ms" }} />
+    <div ref={ref} className="relative mx-auto aspect-[100/26] w-full max-w-[1100px]">
+      {shots.map((src, i) =>
+        src ? (
+          <div key={i} className={`absolute top-[4%] w-[36%] ${spots[i]}`}>
+            <img
+              src={src}
+              alt=""
+              className="aspect-[16/10] w-full rounded-md object-cover object-top shadow-[0_30px_60px_-25px_rgba(0,0,0,.8)] ring-1 ring-white/10 transition-[transform,opacity] duration-[1100ms] ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.04]"
+              style={{ transform: inView ? "none" : from[i], opacity: inView ? 1 : 0, transitionDelay: `${i === 1 ? 150 : 0}ms` }}
+            />
+          </div>
+        ) : null
       )}
     </div>
   );
@@ -199,20 +201,21 @@ const SIDE: Record<number, (s: Section) => ReactNode> = {
   4: (s) => <SocialStats s={s} />,
 };
 
-/** Big centred title with its number, like a film chapter card. */
-function ChapterTitle({ s, id, n }: { s: Section; id: number; n: string }) {
+/** Big centred title, like a film chapter card. Long titles get a smaller
+ * size so they always fit on at most two lines. */
+function ChapterTitle({ s, id }: { s: Section; id: number }) {
+  const long = textOf(s, `s${id}title`).length > 13;
   return (
-    <div className="relative">
-      <span className="absolute left-0 top-1 font-display text-xs font-bold text-spark sm:top-3 sm:text-sm">{n}</span>
-      <Reveal>
-        <Txt
-          s={s}
-          k={`s${id}title`}
-          as="h3"
-          className="block px-7 text-center font-display text-[clamp(1.5rem,7.4vw,6.25rem)] font-black uppercase leading-[0.95] text-ink"
-        />
-      </Reveal>
-    </div>
+    <Reveal>
+      <Txt
+        s={s}
+        k={`s${id}title`}
+        as="h3"
+        className={`mx-auto block max-w-[16ch] text-balance text-center font-display font-black uppercase leading-[0.95] text-ink ${
+          long ? "text-[clamp(1.6rem,6.2vw,5.25rem)]" : "text-[clamp(1.9rem,7.4vw,6.25rem)]"
+        }`}
+      />
+    </Reveal>
   );
 }
 
@@ -222,7 +225,7 @@ function Tagline({ s, k, small }: { s: Section; k: string; small?: boolean }) {
       s={s}
       k={k}
       as="p"
-      className={`block whitespace-pre-line font-display font-black leading-[1.08] text-ink ${small ? "text-[clamp(1.05rem,2.4vw,2rem)]" : "text-[clamp(1.2rem,4vw,3.25rem)]"}`}
+      className={`block whitespace-pre-line font-display font-black max-md:text-center leading-[1.08] text-ink ${small ? "text-[clamp(1.05rem,2.4vw,2rem)]" : "text-[clamp(1.2rem,4vw,3.25rem)]"}`}
     />
   );
 }
@@ -241,8 +244,7 @@ export function Showcases({ s }: { s: Section }) {
         </Reveal>
       </div>
 
-      {order.map((id, pos) => {
-        const n = String(pos + 1).padStart(2, "0");
+      {order.map((id) => {
         if (id === 2)
           return (
             // Photography: a dark band so the photos pop.
@@ -254,7 +256,7 @@ export function Showcases({ s }: { s: Section }) {
                 style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)" }}
               />
               <div className="relative mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
-                <ChapterTitle s={s} id={id} n={n} />
+                <ChapterTitle s={s} id={id} />
                 <div className="mt-6 sm:mt-12">{<PhotoSpread images={imagesOf(s, "photos")} look={look} />}</div>
               </div>
             </div>
@@ -262,7 +264,7 @@ export function Showcases({ s }: { s: Section }) {
         if (id === 1)
           return (
             <div key={id} className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
-              <ChapterTitle s={s} id={id} n={n} />
+              <ChapterTitle s={s} id={id} />
               <div className="mt-6 sm:mt-12">
                 <SiteFan images={imagesOf(s, "site")} />
               </div>
@@ -270,8 +272,8 @@ export function Showcases({ s }: { s: Section }) {
           );
         const flip = id === 4;
         return (
-          <div key={id} className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
-            <ChapterTitle s={s} id={id} n={n} />
+          <div key={id} className={`mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20 ${flip ? "mt-10 sm:mt-24" : ""}`}>
+            <ChapterTitle s={s} id={id} />
             <div className="mt-6 grid items-center gap-6 sm:mt-12 md:grid-cols-[1fr_1.15fr] md:gap-12">
               <Reveal className={flip ? "md:order-2" : ""}>
                 <Tagline s={s} k={`s${id}tag`} small={id === 4} />

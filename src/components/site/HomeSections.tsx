@@ -43,9 +43,16 @@ function luminance(hex: string) {
  * any free elements are never clipped: they can overhang into the next
  * section and sit on top of its background. Layers: background (lowest) →
  * z 1-2 behind content → content (z 3) → z 4+ in front. */
-export function SectionFrame({ s, children }: { s: Section; children: ReactNode }) {
+/** True when the section paints its own background (anything but the page itself). */
+export function hasOwnBg(s: Section) {
+  return !!styleOf(s).bg && styleOf(s).bg !== "page";
+}
+
+export function SectionFrame({ s, children, fadeOut = false }: { s: Section; children: ReactNode; fadeOut?: boolean }) {
   const st = styleOf(s);
-  const { editing, selSection, setFixedH, zoom } = useEdit();
+  const { editing, selSection, setFixedH, zoom, moveMode, sel } = useEdit();
+  // Layout guides: a grid plus a centre line while arranging things in this section.
+  const guides = editing && (moveMode || sel?.sectionId === s.id) && selSection === s.id;
   let mode: "light" | "dark" | undefined;
   let background: string | undefined;
   const cls: string[] = [];
@@ -71,7 +78,7 @@ export function SectionFrame({ s, children }: { s: Section; children: ReactNode 
   if (st.fixedH) cls.push("sec-fixed");
   // A set height crops whatever doesn't fit (unless "let things spill out" is on),
   // so a shortened section never runs into the next one.
-  if (st.fixedH && !st.spill) cls.push("overflow-hidden");
+  const crop = !!st.fixedH && !st.spill;
   if (st.hover && st.hover !== "none") cls.push(`fx-${st.hover}`);
 
   // Drag the bottom edge to set an exact height (editor only).
@@ -92,16 +99,27 @@ export function SectionFrame({ s, children }: { s: Section; children: ReactNode 
       style={{ containerType: "inline-size", ...(st.fixedH ? { height: st.fixedH } : {}) }}
     >
       {background && (
+        // Auto blend: the background reaches up over the section above and fades
+        // in, so neighbouring colours always melt into each other (no seams). It
+        // only fades out at the bottom when the next section has no background.
         <div
           aria-hidden
-          className={`band-fade pointer-events-none absolute inset-0 overflow-hidden ${st.grain ? "vintage" : ""}`}
+          className={`${fadeOut ? "blend-both" : "blend-top"} pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden ${st.grain ? "vintage" : ""}`}
           style={{ background }}
         />
       )}
-      <div className={`relative ${raised ? "z-[45]" : "z-[3]"}`}>
-        <EntranceContext.Provider value={st.entrance ?? "rise"}>{children}</EntranceContext.Provider>
+      <div className={crop ? "relative h-full overflow-hidden" : "contents"}>
+        <div className={`relative ${raised ? "z-[45]" : "z-[3]"}`}>
+          <EntranceContext.Provider value={st.entrance ?? "rise"}>{children}</EntranceContext.Provider>
+        </div>
+        <ElementsLayer s={s} />
       </div>
-      <ElementsLayer s={s} />
+      {guides && (
+        <div aria-hidden className="edit-guides pointer-events-none absolute inset-0 z-[55]">
+          <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#ff3d7f]" />
+          <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#ff3d7f]/50" />
+        </div>
+      )}
       {showHandle && (
         <div
           data-mode="dark"
@@ -197,9 +215,9 @@ function About({ s }: { s: Section }) {
               className="h-auto w-24 invert mix-blend-screen light:invert-0 light:mix-blend-multiply sm:w-40"
             />
             <img
-              src="/signatures/elena-signature.webp"
+              src="/signatures/elena-signature-clear.webp"
               alt="Elena's signature"
-              className="h-auto w-32 invert mix-blend-screen light:invert-0 light:mix-blend-multiply sm:w-[213px]"
+              className="h-auto w-32 invert light:invert-0 sm:w-[213px]"
             />
           </Reveal>
         </Movable>
@@ -513,8 +531,10 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
   const list = canvas ? layout.sections : layout.sections.filter((s) => !s.hidden);
   return (
     <ThemeScope theme={layout.theme}>
-      {list.map((s) =>
-        canvas ? (
+      {list.map((s, i) => {
+        const next = list.slice(i + 1).find((n) => canvas || !n.hidden);
+        const fadeOut = hasOwnBg(s) && (!next || !hasOwnBg(next));
+        return canvas ? (
           <div
             key={s.id}
             id={`sec-${s.id}`}
@@ -534,15 +554,15 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
               </span>
             )}
             <div className={s.hidden ? "opacity-40 grayscale" : undefined}>
-              <SectionFrame s={s}>{renderSection(s, slots)}</SectionFrame>
+              <SectionFrame s={s} fadeOut={fadeOut}>{renderSection(s, slots)}</SectionFrame>
             </div>
           </div>
         ) : (
-          <SectionFrame key={s.id} s={s}>
+          <SectionFrame key={s.id} s={s} fadeOut={fadeOut}>
             {renderSection(s, slots)}
           </SectionFrame>
-        )
-      )}
+        );
+      })}
     </ThemeScope>
   );
 }

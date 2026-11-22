@@ -259,6 +259,17 @@ body {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 min(130px, 22%), #000 calc(100% - min(130px, 22%)), transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 min(130px, 22%), #000 calc(100% - min(130px, 22%)), transparent 100%);
 }
+/* Section backgrounds reach 140px up and fade in over the section above. */
+.blend-top {
+  top: -140px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 140px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 140px);
+}
+.blend-both {
+  top: -140px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 140px, #000 calc(100% - 120px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 140px, #000 calc(100% - 120px), transparent 100%);
+}
 .band-fade-top {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 130px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 130px);
@@ -557,4 +568,12 @@ body {
 .justified-spacer {
   flex: 10000 1 0;
   height: 0;
+}
+
+/* Editor: layout grid (12 columns, square rows) shown while arranging a section. */
+.edit-guides {
+  background-image:
+    linear-gradient(to right, rgb(245 200 76 / 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(245 200 76 / 0.16) 1px, transparent 1px);
+  background-size: calc(100% / 12) 100%, 100% calc(100cqw / 24);
 }

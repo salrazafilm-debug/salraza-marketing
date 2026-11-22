@@ -149,7 +149,7 @@ export function Movable({
   const { editing, moveMode, sel, setPlace, selectEl, zoom } = useContext(EditContext);
   const saved = s.place?.[id];
   const [live, setLive] = useState<Placement | null>(null);
-  const drag = useRef<{ kind: "move" | "resize"; x: number; y: number; start: Placement; w: number; secW: number } | null>(null);
+  const drag = useRef<{ kind: "move" | "resize"; x: number; y: number; start: Placement; w: number; secW: number; off0: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const cur = live ?? saved ?? { x: 0, y: 0, scale: 1 };
   const isSel = !!sel && sel.sectionId === s.id && sel.id === id && sel.builtin;
@@ -194,10 +194,15 @@ export function Movable({
     e.stopPropagation();
     selectEl({ sectionId: s.id, id, builtin: true });
     const kind = (e.target as HTMLElement).dataset.handle === "resize" ? "resize" : "move";
-    const secW = (ref.current?.closest("[data-sec]") as HTMLElement | null)?.offsetWidth || 1200;
+    const secEl = ref.current?.closest("[data-sec]") as HTMLElement | null;
+    const secW = secEl?.offsetWidth || 1200;
+    // How far (on screen) the middle of this piece is from the middle of the section.
+    const r = ref.current?.getBoundingClientRect();
+    const sr = secEl?.getBoundingClientRect();
+    const off0 = r && sr ? r.left + r.width / 2 - (sr.left + sr.width / 2) : 9999;
     // Older placements were saved in pixels; switch them to section-width units.
     const start: Placement = cur.u ? cur : { ...cur, x: (cur.x / secW) * 1000, y: (cur.y / secW) * 1000, u: 1 };
-    drag.current = { kind, x: e.clientX, y: e.clientY, start, w: ref.current?.offsetWidth || 300, secW };
+    drag.current = { kind, x: e.clientX, y: e.clientY, start, w: ref.current?.offsetWidth || 300, secW, off0 };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
@@ -206,13 +211,17 @@ export function Movable({
     const d = drag.current;
     if (!d) return;
     // Pointer moves are on screen; the page inside the editor is zoomed.
-    const dx = (e.clientX - d.x) / zoom;
+    let sdx = e.clientX - d.x;
+    // Snap to the centre line when close to it (hold Alt to move freely).
+    const centred = d.kind === "move" && !e.altKey && Math.abs(d.off0 + sdx) < 10;
+    if (centred) sdx = -d.off0;
+    const dx = sdx / zoom;
     const dy = (e.clientY - d.y) / zoom;
     if (d.kind === "move") {
       // Positions are in 1/1000s of the section width so they hold on every screen size.
       const toU = (px: number) => (px / d.secW) * 1000;
       const snap = (v: number) => (e.altKey ? Math.round(v * 10) / 10 : Math.round(v / 4) * 4);
-      setLive({ ...d.start, x: snap(d.start.x + toU(dx)), y: snap(d.start.y + toU(dy)) });
+      setLive({ ...d.start, x: centred ? Math.round((d.start.x + toU(dx)) * 10) / 10 : snap(d.start.x + toU(dx)), y: snap(d.start.y + toU(dy)) });
     } else {
       const scale = Math.max(0.3, Math.min(3, d.start.scale * (1 + dx / d.w)));
       setLive({ ...d.start, scale: Math.round(scale * 100) / 100 });
@@ -383,7 +392,10 @@ export function ElementsLayer({ s }: { s: Section }) {
     if (d.kind === "move") {
       const snapX = (v: number) => (e.altKey ? v : Math.round(v * 2) / 2);
       const snapY = (v: number) => (e.altKey ? Math.round(v) : Math.round(v / 4) * 4);
-      updateEl(s.id, d.id, { x: snapX(d.el.x + dxPct), y: snapY(d.el.y + dy) });
+      let x = snapX(d.el.x + dxPct);
+      // Snap to the centre line when the middle of the element is close to it.
+      if (!e.altKey && Math.abs(x + d.el.w / 2 - 50) < 1.2) x = Math.round((50 - d.el.w / 2) * 10) / 10;
+      updateEl(s.id, d.id, { x, y: snapY(d.el.y + dy) });
     } else {
       const patch: Partial<El> = { w: Math.max(2, Math.round((d.el.w + dxPct) * 10) / 10) };
       if (d.el.kind === "image" || d.el.kind === "shape") patch.h = Math.max(12, Math.round((d.el.h ?? 240) + dy));
