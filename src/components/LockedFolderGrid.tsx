@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { DEFAULT_RATIO, JustifiedRows, clampRatio, type JustifyItem } from "@/components/JustifiedRows";
 
 /** Only what a guest may see: cover, name, date. No media is ever passed in. */
 export type LockedFolder = {
@@ -16,47 +14,23 @@ export type LockedFolder = {
   countLabel: string;
 };
 
-function LockedCard({
-  folder,
-  width,
-  height,
-  onRatio,
-}: {
-  folder: LockedFolder;
-  width: number;
-  height: number;
-  onRatio: (id: string, ratio: number) => void;
-}) {
+/** Same hero card as the regular vault: one folder per row, full width. A locked folder shows its plain cover and a Locked button. */
+function GuestCard({ folder }: { folder: LockedFolder }) {
   const inner = (
     <>
-      <div className="relative w-full overflow-hidden bg-black" style={{ height }}>
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black sm:aspect-[16/9] sm:max-h-[78svh]">
         {folder.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={folder.cover}
             alt=""
-            onLoad={(event) => onRatio(folder.id, clampRatio(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight))}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="h-full w-full bg-[#1d0b11]" />
         )}
-        {!folder.open && (
-          <>
-            <div className="absolute inset-0 bg-black/25" />
-            {/* The lock sits in the middle of the cover. */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="flex h-20 w-20 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white shadow-2xl backdrop-blur-sm sm:h-24 sm:w-24">
-                <svg width="38" height="38" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-                  <rect x="4" y="9" width="12" height="9" rx="2" />
-                  <path d="M7 9V6a3 3 0 0 1 6 0v3" />
-                </svg>
-              </span>
-            </div>
-          </>
-        )}
       </div>
-      <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center">
+      <div className="flex flex-1 flex-col items-center gap-1 p-5 text-center sm:p-6">
         {folder.dateLabel && <p className="text-caption uppercase tracking-wide text-golden-hour/80">{folder.dateLabel}</p>}
         <p className="text-subhead text-[#f4efe9]">{folder.name}</p>
         {folder.open && folder.countLabel && <p className="text-caption text-golden-hour/80">{folder.countLabel}</p>}
@@ -78,24 +52,22 @@ function LockedCard({
   );
 
   return folder.open ? (
-    <Link href={folder.href} className="justified-item focus-brand group flex flex-col shadow-lg shadow-black/30 transition hover:-translate-y-1" style={{ width }}>
+    <Link href={folder.href} className="focus-brand group flex w-full flex-col shadow-lg shadow-black/30 transition hover:-translate-y-1">
       {inner}
     </Link>
   ) : (
-    <div className="justified-item flex cursor-not-allowed flex-col shadow-lg shadow-black/30" style={{ width }} aria-label={`${folder.name} (locked)`}>
+    <div className="flex w-full cursor-not-allowed flex-col shadow-lg shadow-black/30" aria-label={`${folder.name} (locked)`}>
       {inner}
     </div>
   );
 }
 
 export function LockedFolderGrid({ folders }: { folders: LockedFolder[] }) {
-  const [ratios, setRatios] = useState<Record<string, number>>({});
-  const onRatio = (id: string, ratio: number) => setRatios((prev) => (prev[id] === ratio ? prev : { ...prev, [id]: ratio }));
-  const items: JustifyItem[] = folders.map((folder) => ({
-    key: folder.id,
-    ratio: ratios[folder.id] ?? DEFAULT_RATIO,
-    solo: false,
-    render: (width, height) => <LockedCard folder={folder} width={width} height={height} onRatio={onRatio} />,
-  }));
-  return <JustifiedRows items={items} gap={16} fallbackHeight={260} targetHeight={(width) => (width < 640 ? 260 : 360)} />;
+  return (
+    <div className="flex flex-col gap-6 sm:gap-8">
+      {folders.map((folder) => (
+        <GuestCard key={folder.id} folder={folder} />
+      ))}
+    </div>
+  );
 }
