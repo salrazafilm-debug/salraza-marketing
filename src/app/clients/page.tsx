@@ -21,10 +21,10 @@ export default async function ClientsPage({
   return (
     <>
       <SiteHeader revealImmediately />
-      <main className="flex min-h-[100svh] flex-col items-center justify-center bg-cream px-4 pt-40 pb-16 sm:px-6 sm:pt-36">
-        {/* The torn-paper card. */}
+      <main className="flex min-h-[100svh] flex-col items-center justify-center px-4 pt-40 pb-16 sm:px-6 sm:pt-36">
+        {/* The torn-paper card, in Velvet colours. */}
         <div className="relative z-10 mx-auto w-full max-w-[480px]">
-          <div className="torn-paper relative bg-paper px-6 py-10 sm:px-10">
+          <div className="torn-paper relative bg-paper-raised px-6 py-10 sm:px-10">
             <span className="tape absolute -top-3 left-1/2 h-7 w-20 -translate-x-1/2 -rotate-2" aria-hidden />
 
             <svg

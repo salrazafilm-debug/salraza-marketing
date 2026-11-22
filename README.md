@@ -1,6 +1,6 @@
 # Salraza Marketing
 
-Next.js site for Salraza Marketing: cinematic hero video intro, services, portfolio,
+Next.js site for Salraza Marketing: homepage hero, services, portfolio,
 a quote-request form, and password-protected client workspaces.
 
 ## Getting started
@@ -65,7 +65,7 @@ self-hosting through this repo.
 
 ## Brand assets
 
-Logos, fonts and the hero video live in `public/` and `src/app/fonts.ts`, sourced
+Logos and fonts live in `public/` and `src/app/fonts.ts`, sourced
 from the Salraza Marketing brand kit. Color and type tokens are defined in
 `src/app/globals.css`.
 

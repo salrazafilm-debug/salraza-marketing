@@ -81,7 +81,8 @@ function FolderCard({
         {folder.eventDate && (
           <p className="text-caption uppercase tracking-wide text-golden-hour/80">{formatEventDate(folder.eventDate)}</p>
         )}
-        <p className="text-subhead text-paper">{folder.name}</p>
+        {/* The card is always dark (espresso), so the name stays light in both modes. */}
+        <p className="text-subhead text-[#f4efe9]">{folder.name}</p>
         <p className="text-caption text-golden-hour/80">{countLabel(items)}</p>
         <span className="mt-3 inline-flex items-center rounded-full bg-highlighter px-6 py-3 text-label font-bold text-on-highlighter transition group-hover:brightness-95">
           Enter this day →

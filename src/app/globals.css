@@ -1,24 +1,77 @@
 @import "tailwindcss";
 
-:root {
-  --paper: #fefefe;
-  --paper-raised: #f7f1e8;
-  --cream: #fdf0d1;
-  --ink: #000000;
-  --ink-muted: #5c5c5c;
-  --line: #e2e2df;
-  --highlighter: #fee329;
-  --on-highlighter: #000000;
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+@custom-variant light (&:where([data-mode="light"], [data-mode="light"] *));
+
+/* "Velvet" — the site look. Light (warm cream) is the default; dark is the
+   same palette in near-black. Visitors switch with the toggle in the header
+   (see ModeToggle.tsx); the choice is set on <html data-mode> before hydration
+   by the script in layout.tsx. Any element can force a mode with its own
+   data-mode attribute (the footer, Media Vault block and intro are dark). */
+:root:not([data-mode]),
+[data-mode="light"] {
+  --paper: #f6efe6;
+  --paper-raised: #efe4d6;
+  --cream: #f1e6d8;
+  --ink: #1a0f10;
+  --ink-muted: #6b5a55;
+  --line: #dccbbb;
+  --highlighter: #f5c84c;
+  --on-highlighter: #160b0d;
   --marker-purple: #c164fc;
-  --purple-text: #8b3fd6;
+  --purple-text: #7a2fc0;
   --lavender-dusk: #a27da6;
   --golden-hour: #f1cf9f;
-  --warm-text: #764b3d;
-  --espresso: #2b1105;
-  --burgundy: #4a1220;
-  --focus-ring: #8b3fd6;
+  --warm-text: #8e1b3a;
+  --espresso: #1a0f10;
+  --burgundy: #5c0f24;
+  --focus-ring: #8e1b3a;
   --frost: #a8e6ff;
   --on-frost: #0a2740;
+  --accent: #8e1b3a;
+  --accent-bright: #b8324f;
+  --spark: #d9a521;
+  --atmo-top: rgba(190, 70, 100, 0.1);
+  --atmo-beam: rgba(255, 255, 255, 0.55);
+  --atmo-ink: 40, 15, 18;
+  --grain-opacity: 0.1;
+  --grain-blend: multiply;
+  --title-from: #1d0d10;
+  --title-to: #8e1b3a;
+  /* Just a hairline of lift under the letters: no glow. */
+  --title-filter: none;
+}
+
+[data-mode="dark"] {
+  --paper: #0d090a;
+  --paper-raised: #1a1113;
+  --cream: #150d0f;
+  --ink: #f4efe9;
+  --ink-muted: #b3a5a2;
+  --line: #3a2a2d;
+  --highlighter: #f5c84c;
+  --on-highlighter: #160b0d;
+  --marker-purple: #c164fc;
+  --purple-text: #d6a6ff;
+  --lavender-dusk: #a27da6;
+  --golden-hour: #f1cf9f;
+  --warm-text: #e6b98f;
+  --espresso: #0a0607;
+  --burgundy: #5c0f24;
+  --focus-ring: #f5c84c;
+  --frost: #a8e6ff;
+  --on-frost: #0a2740;
+  --accent: #8e1b3a;
+  --accent-bright: #c23a5c;
+  --spark: #f5c84c;
+  --atmo-top: rgba(142, 27, 58, 0.38);
+  --atmo-beam: rgba(255, 255, 255, 0.06);
+  --atmo-ink: 255, 255, 255;
+  --grain-opacity: 0.08;
+  --grain-blend: overlay;
+  --title-from: #ffffff;
+  --title-to: #8a8380;
+  --title-filter: none;
 }
 
 @theme inline {
@@ -40,6 +93,9 @@
   --color-focus-ring: var(--focus-ring);
   --color-frost: var(--frost);
   --color-on-frost: var(--on-frost);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-spark: var(--spark);
 
   --font-display: var(--font-unbounded);
   --font-sans: var(--font-bricolage);
@@ -50,7 +106,201 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ---------- Velvet atmosphere (see SiteAtmosphere.tsx) ----------
+   Not a flat background: a burgundy glow from above, a soft light beam,
+   film scratches and dust, and moving grain — all fixed behind the page. */
+.atmo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -10%, var(--atmo-top), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, var(--atmo-top), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 100% 70%, var(--atmo-top), transparent 70%),
+    var(--color-paper);
+}
+.atmo-beam {
+  position: absolute;
+  top: -20%;
+  left: 25%;
+  width: 50%;
+  height: 120%;
+  background: radial-gradient(ellipse 50% 60% at 50% 0%, var(--atmo-beam), transparent 75%);
+  transform: rotate(14deg);
+  animation: atmo-beam 18s ease-in-out infinite;
+}
+@keyframes atmo-beam {
+  0%, 100% { opacity: 0.6; transform: rotate(14deg) translateX(0); }
+  50% { opacity: 1; transform: rotate(10deg) translateX(8%); }
+}
+/* Thin film scratches: long hairlines and a few curls, jittering slightly. */
+.atmo-scratches {
+  position: absolute;
+  inset: -5%;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><g fill='none' stroke='white' stroke-linecap='round'><path d='M120 0 L135 900' stroke-width='0.6' opacity='.35'/><path d='M610 0 L598 520' stroke-width='0.5' opacity='.25'/><path d='M760 300 L772 900' stroke-width='0.7' opacity='.3'/><path d='M300 80 q40 30 90 18' stroke-width='0.8' opacity='.45'/><path d='M680 640 q-30 22 -70 12' stroke-width='0.7' opacity='.4'/><path d='M80 560 l60 -24' stroke-width='0.6' opacity='.35'/><path d='M450 760 q20 -40 64 -48' stroke-width='0.6' opacity='.35'/><path d='M820 120 l-44 52' stroke-width='0.5' opacity='.3'/></g><g fill='white'><circle cx='210' cy='330' r='1.4' opacity='.5'/><circle cx='540' cy='210' r='1' opacity='.45'/><circle cx='700' cy='470' r='1.6' opacity='.4'/><circle cx='380' cy='620' r='1.1' opacity='.5'/><circle cx='90' cy='120' r='1.2' opacity='.4'/><circle cx='860' cy='820' r='1.4' opacity='.45'/><circle cx='480' cy='860' r='.9' opacity='.5'/></g></svg>");
+  background-size: 900px 900px;
+  animation: atmo-scratch 40s ease-in-out infinite;
+}
+[data-mode="light"] .atmo-scratches {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><g fill='none' stroke='%23281218' stroke-linecap='round'><path d='M120 0 L135 900' stroke-width='0.6' opacity='.35'/><path d='M610 0 L598 520' stroke-width='0.5' opacity='.25'/><path d='M760 300 L772 900' stroke-width='0.7' opacity='.3'/><path d='M300 80 q40 30 90 18' stroke-width='0.8' opacity='.45'/><path d='M680 640 q-30 22 -70 12' stroke-width='0.7' opacity='.4'/><path d='M80 560 l60 -24' stroke-width='0.6' opacity='.35'/><path d='M450 760 q20 -40 64 -48' stroke-width='0.6' opacity='.35'/><path d='M820 120 l-44 52' stroke-width='0.5' opacity='.3'/></g><g fill='%23281218'><circle cx='210' cy='330' r='1.4' opacity='.5'/><circle cx='540' cy='210' r='1' opacity='.45'/><circle cx='700' cy='470' r='1.6' opacity='.4'/><circle cx='380' cy='620' r='1.1' opacity='.5'/><circle cx='90' cy='120' r='1.2' opacity='.4'/><circle cx='860' cy='820' r='1.4' opacity='.45'/><circle cx='480' cy='860' r='.9' opacity='.5'/></g></svg>");
+  opacity: 0.3;
+}
+@keyframes atmo-scratch {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-14px, 22px); }
+}
+.atmo-grain {
+  position: absolute;
+  inset: -8%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: var(--grain-opacity);
+  will-change: transform;
+  animation: atmo-grain 1.8s steps(6) infinite;
+}
+[data-mode="light"] .atmo-grain { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.07  0 0 0 0 0.09  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.atmo-grain-coarse { display: none; }
+@keyframes atmo-grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -4%); }
+  60% { transform: translate(-4%, -1%); }
+  80% { transform: translate(3%, 3%); }
+  100% { transform: translate(0, 0); }
+}
+/* Vintage film layers: a coarse second grain, a warm light leak, two long
+   vertical scratches that jump across the frame, blinking dust, a soft
+   projector flicker and a dark vignette. */
+.atmo-grain-coarse {
+  background-size: 520px 520px;
+  opacity: calc(var(--grain-opacity) * 0.7);
+  animation-duration: 2.6s;
+}
+.atmo-leak {
+  position: absolute;
+  right: -15%;
+  top: 10%;
+  width: 55%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 120, 58, 0.16), rgba(194, 65, 12, 0.06) 45%, transparent 70%);
+  animation: atmo-leak 16s ease-in-out infinite;
+}
+@keyframes atmo-leak {
+  0%, 100% { opacity: 0.5; transform: translate(0, 0) scale(1); }
+  50% { opacity: 1; transform: translate(-10%, 8%) scale(1.15); }
+}
+.atmo-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(var(--atmo-ink), 0.35) 20%, rgba(var(--atmo-ink), 0.12) 60%, transparent);
+}
+.atmo-line-1 { left: 22%; animation: atmo-line-a 38s ease-in-out infinite; }
+.atmo-line-2 { left: 71%; width: 2px; animation: atmo-line-b 52s ease-in-out infinite; }
+@keyframes atmo-line-a {
+  0%, 100% { transform: translateX(0); opacity: 0.7; }
+  50% { transform: translateX(18vw); opacity: 0.35; }
+}
+@keyframes atmo-line-b {
+  0%, 100% { transform: translateX(0); opacity: 0.45; }
+  50% { transform: translateX(-26vw); opacity: 0.2; }
+}
+.atmo-dust {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 12% 30%, rgba(var(--atmo-ink), 0.55) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 78% 18%, rgba(var(--atmo-ink), 0.45) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 40% 72%, rgba(var(--atmo-ink), 0.5) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 88% 64%, rgba(var(--atmo-ink), 0.4) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 57% 41%, rgba(var(--atmo-ink), 0.35) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 25% 88%, rgba(var(--atmo-ink), 0.45) 0 1.5px, transparent 2px);
+  animation: atmo-dust 60s linear infinite;
+}
+@keyframes atmo-dust {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(6%, -4%) rotate(360deg); }
+}
+.atmo-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 75% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+[data-mode="light"] .atmo-vignette {
+  background: radial-gradient(ellipse 80% 75% at 50% 45%, transparent 60%, rgba(92, 15, 36, 0.12) 100%);
+}
+
+/* Old-film treatment for one block (the Media Vault): grain, scratches and a
+   vignette laid over its photo. */
+.vintage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.16;
+}
+.vintage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 18%, rgba(255, 255, 255, 0.18) 18.1%, transparent 18.3%),
+    linear-gradient(90deg, transparent 63%, rgba(255, 255, 255, 0.12) 63.1%, transparent 63.25%);
+}
+
+/* Colour-block bands fade into the page at their edges (mask), so the dark
+   parts blend with the light background instead of ending in a hard line. */
+.band-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 130px, #000 calc(100% - 130px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 130px, #000 calc(100% - 130px), transparent 100%);
+}
+.band-fade-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 130px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 130px);
+}
+
+/* Static grain for surfaces such as the intro wipe. */
+.noise-surface {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.3 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.4;
+}
+
+/* Gradient-lit display title (SALRAZA, section headings). */
+.title-lit {
+  background: linear-gradient(200deg, var(--title-from) 30%, var(--title-to) 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: var(--title-filter);
+}
+
+/* Reveal on scroll (see Reveal.tsx). */
+[data-reveal] {
+  transition: opacity 1s cubic-bezier(.16, 1, .3, 1), transform 1s cubic-bezier(.16, 1, .3, 1);
+}
+[data-reveal]:not([data-in]) { opacity: 0; transform: translateY(70px); }
+
+/* Website showcase: the mock site scrolls up and back inside its browser. */
+@keyframes site-scroll {
+  0%, 12% { transform: translateY(0); }
+  50%, 62% { transform: translateY(calc(-100% + 360px)); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes rec-blink { 50% { opacity: 0; } }
+.rec-blink { animation: rec-blink 1.6s steps(1) infinite; }
 
 @layer utilities {
   .text-display-hero {

@@ -11,6 +11,16 @@ export async function PortfolioGrid({
    * more breathing room — used on the dedicated /portfolio page. */
   size?: "compact" | "large";
 }) {
+  // Local development without database settings (.env.local): show a note
+  // instead of crashing the whole page. Production still fails loudly.
+  if (process.env.NODE_ENV !== "production" && !process.env.SUPABASE_URL) {
+    return (
+      <p className="rounded-xl border border-dashed border-line p-8 text-center text-sm text-ink-muted">
+        Portfolio photos load from the database — add .env.local to see them locally.
+      </p>
+    );
+  }
+
   const allItems = await listPortfolioItems();
   const items = limit ? allItems.slice(0, limit) : allItems;
 
