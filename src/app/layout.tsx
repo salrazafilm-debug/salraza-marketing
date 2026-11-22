@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { unbounded, bricolage, caveatBrush } from "./fonts";
 import Script from "next/script";
 import "./globals.css";
-import { SiteAtmosphere } from "@/components/cinema/SiteAtmosphere";
+import { FilmGrain, SiteAtmosphere } from "@/components/cinema/SiteAtmosphere";
 import { MODE_BOOT_SCRIPT } from "@/components/cinema/mode";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -47,6 +47,7 @@ export default function RootLayout({
           {MODE_BOOT_SCRIPT}
         </Script>
         <SiteAtmosphere />
+        <FilmGrain />
         {children}
       </body>
     </html>

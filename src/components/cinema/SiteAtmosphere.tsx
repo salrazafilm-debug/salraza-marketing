@@ -15,3 +15,13 @@ export function SiteAtmosphere() {
     </div>
   );
 }
+
+/** Film grain and a soft warm vignette laid over everything, for a vintage feel. */
+export function FilmGrain() {
+  return (
+    <>
+      <div aria-hidden className="film-grain-warm" />
+      <div aria-hidden className="film-grain" />
+    </>
+  );
+}

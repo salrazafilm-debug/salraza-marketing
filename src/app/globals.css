@@ -598,3 +598,95 @@ body {
   color: transparent;
   filter: drop-shadow(0 0 28px rgba(194, 58, 92, 0.45)) drop-shadow(0 6px 30px rgba(0, 0, 0, 0.6));
 }
+
+/* Dusk to dawn: the lighter half of the homepage. Its own background starts
+   transparent (so it melts out of the dark hero), passes through wine, rose and
+   peach, settles into warm cream, then dims again before the dark footer. */
+.dawn {
+  --paper: #fff4ea;
+  --paper-raised: #fde8dc;
+  --cream: #fff7ef;
+  --ink: #2a0d18;
+  --ink-muted: #7a4a52;
+  --line: #ecc9bd;
+  --warm-text: #b8456b;
+  --title-from: #2a0d18;
+  --title-to: #b8456b;
+  --accent: #d4537e;
+  --accent-bright: #c0466f;
+  background:
+    linear-gradient(180deg, #fde8dc 0, #fff4ea 700px, #fff7ef 100%),
+    #fff7ef;
+  background-size: 100% 100%;
+}
+/* The fade from the dark top into the light half starts above it, so the
+   change is gradual and the first heading already sits on light colour. */
+.dawn::before {
+  content: "";
+  position: absolute;
+  inset: -340px 0 auto 0;
+  height: 340px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(120, 52, 66, 0.75) 40%, #d98f88 72%, #fde8dc 100%);
+}
+.dawn::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 260px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, #2a0d18);
+}
+
+/* Vintage film grain over the whole site, for an older, filmic look. */
+.film-grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.4 -0.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  animation: film-grain 0.9s steps(6) infinite;
+}
+.film-grain-warm {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  pointer-events: none;
+  background: radial-gradient(ellipse 85% 80% at 50% 50%, transparent 55%, rgba(40, 14, 10, 0.22) 100%);
+  mix-blend-mode: multiply;
+}
+@keyframes film-grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-4%, 3%); }
+  40% { transform: translate(3%, -5%); }
+  60% { transform: translate(-5%, -2%); }
+  80% { transform: translate(4%, 4%); }
+  100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-grain { animation: none; }
+}
+
+/* Text stays readable on any colour: a soft halo that matches its background
+   (dark shadow on dark parts, a light glow on the bright parts). */
+@scope ([data-mode="dark"]) to ([data-mode="light"]) {
+  :where(h1, h2, h3, h4, p, li, a, label, blockquote, figcaption) {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 18px rgba(0, 0, 0, 0.25);
+  }
+}
+@scope ([data-mode="light"]) to ([data-mode="dark"]) {
+  :where(h1, h2, h3, h4, p, li, a, label, blockquote, figcaption) {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55), 0 0 16px rgba(255, 244, 234, 0.6);
+  }
+}
+/* Gradient-filled titles cannot carry a text-shadow (it would cover the fill),
+   so they get the same halo as a filter instead. */
+.title-lit,
+.hero-word {
+  text-shadow: none !important;
+}
+.dawn .title-lit {
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)) drop-shadow(0 0 12px rgba(255, 244, 234, 0.55));
+}

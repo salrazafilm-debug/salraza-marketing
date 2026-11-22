@@ -540,9 +540,7 @@ export type CanvasControls = { selectedId: string | null; select: (id: string) =
  * selectable for the admin editor (hidden ones are shown faded). */
 export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; slots: Slots; canvas?: CanvasControls }) {
   const list = canvas ? layout.sections : layout.sections.filter((s) => !s.hidden);
-  return (
-    <ThemeScope theme={layout.theme}>
-      {list.map((s, i) => {
+  const nodes = list.map((s, i) => {
         const next = list.slice(i + 1).find((n) => canvas || !n.hidden);
         const plain = !layout.ownBgs;
         const fadeOut = !plain && hasOwnBg(s) && (!next || !hasOwnBg(next));
@@ -574,7 +572,19 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
             {renderSection(s, slots)}
           </SectionFrame>
         );
-      })}
+      });
+  // Dusk to dawn: the top of the page (bar and hero) stays dark; from "What we
+  // do" down the page brightens through rose and peach into warm cream.
+  const cut = list.findIndex((s) => s.type === "showcases");
+  const at = cut >= 0 ? cut : Math.min(1, nodes.length);
+  return (
+    <ThemeScope theme={layout.theme}>
+      {nodes.slice(0, at)}
+      {nodes.length > at && (
+        <div data-mode="light" className="dawn relative text-ink">
+          {nodes.slice(at)}
+        </div>
+      )}
     </ThemeScope>
   );
 }

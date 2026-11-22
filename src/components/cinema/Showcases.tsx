@@ -277,7 +277,7 @@ export function Showcases({ s }: { s: Section }) {
         if (id === 2)
           return (
             // Photography: a dark band so the photos pop.
-            <div key={id} data-mode="dark" className="relative text-ink">
+            <div key={id} className="relative text-ink">
               <div className="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6 sm:py-24">
                 {title}
                 <Movable s={s} id="photos" label="Photos" className="mt-6 sm:mt-12">
