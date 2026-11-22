@@ -65,7 +65,11 @@ function LockedCard({
             Enter this day →
           </span>
         ) : (
-          <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-label font-bold text-[#f4efe9]/80">
+          <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 text-label font-bold text-[#f4efe9]/85 ring-1 ring-white/25">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <rect x="4" y="9" width="12" height="9" rx="2" />
+              <path d="M7 9V6a3 3 0 0 1 6 0v3" />
+            </svg>
             Locked
           </span>
         )}

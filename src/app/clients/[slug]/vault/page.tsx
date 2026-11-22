@@ -127,17 +127,14 @@ export default async function VaultPage({
 
             {isGuest && !activeFolder ? (
               <RevealSection index={step++}>
-                <div className="mt-10 flex flex-col gap-6">
-                  <div className="mx-auto flex max-w-xl flex-col items-center gap-2 rounded-xl bg-cream px-6 py-5 text-center">
-                    <p className="text-subhead text-ink">Guest preview</p>
-                    <p className="text-body text-ink-muted">
-                      You can see the cover of every folder. Folders with a lock are private; folders without one you can open.
-                    </p>
-                  </div>
+                <div className="flex flex-col gap-6">
                   {lockedFolders.length > 0 ? (
                     <LockedFolderGrid folders={lockedFolders} />
                   ) : (
-                    <p className="text-center text-body text-ink-muted">Nothing to preview yet.</p>
+                    <div className="mt-10 flex flex-col items-center gap-2 rounded-xl bg-cream px-6 py-14 text-center">
+                      <p className="text-subhead text-ink">Nothing here yet</p>
+                      <p className="max-w-sm text-body text-ink-muted">We&apos;re still finishing your gallery — check back soon.</p>
+                    </div>
                   )}
                 </div>
               </RevealSection>

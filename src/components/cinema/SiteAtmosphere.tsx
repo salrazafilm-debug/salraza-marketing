@@ -1,3 +1,7 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 /** Fixed, decorative background behind every page: burgundy glow, a soft
  * light beam, film scratches and moving grain. Styles live in globals.css. */
 export function SiteAtmosphere() {
@@ -18,6 +22,9 @@ export function SiteAtmosphere() {
 
 /** Film grain and a soft warm vignette laid over everything, for a vintage feel. */
 export function FilmGrain() {
+  // Inside a client's vault the page stays clean: no grain, scratches or fade.
+  const pathname = usePathname();
+  if (/^\/clients\/[^/]+\/vault/.test(pathname ?? "")) return null;
   return (
     <>
       <div aria-hidden className="film-grain-warm" />
