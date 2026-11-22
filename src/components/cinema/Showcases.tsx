@@ -268,16 +268,22 @@ export function Showcases({ s }: { s: Section }) {
         </Movable>
       </div>
 
-      {order.map((id) => {
+      {order.map((id, pos) => {
+        // Chapters alternate: paper, dark, paper, dark ("oreo" layering).
+        const dark = pos % 2 === 1;
+        const wrap = (el: ReactNode) => (
+          <div key={id} data-mode={dark ? "dark" : undefined} className={dark ? "band-dark relative text-ink" : "relative"}>
+            {el}
+          </div>
+        );
         const title = (
           <Movable s={s} id={`title${id}`} label={`${textOf(s, `s${id}title`) || "Title"}`}>
             <ChapterTitle s={s} id={id} />
           </Movable>
         );
         if (id === 2)
-          return (
-            // Photography: a dark band so the photos pop.
-            <div key={id} className="relative text-ink">
+          return wrap(
+            <div className="relative text-ink">
               <div className="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6 sm:py-24">
                 {title}
                 <Movable s={s} id="photos" label="Photos" className="mt-6 sm:mt-12">
@@ -287,8 +293,8 @@ export function Showcases({ s }: { s: Section }) {
             </div>
           );
         if (id === 1)
-          return (
-            <div key={id} className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
+          return wrap(
+            <div className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20">
               {title}
               <Movable s={s} id="sites" label="Website screenshots" className="mt-6 sm:mt-12">
                 {site.length ? <SiteFan images={site} /> : <EmptySpot what="up to 3 website screenshots" />}
@@ -296,8 +302,8 @@ export function Showcases({ s }: { s: Section }) {
             </div>
           );
         const flip = id === 4;
-        return (
-          <div key={id} className={`mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20 ${flip ? "mt-10 sm:mt-24" : ""}`}>
+        return wrap(
+          <div className={`mx-auto max-w-[1200px] px-4 py-12 sm:px-6 sm:py-20 ${flip && !dark ? "mt-10 sm:mt-24" : ""}`}>
             {title}
             <div className="mt-6 grid items-center gap-6 sm:mt-12 md:grid-cols-[1fr_1.15fr] md:gap-12">
               <Movable s={s} id={`tag${id}`} label="Tagline" className={flip ? "md:order-2" : ""}>

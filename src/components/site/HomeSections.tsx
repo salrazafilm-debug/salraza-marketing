@@ -582,7 +582,19 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
       {nodes.slice(0, at)}
       {nodes.length > at && (
         <div data-mode="light" className="dawn relative text-ink">
-          {nodes.slice(at)}
+          {nodes.slice(at).map((node, i) => {
+            // After "What we do": the next section sits on paper, the one after
+            // on a dark band, and so on, so the page alternates like an oreo.
+            const s = list[at + i];
+            const dark = s.type !== "showcases" && i % 2 === 0;
+            return dark ? (
+              <div key={s.id} data-mode="dark" className="band-dark relative text-ink">
+                {node}
+              </div>
+            ) : (
+              node
+            );
+          })}
         </div>
       )}
     </ThemeScope>
