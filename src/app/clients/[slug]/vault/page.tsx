@@ -13,6 +13,9 @@ import { MarksmenVaultIntro } from "@/components/MarksmenVaultIntro";
 import { RevealSection } from "@/components/RevealSection";
 import { VaultMediaGrid, type VaultMediaItem } from "@/components/VaultMediaGrid";
 import { VaultFolderGrid, formatEventDate } from "@/components/VaultFolderGrid";
+import { SectionFrame } from "@/components/site/HomeSections";
+import { getVaultLook } from "@/lib/vault-look";
+import type { Section } from "@/components/site/layout-types";
 
 function withUrls(items: MediaItem[]): VaultMediaItem[] {
   return items.map((item) => ({
@@ -45,11 +48,20 @@ export default async function VaultPage({
   const activeFolder = folderParam ? client.folders.find((folder) => folder.id === folderParam) : undefined;
   const showIntro = slug === MARKSMEN_SLUG && intro === "1";
   const isMarksmen = slug === MARKSMEN_SLUG;
+  // The look chosen in Admin → "Client view & customize" (Marksmen keeps its own theme).
+  const look = isMarksmen ? {} : await getVaultLook(slug);
+  const lookFrame: Section = {
+    id: "vault",
+    type: "textBlock",
+    text: {},
+    style: { bg: look.bg, color1: look.color1, color2: look.color2, angle: look.angle, grain: look.grain, hover: look.hover },
+  };
   let step = 0;
 
   return (
     <>
       <SiteHeader revealImmediately theme={isMarksmen ? "marksmen" : "default"} />
+      <SectionFrame s={lookFrame}>
       <main
         data-theme={isMarksmen ? "marksmen" : undefined}
         className={`min-h-[100svh] px-4 pb-20 sm:px-6 ${isMarksmen ? "pt-[150px] md:pt-[112px] bg-[#0a0a0c]" : "pt-28"}`}
@@ -67,7 +79,7 @@ export default async function VaultPage({
                 <div className={isMarksmen ? "flex flex-col items-center" : ""}>
                   {!isMarksmen && (
                     <p className="text-caption uppercase tracking-wide text-warm-text">
-                      {client.name}
+                      {look.eyebrow || client.name}
                     </p>
                   )}
                   <h1 className="text-headline mt-2 text-ink">
@@ -81,6 +93,7 @@ export default async function VaultPage({
                       client.welcomeNote
                     )}
                   </h1>
+                  {look.intro && <p className="mt-3 max-w-xl whitespace-pre-line text-body text-ink-muted">{look.intro}</p>}
                 </div>
                 {!isMarksmen && <LogoutButton />}
               </div>
@@ -201,6 +214,7 @@ export default async function VaultPage({
           </div>
         </MarksmenVaultIntro>
       </main>
+      </SectionFrame>
       <Footer />
     </>
   );

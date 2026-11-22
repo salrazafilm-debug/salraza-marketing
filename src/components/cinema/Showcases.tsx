@@ -3,9 +3,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Reveal } from "./Reveal";
-import { PHOTOS } from "./photos";
-import { Txt, textOf, useEditing } from "@/components/site/Editable";
-import type { Section } from "@/components/site/layout-types";
+import { photoTitle } from "./photos";
+import { Movable, Txt, textOf, useEditing } from "@/components/site/Editable";
+import { imagesOf, type Section } from "@/components/site/layout-types";
 
 function useInView<T extends Element>(threshold = 0.35) {
   const ref = useRef<T>(null);
@@ -29,7 +29,7 @@ function useInView<T extends Element>(threshold = 0.35) {
 }
 
 /* ---------- 01 Website creation: a site scrolling inside a browser ---------- */
-function WebsiteDemo() {
+function WebsiteDemo({ images }: { images: string[] }) {
   return (
     <div className="group relative mx-auto w-full max-w-[520px]">
       <div className="overflow-hidden rounded-xl border border-line bg-paper-raised shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]">
@@ -49,10 +49,10 @@ function WebsiteDemo() {
               <p className="mt-10 font-display text-3xl font-black uppercase leading-none">Your name,<br />front and center.</p>
               <span className="mt-5 inline-block rounded-full bg-[#f5c84c] px-4 py-2 text-[10px] font-bold uppercase text-black">Book now</span>
             </div>
-            <img src={PHOTOS[0].src} alt="" className="h-40 w-full object-cover" />
+            {images[0] && <img src={images[0]} alt="" className="h-40 w-full object-cover" />}
             <div className="grid grid-cols-3 gap-2 bg-[#f6efe6] p-4">
-              {PHOTOS.slice(1, 4).map((p) => (
-                <img key={p.src} src={p.src} alt="" className="aspect-square w-full object-cover" />
+              {images.slice(1, 4).map((url) => (
+                <img key={url} src={url} alt="" className="aspect-square w-full object-cover" />
               ))}
             </div>
             <div className="bg-[#8e1b3a] p-6 text-center text-white">
@@ -68,9 +68,9 @@ function WebsiteDemo() {
 }
 
 /* ---------- 02 Photography: photos come out of a pile and lay out in full view ---------- */
-function PhotoSpread() {
+function PhotoSpread({ images }: { images: string[] }) {
   const [ref, inView] = useInView<HTMLDivElement>(0.2);
-  const shots = PHOTOS.slice(0, 8);
+  const shots = images.slice(0, 8).map((url) => ({ src: url, thumb: url, title: photoTitle(url) }));
   const tilt = ["-rotate-2", "rotate-1", "rotate-2", "-rotate-1"];
   return (
     <div ref={ref} className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
@@ -99,7 +99,7 @@ function PhotoSpread() {
             <div
               className={`group relative bg-[#f4efe9] p-2 pb-8 shadow-[0_28px_55px_-22px_rgba(0,0,0,.75)] transition-transform duration-500 hover:z-20 hover:!rotate-0 hover:scale-[1.04] sm:p-2.5 sm:pb-10 ${tilt[col4]} ${col4 % 2 ? "md:translate-y-8" : ""}`}
             >
-              <img src={p.src} alt={p.title} className="aspect-[3/4] w-full object-cover" />
+              <img src={p.thumb} alt={p.title} className="aspect-[3/4] w-full object-cover" />
               <figcaption className="absolute inset-x-0 bottom-1.5 text-center font-script text-base text-black/70 sm:bottom-2.5 sm:text-lg">
                 {p.title}
               </figcaption>
@@ -112,8 +112,8 @@ function PhotoSpread() {
 }
 
 /* ---------- 03 Branding: three pieces, then the palette ---------- */
-function BrandBoard() {
-  const pieces = [PHOTOS[4], PHOTOS[6], PHOTOS[7]];
+function BrandBoard({ images }: { images: string[] }) {
+  const pieces = images.slice(0, 3).map((url) => ({ src: url, thumb: url }));
   const tilt = ["-rotate-3", "rotate-0", "rotate-3"];
   return (
     <div className="group mx-auto w-full max-w-[560px]">
@@ -123,7 +123,7 @@ function BrandBoard() {
             key={p.src}
             className={`aspect-[3/4] overflow-hidden shadow-[0_26px_50px_-22px_rgba(60,10,25,.6)] transition-transform duration-500 group-hover:-translate-y-2 ${tilt[i]} group-hover:rotate-0`}
           >
-            <img src={p.src} alt="" className="h-full w-full object-cover" />
+            <img src={p.thumb} alt="" className="h-full w-full object-cover" />
           </div>
         ))}
       </div>
@@ -216,9 +216,9 @@ function SocialStats({ s }: { s: Section }) {
 }
 
 const DEMOS: { n: string; render: (s: Section) => ReactNode }[] = [
-  { n: "01", render: () => <WebsiteDemo /> },
-  { n: "02", render: () => <PhotoSpread /> },
-  { n: "03", render: () => <BrandBoard /> },
+  { n: "01", render: (s) => <WebsiteDemo images={imagesOf(s, "site")} /> },
+  { n: "02", render: (s) => <PhotoSpread images={imagesOf(s, "photos")} /> },
+  { n: "03", render: (s) => <BrandBoard images={imagesOf(s, "brand")} /> },
   { n: "04", render: (s) => <SocialStats s={s} /> },
 ];
 
@@ -236,12 +236,14 @@ export function Showcases({ s }: { s: Section }) {
   return (
     <section id="services" className="relative">
       <div className="mx-auto max-w-[1200px] px-4 pb-20 pt-24 sm:px-6 sm:pb-24 sm:pt-28">
-        <Reveal as="p" className="text-xs uppercase tracking-[0.3em] text-warm-text">
-          <Txt s={s} k="eyebrow" />
-        </Reveal>
-        <Reveal delay={80}>
-          <Txt s={s} k="title" as="h2" className="title-lit mt-4 block max-w-3xl font-display text-4xl font-black uppercase leading-[1.05] sm:text-6xl" />
-        </Reveal>
+        <Movable s={s} id="heading" label="Heading">
+          <Reveal as="p" className="text-xs uppercase tracking-[0.3em] text-warm-text">
+            <Txt s={s} k="eyebrow" />
+          </Reveal>
+          <Reveal delay={80}>
+            <Txt s={s} k="title" as="h2" className="title-lit mt-4 block max-w-3xl font-display text-4xl font-black uppercase leading-[1.05] sm:text-6xl" />
+          </Reveal>
+        </Movable>
       </div>
 
       {DEMOS.map((d, i) =>
@@ -255,21 +257,27 @@ export function Showcases({ s }: { s: Section }) {
               style={{ background: "radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%)" }}
             />
             <div className="relative mx-auto max-w-[1200px] px-4 py-20 sm:px-6 sm:py-28">
-              <Reveal>
-                <ShowcaseText s={s} i={i} n={d.n} />
-              </Reveal>
-              <div className="mt-12 sm:mt-16">{d.render(s)}</div>
+              <Movable s={s} id="text2" label="Text 02">
+                <Reveal>
+                  <ShowcaseText s={s} i={i} n={d.n} />
+                </Reveal>
+              </Movable>
+              <Movable s={s} id="demo2" label="Photos" className="mt-12 sm:mt-16">
+                {d.render(s)}
+              </Movable>
             </div>
           </div>
         ) : (
           <div key={d.n} className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-20">
             <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-              <Reveal className={i % 2 ? "lg:order-2" : ""}>
-                <ShowcaseText s={s} i={i} n={d.n} />
-              </Reveal>
-              <Reveal delay={120} className={i % 2 ? "lg:order-1" : ""}>
-                {d.render(s)}
-              </Reveal>
+              <Movable s={s} id={`text${i + 1}`} label={`Text ${d.n}`} className={i % 2 ? "lg:order-2" : ""}>
+                <Reveal>
+                  <ShowcaseText s={s} i={i} n={d.n} />
+                </Reveal>
+              </Movable>
+              <Movable s={s} id={`demo${i + 1}`} label={`Visual ${d.n}`} className={i % 2 ? "lg:order-1" : ""}>
+                <Reveal delay={120}>{d.render(s)}</Reveal>
+              </Movable>
             </div>
           </div>
         )

@@ -12,6 +12,8 @@ import { ClientSettingsForm } from "@/components/ClientSettingsForm";
 import { ClientPasswordsManager } from "@/components/ClientPasswordsManager";
 import { AdminVault, INDIVIDUAL } from "@/components/admin/AdminVault";
 import { ClientPreview } from "@/components/admin/ClientPreview";
+import { VaultLookEditor } from "@/components/admin/VaultLookEditor";
+import { getVaultLook } from "@/lib/vault-look";
 
 export const metadata: Metadata = {
   title: "Admin — Salraza Marketing",
@@ -43,9 +45,10 @@ export default async function AdminClientPage({
 
   const client = await findClientBySlug(slug);
   if (!client) notFound();
-  const [extraPasswords, variantsByItem] = await Promise.all([
+  const [extraPasswords, variantsByItem, look] = await Promise.all([
     listClientPasswords(client.slug),
     listMediaVariantsByClient(client.slug),
+    getVaultLook(client.slug),
   ]);
 
   const previewFolder = folder && folder !== INDIVIDUAL && client.folders.some((f) => f.id === folder) ? folder : null;
@@ -56,6 +59,7 @@ export default async function AdminClientPage({
       JSON.stringify([
         client.name,
         client.welcomeNote,
+        look,
         client.folders,
         client.media.map((item) => [item.id, item.label, item.caption, item.folderId, item.thumbnailUrl]),
       ])
@@ -121,6 +125,7 @@ export default async function AdminClientPage({
               </div>
               <div className="flex flex-col gap-6">
                 <ClientSettingsForm slug={client.slug} name={client.name} welcomeNote={client.welcomeNote} />
+                <VaultLookEditor slug={client.slug} initial={look} clientName={client.name} />
                 <div className="rounded-xl bg-paper-raised p-5 text-caption text-ink-muted">
                   <p className="text-label text-ink">Customize folders</p>
                   <p className="mt-1">

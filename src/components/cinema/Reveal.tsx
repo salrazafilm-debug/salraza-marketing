@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
+import { EntranceContext } from "@/components/site/Editable";
 
-/** Rises and fades in once ~20% of it is on screen (styles in globals.css). */
+/**
+ * Animates in once ~20% of it is on screen. The animation (rise, fade, zoom,
+ * slide or none) comes from the section's style; styles live in globals.css.
+ */
 export function Reveal({
   as: Tag = "div",
   delay = 0,
@@ -14,6 +18,7 @@ export function Reveal({
   className?: string;
   children: ReactNode;
 }) {
+  const entrance = useContext(EntranceContext);
   const ref = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
@@ -34,7 +39,7 @@ export function Reveal({
   return (
     <Tag
       ref={ref}
-      data-reveal=""
+      data-reveal={entrance}
       data-in={inView ? "" : undefined}
       style={{ transitionDelay: `${delay}ms` }}
       className={className}

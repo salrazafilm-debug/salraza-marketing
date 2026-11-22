@@ -5,19 +5,19 @@ import { QuoteForm } from "@/components/QuoteForm";
 import { IntroLoader } from "@/components/cinema/IntroLoader";
 import { RecBar } from "@/components/cinema/RecBar";
 import { PHOTOS } from "@/components/cinema/photos";
-import { HomeSections } from "@/components/site/HomeSections";
+import { HomeSections, ThemeScope } from "@/components/site/HomeSections";
 import { getHomepageLayout } from "@/lib/site-layout";
 
 // Reads the portfolio and the editable layout from the database — render
 // per-request so admin changes show up immediately.
 export const dynamic = "force-dynamic";
 
-const PRELOAD = PHOTOS.map((p) => p.src);
+const PRELOAD = PHOTOS.map((p) => p.thumb);
 
 export default async function Home() {
   const layout = await getHomepageLayout();
   return (
-    <>
+    <ThemeScope theme={layout.theme}>
       <IntroLoader preload={PRELOAD} />
       <SiteHeader revealImmediately />
       <main className="overflow-x-clip">
@@ -25,6 +25,6 @@ export default async function Home() {
       </main>
       <Footer />
       <RecBar />
-    </>
+    </ThemeScope>
   );
 }

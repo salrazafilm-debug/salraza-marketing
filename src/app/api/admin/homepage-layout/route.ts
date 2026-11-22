@@ -1,31 +1,68 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { saveHomepageLayout } from "@/lib/site-layout";
+import {
+  getHomepageDraft,
+  getHomepageHistory,
+  getHomepageLayout,
+  publishHomepage,
+  saveHomepageDraft,
+} from "@/lib/site-layout";
 import { DEFAULT_LAYOUT, parseLayout } from "@/components/site/layout-types";
 
-/** Saves the homepage layout from the admin site editor. */
+/** The editor's draft, what's live, and the list of earlier published versions. */
+export async function GET() {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+  const [draft, published, history] = await Promise.all([getHomepageDraft(), getHomepageLayout(), getHomepageHistory()]);
+  return NextResponse.json({
+    draft,
+    published,
+    history: history.map((h, index) => ({ index, at: h.at, sections: h.layout.sections.length })),
+  });
+}
+
+/** Autosaves the draft (does not change the live site). */
 export async function PUT(request: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
-  const layout = parseLayout((body as { layout?: unknown })?.layout);
+  const body = await request.json().catch(() => null);
+  const layout = parseLayout((body as { layout?: unknown } | null)?.layout);
   if (!layout) return NextResponse.json({ error: "That layout isn't valid." }, { status: 400 });
-
-  await saveHomepageLayout(layout);
+  await saveHomepageDraft(layout);
   return NextResponse.json({ ok: true });
 }
 
-/** Resets the homepage to the original design and words. */
-export async function DELETE() {
+/**
+ * Actions:
+ *   { action: "publish", layout }   make it live (previous live version goes to history)
+ *   { action: "restore", index }    load an earlier published version into the draft
+ *   { action: "reset" }             put the original design into the draft
+ */
+export async function POST(request: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
-  await saveHomepageLayout(DEFAULT_LAYOUT);
-  return NextResponse.json({ ok: true, layout: DEFAULT_LAYOUT });
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const action = body?.action;
+
+  if (action === "publish") {
+    const layout = parseLayout(body?.layout);
+    if (!layout) return NextResponse.json({ error: "That layout isn't valid." }, { status: 400 });
+    await publishHomepage(layout);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "restore") {
+    const history = await getHomepageHistory();
+    const entry = typeof body?.index === "number" ? history[body.index] : undefined;
+    if (!entry) return NextResponse.json({ error: "That version wasn't found." }, { status: 404 });
+    await saveHomepageDraft(entry.layout);
+    return NextResponse.json({ ok: true, layout: entry.layout });
+  }
+
+  if (action === "reset") {
+    await saveHomepageDraft(DEFAULT_LAYOUT);
+    return NextResponse.json({ ok: true, layout: DEFAULT_LAYOUT });
+  }
+
+  return NextResponse.json({ error: "Unknown action." }, { status: 400 });
 }

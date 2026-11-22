@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { ScribbleCanvas, type ScribbleStyle } from "./ScribbleCanvas";
 import { ReelStrip } from "./ReelStrip";
-import { Txt } from "@/components/site/Editable";
-import type { Section } from "@/components/site/layout-types";
+import { Movable, Txt } from "@/components/site/Editable";
+import { imagesOf, type Section } from "@/components/site/layout-types";
+import { photoTitle } from "./photos";
 
 // Purple, blue and a little gold — the "life" borrowed from Golden Hour,
 // kept to the scribbles so the page itself stays Velvet.
@@ -36,26 +37,29 @@ export function Hero({ s }: { s: Section }) {
       <Corners />
 
       <div className="relative z-10 w-full max-w-5xl px-4">
-        <div className="relative mx-auto flex h-[130px] items-center justify-center sm:h-[190px]">
-          <ScribbleCanvas style={SCRIBBLE} />
-          <Txt
-            s={s}
-            k="title"
-            as="h1"
-            className="title-lit relative text-center font-display text-[14.5vw] font-black leading-none tracking-tight sm:text-[7.5rem]"
-          />
-        </div>
-        <p className="mx-auto max-w-md text-center text-[11px] uppercase tracking-[0.2em] text-ink/80 sm:text-sm">
-          <Txt s={s} k="tagline" />{" "}
-          <Txt s={s} k="spark" className="text-spark" />
-        </p>
+        <Movable s={s} id="title" label="Title">
+          <div className="relative mx-auto flex h-[130px] items-center justify-center sm:h-[190px]">
+            <ScribbleCanvas style={SCRIBBLE} />
+            <Txt
+              s={s}
+              k="title"
+              as="h1"
+              className="title-lit relative text-center font-display text-[14.5vw] font-black leading-none tracking-tight sm:text-[7.5rem]"
+            />
+          </div>
+        </Movable>
+        <Movable s={s} id="tagline" label="Tagline">
+          <p className="mx-auto max-w-md text-center text-[11px] uppercase tracking-[0.2em] text-ink/80 sm:text-sm">
+            <Txt s={s} k="tagline" /> <Txt s={s} k="spark" className="text-spark" />
+          </p>
+        </Movable>
       </div>
 
       <div className="relative z-10 mt-1 w-full sm:mt-3">
-        <ReelStrip />
+        <ReelStrip photos={imagesOf(s, "strip").map((url) => ({ thumb: url, title: photoTitle(url) }))} />
       </div>
 
-      <div className="relative z-10 mt-5 flex justify-center gap-3 px-4 sm:mt-7">
+      <Movable s={s} id="buttons" label="Buttons" className="relative z-10 mt-5 flex justify-center gap-3 px-4 sm:mt-7">
         <Link
           href="/#quote"
           className="focus-brand whitespace-nowrap rounded-full bg-spark px-5 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-[#160b0d] transition-colors duration-300 hover:bg-accent hover:text-white sm:px-7"
@@ -68,7 +72,7 @@ export function Hero({ s }: { s: Section }) {
         >
           <Txt s={s} k="cta2" />
         </Link>
-      </div>
+      </Movable>
     </section>
   );
 }
