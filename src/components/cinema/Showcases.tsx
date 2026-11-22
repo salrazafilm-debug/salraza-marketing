@@ -138,7 +138,7 @@ function StatValue({ s, k, run }: { s: Section; k: string; run: boolean }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [run, target, parsed]);
-  const cls = "font-display text-xl font-black text-ink tabular-nums sm:text-3xl";
+  const cls = "font-display text-lg font-black text-ink tabular-nums sm:text-2xl xl:text-3xl";
   if (editing || !m) return <Txt s={s} k={k} as="p" className={cls} />;
   return (
     <p className={cls}>
@@ -216,13 +216,13 @@ function ChapterTitle({ s, id, n }: { s: Section; id: number; n: string }) {
   );
 }
 
-function Tagline({ s, k }: { s: Section; k: string }) {
+function Tagline({ s, k, small }: { s: Section; k: string; small?: boolean }) {
   return (
     <Txt
       s={s}
       k={k}
       as="p"
-      className="block whitespace-pre-line font-display text-[clamp(1.2rem,4vw,3.25rem)] font-black leading-[1.05] text-ink"
+      className={`block whitespace-pre-line font-display font-black leading-[1.08] text-ink ${small ? "text-[clamp(1.05rem,2.4vw,2rem)]" : "text-[clamp(1.2rem,4vw,3.25rem)]"}`}
     />
   );
 }
@@ -274,7 +274,7 @@ export function Showcases({ s }: { s: Section }) {
             <ChapterTitle s={s} id={id} n={n} />
             <div className="mt-6 grid items-center gap-6 sm:mt-12 md:grid-cols-[1fr_1.15fr] md:gap-12">
               <Reveal className={flip ? "md:order-2" : ""}>
-                <Tagline s={s} k={`s${id}tag`} />
+                <Tagline s={s} k={`s${id}tag`} small={id === 4} />
               </Reveal>
               <Reveal delay={120} className={flip ? "md:order-1" : ""}>
                 {SIDE[id](s)}

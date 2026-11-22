@@ -547,7 +547,11 @@ function tidyShowcases(sec: Section) {
     const t = (e.text ?? "").trim();
     if (/stand out/i.test(t)) sec.text.s3tag = t;
     else if (/short-form|behind the scenes/i.test(t)) sec.text.s4tag = t;
+    else if (/website/i.test(t) && t.length < 60) sec.text.s1title = t.replace(/\s*\n\s*/g, " ");
+    else if (/photograph/i.test(t) && t.length < 40) sec.text.s2title = t;
   }
+  // Titles emptied in favour of loose copies come back.
+  for (const k of ["s1title", "s2title", "s3title", "s4title"]) if (!sec.text[k]?.trim()) delete sec.text[k];
   delete sec.els;
   delete sec.place;
   if (sec.style) {
