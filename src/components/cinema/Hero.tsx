@@ -27,7 +27,7 @@ function Corners() {
  * screen without scrolling, and the two buttons underneath the photos. */
 export function Hero({ s }: { s: Section }) {
   return (
-    <section id="hero" className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden pb-24 pt-24 sm:pb-20 sm:pt-28">
+    <section id="hero" className="relative flex min-h-[100svh] flex-col items-center justify-center pb-24 pt-24 sm:pb-20 sm:pt-28">
       {/* soft burgundy at the frame edges only */}
       <div
         aria-hidden

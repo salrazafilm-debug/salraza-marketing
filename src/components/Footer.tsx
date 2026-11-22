@@ -5,7 +5,9 @@ const LINK = "focus-brand w-fit transition-colors hover:text-spark";
 
 export function Footer() {
   return (
-    <footer data-mode="dark" className="vintage band-fade-top relative overflow-hidden bg-paper px-4 pb-24 pt-28 text-ink sm:px-6">
+    <footer data-mode="dark" className="relative px-4 pb-24 pt-28 text-ink sm:px-6">
+      {/* Background + top fade on their own layer, so the fade never dims the footer's words. */}
+      <div aria-hidden className="vintage band-fade-top pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[80%]"

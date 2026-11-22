@@ -3,11 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { Hero } from "@/components/cinema/Hero";
 import { Showcases } from "@/components/cinema/Showcases";
 import { Reveal } from "@/components/cinema/Reveal";
-import { EntranceContext, Movable, Txt, textOf, useEditing } from "./Editable";
+import { ElementsLayer, EntranceContext, Movable, Txt, textOf, useEdit, useEditing } from "./Editable";
 import { SECTION_LIBRARY, imagesOf, styleOf, type HomeLayout, type Section, type Theme } from "./layout-types";
 
 export type Slots = { gallery: ReactNode; quote: ReactNode };
@@ -37,9 +37,15 @@ function luminance(hex: string) {
 }
 
 /** Wraps one section and applies the style chosen in the editor. Text colour
- * flips automatically (light text on dark backgrounds) so words stay readable. */
+ * flips automatically (light text on dark backgrounds) so words stay readable.
+ *
+ * The background lives on its own clipped layer, so the section's content and
+ * any free elements are never clipped: they can overhang into the next
+ * section and sit on top of its background. Layers: background (lowest) →
+ * z 1-2 behind content → content (z 3) → z 4+ in front. */
 export function SectionFrame({ s, children }: { s: Section; children: ReactNode }) {
   const st = styleOf(s);
+  const { editing, selSection, setFixedH } = useEdit();
   let mode: "light" | "dark" | undefined;
   let background: string | undefined;
   const cls: string[] = [];
@@ -57,21 +63,75 @@ export function SectionFrame({ s, children }: { s: Section; children: ReactNode 
     background = `linear-gradient(${st.angle ?? 160}deg, ${c1}, ${c2})`;
     mode = (luminance(c1) + luminance(c2)) / 2 < 0.35 ? "dark" : "light";
   }
-  if (background) cls.push("band-fade text-ink");
-  if (background && st.grain) cls.push("vintage");
+  if (background) cls.push("text-ink");
+  if (st.height === "flat") cls.push("sec-flat");
   if (st.height === "tight") cls.push("sec-tight");
   if (st.height === "roomy") cls.push("sec-roomy");
   if (st.height === "screen") cls.push("sec-screen");
+  if (st.fixedH) cls.push("sec-fixed");
+  // A set height crops whatever doesn't fit (unless "let things spill out" is on),
+  // so a shortened section never runs into the next one.
+  if (st.fixedH && !st.spill) cls.push("overflow-hidden");
   if (st.hover && st.hover !== "none") cls.push(`fx-${st.hover}`);
 
+  // Drag the bottom edge to set an exact height (editor only).
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ y: number; h: number } | null>(null);
+  const showHandle = editing;
+  const handleActive = selSection === s.id;
+  // A piece sent to the very front lifts this whole section above the next one,
+  // so it can overlap neighbouring sections without being hidden.
+  const raised = Object.values(s.place ?? {}).some((p) => !p.hidden && (p.z ?? 0) >= 20);
+
   return (
-    // Clip only when there is a background to keep inside; otherwise moved pieces may overhang.
     <div
+      ref={ref}
       data-mode={mode}
-      className={`relative ${background ? "overflow-hidden" : ""} ${cls.join(" ")}`}
-      style={background ? { background } : undefined}
+      data-sec={s.id}
+      className={`group/sec relative ${cls.join(" ")}`}
+      style={st.fixedH ? { height: st.fixedH } : undefined}
     >
-      <EntranceContext.Provider value={st.entrance ?? "rise"}>{children}</EntranceContext.Provider>
+      {background && (
+        <div
+          aria-hidden
+          className={`band-fade pointer-events-none absolute inset-0 overflow-hidden ${st.grain ? "vintage" : ""}`}
+          style={{ background }}
+        />
+      )}
+      <div className={`relative ${raised ? "z-[45]" : "z-[3]"}`}>
+        <EntranceContext.Provider value={st.entrance ?? "rise"}>{children}</EntranceContext.Provider>
+      </div>
+      <ElementsLayer s={s} />
+      {showHandle && (
+        <div
+          data-mode="dark"
+          className={`absolute inset-x-0 bottom-0 z-[60] flex h-4 cursor-ns-resize items-center justify-center bg-[#f5c84c]/25 transition-opacity hover:bg-[#f5c84c]/50 ${
+            handleActive ? "opacity-100" : "opacity-0 group-hover/sec:opacity-100"
+          }`}
+          title="Drag to set this section's height · double-click for automatic height"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drag.current = { y: e.clientY, h: ref.current?.offsetHeight ?? 400 };
+            try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+          }}
+          onPointerMove={(e) => {
+            if (!drag.current) return;
+            const raw = drag.current.h + (e.clientY - drag.current.y);
+            const h = Math.max(16, Math.min(3000, e.altKey ? raw : Math.round(raw / 8) * 8));
+            setFixedH(s.id, h);
+          }}
+          onPointerUp={() => (drag.current = null)}
+          onPointerCancel={() => (drag.current = null)}
+          onDoubleClick={() => setFixedH(s.id, null)}
+        >
+          <span className="rounded-full bg-[#f5c84c] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black">
+            ↕ {st.fixedH ? `${st.fixedH}px` : "auto height"} · drag
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -439,6 +499,9 @@ function renderSection(s: Section, slots: Slots) {
       return <Faq s={s} />;
     case "video":
       return <Video s={s} />;
+    case "blank":
+      // Empty canvas: only free elements (added in the editor) and the set height.
+      return <section aria-label="" className="min-h-[1px]" />;
   }
 }
 

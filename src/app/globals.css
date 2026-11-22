@@ -256,8 +256,8 @@ body {
 /* Colour-block bands fade into the page at their edges (mask), so the dark
    parts blend with the light background instead of ending in a hard line. */
 .band-fade {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 130px, #000 calc(100% - 130px), transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 130px, #000 calc(100% - 130px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 min(130px, 22%), #000 calc(100% - min(130px, 22%)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 min(130px, 22%), #000 calc(100% - min(130px, 22%)), transparent 100%);
 }
 .band-fade-top {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 130px);
@@ -289,9 +289,13 @@ body {
 [data-reveal="slide"]:not([data-in]) { opacity: 0; transform: translateX(-80px); }
 
 /* Section heights chosen in the editor (see SectionFrame in HomeSections). */
-.sec-tight > section,
-.sec-tight > section > div { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
-.sec-tight > section { min-height: 0 !important; }
+/* "Shorter": trims each section's own top/bottom padding. "Minimal" removes it. */
+.sec-tight section,
+.sec-tight section > div { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; min-height: 0 !important; }
+.sec-flat section,
+.sec-flat section > div { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; min-height: 0 !important; }
+/* A fixed height wins over the content's own minimum height. */
+.sec-fixed section { min-height: 0 !important; }
 .sec-roomy { padding-top: 5rem; padding-bottom: 5rem; }
 .sec-screen { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
 

@@ -20,10 +20,11 @@ export type SectionType =
   | "imageText"
   | "testimonials"
   | "faq"
-  | "video";
+  | "video"
+  | "blank";
 
 export type Background = "page" | "light" | "dark" | "color" | "gradient";
-export type Height = "tight" | "normal" | "roomy" | "screen";
+export type Height = "flat" | "tight" | "normal" | "roomy" | "screen";
 export type Entrance = "rise" | "fade" | "zoom" | "slide" | "none";
 export type Hover = "none" | "zoom" | "tilt" | "lift";
 
@@ -34,12 +35,49 @@ export type SectionStyle = {
   angle?: number;
   grain?: boolean;
   height?: Height;
+  /** Exact section height in px (overrides the content's natural height). */
+  fixedH?: number;
+  /** With an exact height: let content spill outside instead of cropping it. */
+  spill?: boolean;
   entrance?: Entrance;
   hover?: Hover;
 };
 
-/** Desktop-only nudge for one element: offset in px and a size multiplier. */
-export type Placement = { x: number; y: number; scale: number };
+/** Desktop-only nudge for one built-in piece: offset in px, a size multiplier,
+ * a layer (z) and whether it has been removed from the page. */
+export type Placement = { x: number; y: number; scale: number; z?: number; hidden?: boolean };
+
+export type ElKind = "text" | "image" | "button" | "shape";
+
+/** A free element added on top of a section's canvas. Everything scales with
+ * the section's width, like a picture: x and w are % of the width; y and h are
+ * in units of 1/1000 of the width (y 100 = 10% of the width down from the top). */
+export type El = {
+  id: string;
+  kind: ElKind;
+  x: number;
+  y: number;
+  w: number;
+  h?: number;
+  /** Layer: 1-2 sit behind the section's content, 4+ in front of it. */
+  z: number;
+  text?: string;
+  src?: string;
+  href?: string;
+  /** Font size in percent of the section width (cqw). */
+  size?: number;
+  weight?: 400 | 700 | 900;
+  color?: string;
+  align?: "left" | "center" | "right";
+  font?: "display" | "sans" | "script";
+  upper?: boolean;
+  fill?: string;
+  radius?: number;
+  opacity?: number;
+  rotate?: number;
+  fit?: "cover" | "contain";
+  on?: "all" | "desktop" | "phone";
+};
 
 export type Section = {
   id: string;
@@ -49,8 +87,10 @@ export type Section = {
   style?: SectionStyle;
   /** Chosen image URLs per slot (e.g. hero "strip"). Missing = defaults. */
   images?: Record<string, string[]>;
-  /** Moved / resized elements, keyed by element id. */
+  /** Moved / resized / layered / removed built-in pieces, keyed by piece id. */
   place?: Record<string, Placement>;
+  /** Free elements added on top of the section. */
+  els?: El[];
 };
 
 export type Theme = { preset?: string; accent?: string; accentBright?: string; spark?: string };
@@ -228,6 +268,13 @@ export const SECTION_LIBRARY: Record<SectionType, LibraryEntry> = {
       fa4: "Yes — ask us about monthly packages.",
     },
   },
+  blank: {
+    label: "Blank canvas",
+    description: "An empty section: set its height and fill it with your own text, images, buttons and shapes.",
+    single: false,
+    defaults: {},
+    style: { fixedH: 320 },
+  },
   video: {
     label: "Video",
     description: "A YouTube or Vimeo video with a heading.",
@@ -274,7 +321,9 @@ function parseStyle(v: unknown): SectionStyle | undefined {
     color2: typeof o.color2 === "string" && HEX.test(o.color2) ? o.color2 : undefined,
     angle: typeof o.angle === "number" && o.angle >= 0 && o.angle <= 360 ? Math.round(o.angle) : undefined,
     grain: typeof o.grain === "boolean" ? o.grain : undefined,
-    height: pick(o.height, ["tight", "normal", "roomy", "screen"] as const),
+    height: pick(o.height, ["flat", "tight", "normal", "roomy", "screen"] as const),
+    fixedH: typeof o.fixedH === "number" && o.fixedH >= 16 && o.fixedH <= 3000 ? Math.round(o.fixedH) : undefined,
+    spill: typeof o.spill === "boolean" ? o.spill : undefined,
     entrance: pick(o.entrance, ["rise", "fade", "zoom", "slide", "none"] as const),
     hover: pick(o.hover, ["none", "zoom", "tilt", "lift"] as const),
   };
@@ -293,6 +342,55 @@ function parseTheme(v: unknown): Theme | undefined {
   return Object.keys(t).length ? t : undefined;
 }
 
+const num = (v: unknown, min: number, max: number): number | undefined =>
+  typeof v === "number" && Number.isFinite(v) ? Math.max(min, Math.min(max, Math.round(v * 100) / 100)) : undefined;
+const safeHref = (v: unknown) =>
+  typeof v === "string" && v.length < 400 && (v.startsWith("/") || v.startsWith("#") || v.startsWith("https://") || v.startsWith("mailto:"))
+    ? v
+    : undefined;
+
+function parseEl(v: unknown): El | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  if (typeof o.id !== "string" || !/^[a-z0-9-]{1,30}$/i.test(o.id)) return null;
+  const kind = pick(o.kind, ["text", "image", "button", "shape"] as const);
+  if (!kind) return null;
+  const x = num(o.x, -50, 150);
+  const y = num(o.y, -1500, 5000);
+  const w = num(o.w, 2, 200);
+  if (x === undefined || y === undefined || w === undefined) return null;
+  const el: El = { id: o.id, kind, x, y, w, z: Math.round(num(o.z, 1, 99) ?? 10) };
+  const h = num(o.h, 8, 3000);
+  if (h !== undefined) el.h = h;
+  if (typeof o.text === "string") el.text = o.text.slice(0, 2000);
+  const src = safeUrl(o.src);
+  if (src) el.src = src;
+  const href = safeHref(o.href);
+  if (href) el.href = href;
+  const size = num(o.size, 0.6, 40);
+  if (size !== undefined) el.size = size;
+  const weight = o.weight === 400 || o.weight === 700 || o.weight === 900 ? o.weight : undefined;
+  if (weight) el.weight = weight;
+  if (typeof o.color === "string" && HEX.test(o.color)) el.color = o.color;
+  if (typeof o.fill === "string" && HEX.test(o.fill)) el.fill = o.fill;
+  const align = pick(o.align, ["left", "center", "right"] as const);
+  if (align) el.align = align;
+  const font = pick(o.font, ["display", "sans", "script"] as const);
+  if (font) el.font = font;
+  if (typeof o.upper === "boolean") el.upper = o.upper;
+  const radius = num(o.radius, 0, 200);
+  if (radius !== undefined) el.radius = radius;
+  const opacity = num(o.opacity, 0, 1);
+  if (opacity !== undefined) el.opacity = opacity;
+  const rotate = num(o.rotate, -180, 180);
+  if (rotate !== undefined) el.rotate = rotate;
+  const fit = pick(o.fit, ["cover", "contain"] as const);
+  if (fit) el.fit = fit;
+  const on = pick(o.on, ["all", "desktop", "phone"] as const);
+  if (on) el.on = on;
+  return el;
+}
+
 export function parseLayout(value: unknown): HomeLayout | null {
   if (!value || typeof value !== "object") return null;
   const raw = (value as { sections?: unknown }).sections;
@@ -301,7 +399,7 @@ export function parseLayout(value: unknown): HomeLayout | null {
   const ids = new Set<string>();
   for (const s of raw) {
     if (!s || typeof s !== "object") return null;
-    const { id, type, hidden, text, style, images, place } = s as Record<string, unknown>;
+    const { id, type, hidden, text, style, images, place, els } = s as Record<string, unknown>;
     if (typeof id !== "string" || !/^[a-z0-9-]{1,40}$/i.test(id) || ids.has(id)) return null;
     if (typeof type !== "string" || !ALL_TYPES.includes(type as SectionType)) return null;
     const lib = SECTION_LIBRARY[type as SectionType];
@@ -327,13 +425,18 @@ export function parseLayout(value: unknown): HomeLayout | null {
     if (place && typeof place === "object") {
       for (const [el, p] of Object.entries(place as Record<string, unknown>)) {
         if (!/^[a-z0-9-]{1,30}$/i.test(el) || !p || typeof p !== "object") continue;
-        const { x, y, scale } = p as Record<string, unknown>;
-        if (typeof x !== "number" || typeof y !== "number" || typeof scale !== "number") continue;
-        cleanPlace[el] = {
-          x: Math.max(-1200, Math.min(1200, Math.round(x))),
-          y: Math.max(-1200, Math.min(1200, Math.round(y))),
-          scale: Math.max(0.3, Math.min(3, Math.round(scale * 100) / 100)),
+        const { x, y, scale, z, hidden: gone } = p as Record<string, unknown>;
+        const px = typeof x === "number" ? x : 0;
+        const py = typeof y === "number" ? y : 0;
+        const ps = typeof scale === "number" ? scale : 1;
+        const place: Placement = {
+          x: Math.max(-1200, Math.min(1200, Math.round(px))),
+          y: Math.max(-1200, Math.min(1200, Math.round(py))),
+          scale: Math.max(0.3, Math.min(3, Math.round(ps * 100) / 100)),
         };
+        if (typeof z === "number") place.z = Math.max(1, Math.min(99, Math.round(z)));
+        if (gone === true) place.hidden = true;
+        cleanPlace[el] = place;
       }
     }
 
@@ -343,6 +446,18 @@ export function parseLayout(value: unknown): HomeLayout | null {
     if (st) sec.style = st;
     if (Object.keys(cleanImages).length) sec.images = cleanImages;
     if (Object.keys(cleanPlace).length) sec.place = cleanPlace;
+    if (Array.isArray(els)) {
+      const seen = new Set<string>();
+      const list: El[] = [];
+      for (const raw of els.slice(0, 80)) {
+        const el = parseEl(raw);
+        if (el && !seen.has(el.id)) {
+          seen.add(el.id);
+          list.push(el);
+        }
+      }
+      if (list.length) sec.els = list;
+    }
     sections.push(sec);
   }
   const theme = parseTheme((value as { theme?: unknown }).theme);

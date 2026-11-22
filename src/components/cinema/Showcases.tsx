@@ -250,7 +250,10 @@ export function Showcases({ s }: { s: Section }) {
         i === 1 ? (
           // Photography: a dark full-width band so the photos get the whole
           // width and pop against the light page around it.
-          <div key={d.n} data-mode="dark" className="vintage band-fade relative overflow-hidden bg-paper text-ink">
+          // The dark background and its edge fade live on their own layer so
+          // the fade never dims the heading or photos above it.
+          <div key={d.n} data-mode="dark" className="relative text-ink">
+            <div aria-hidden className="vintage band-fade pointer-events-none absolute inset-0 overflow-hidden bg-paper" />
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"

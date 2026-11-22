@@ -3,7 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EditProvider } from "./Editable";
+import { EditProvider, type Sel } from "./Editable";
+import { PHOTOS } from "@/components/cinema/photos";
 import { HomeSections, type Slots } from "./HomeSections";
 import {
   SECTION_LIBRARY,
@@ -12,6 +13,7 @@ import {
   styleOf,
   type Background,
   type Entrance,
+  type El,
   type Height,
   type HomeLayout,
   type Hover,
@@ -174,6 +176,160 @@ function ImagePicker({
   );
 }
 
+/* ---------- element helpers ---------- */
+
+const rgbToHex = (rgb: string) => {
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(rgb);
+  if (!m || (m[4] !== undefined && parseFloat(m[4]) < 0.2)) return undefined;
+  return "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("");
+};
+
+/** Reads a built-in piece off the page (its words or photo, and its look) so
+ * it can be pasted as a free element that keeps the same style. */
+function elementFromDom(sectionId: string, id: string): Omit<El, "id"> | null {
+  const node = document.querySelector<HTMLElement>(`[data-el="${sectionId}:${id}"]`);
+  const sec = document.querySelector<HTMLElement>(`[data-sec="${sectionId}"]`);
+  if (!node || !sec) return null;
+  const secW = sec.offsetWidth || 1200;
+  const r = node.getBoundingClientRect();
+  const sr = sec.getBoundingClientRect();
+  const base = {
+    x: Math.max(0, Math.round(((r.left - sr.left) / secW) * 1000) / 10),
+    y: Math.max(0, Math.round(((r.top - sr.top) / secW) * 1000)),
+    w: Math.min(100, Math.max(5, Math.round((r.width / secW) * 1000) / 10)),
+    z: 10,
+  };
+  const text = node.innerText.trim();
+  const img = node.querySelector("img");
+  if (img && !text) {
+    let src = img.getAttribute("src") ?? "";
+    if (src.startsWith("/_next/image")) src = decodeURIComponent(new URLSearchParams(src.split("?")[1]).get("url") ?? "");
+    if (!src) return null;
+    return { ...base, kind: "image", src, h: Math.round((img.getBoundingClientRect().height / secW) * 1000), fit: "cover" };
+  }
+  if (!text) return null;
+  const t = node.querySelector<HTMLElement>("h1,h2,h3,p,a,summary,span") ?? node;
+  const cs = getComputedStyle(t);
+  const fw = parseInt(cs.fontWeight, 10) || 400;
+  return {
+    ...base,
+    kind: "text",
+    text,
+    size: Math.round((parseFloat(cs.fontSize) / secW) * 1000) / 10,
+    weight: fw >= 800 ? 900 : fw >= 600 ? 700 : 400,
+    color: rgbToHex(cs.color),
+    font: /unbounded|display/i.test(cs.fontFamily) ? "display" : /caveat|script/i.test(cs.fontFamily) ? "script" : "sans",
+    upper: cs.textTransform === "uppercase",
+    align: cs.textAlign === "center" ? "center" : cs.textAlign === "right" || cs.textAlign === "end" ? "right" : "left",
+  };
+}
+
+/** Small floating bar above the selected element: copy, duplicate, layers, delete. */
+function ElementToolbar({
+  sel,
+  isCustom,
+  hasClip,
+  removed,
+  onCopy,
+  onPaste,
+  onDuplicate,
+  onFront,
+  onBack,
+  onDelete,
+  onReplace,
+  onReset,
+  layoutKey,
+}: {
+  sel: NonNullable<Sel>;
+  isCustom: boolean;
+  hasClip: boolean;
+  removed: boolean;
+  onCopy: () => void;
+  onPaste: () => void;
+  onDuplicate: () => void;
+  onFront: () => void;
+  onBack: () => void;
+  onDelete: () => void;
+  onReplace?: () => void;
+  onReset?: () => void;
+  layoutKey: string;
+}) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const place = () => {
+      const node = document.querySelector<HTMLElement>(`[data-el="${sel.sectionId}:${sel.id}"]`);
+      if (!node) return setPos(null);
+      const r = node.getBoundingClientRect();
+      setPos({
+        x: Math.max(8, Math.min(window.innerWidth - 330, r.left + r.width / 2 - 150)),
+        y: Math.max(64, r.top - 44),
+      });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    const id = setInterval(place, 400); // catches drags and layout changes
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+      clearInterval(id);
+    };
+  }, [sel.sectionId, sel.id, layoutKey]);
+  if (!pos || removed) return null;
+  const b = "rounded-md px-2 py-1.5 text-[11px] font-bold hover:bg-white/10";
+  return (
+    <div
+      data-mode="dark"
+      className="fixed z-[97] flex items-center gap-0.5 rounded-xl border border-[#3a2a2d] bg-[#120c0e] p-1 text-[#f4efe9] shadow-2xl"
+      style={{ left: pos.x, top: pos.y }}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <button type="button" className={b} onClick={onCopy} title="Copy (Ctrl+C)">
+        Copy
+      </button>
+      <button type="button" className={`${b} disabled:opacity-30`} onClick={onPaste} disabled={!hasClip} title="Paste (Ctrl+V)">
+        Paste
+      </button>
+      {isCustom && (
+        <button type="button" className={b} onClick={onDuplicate} title="Duplicate (Ctrl+D)">
+          Duplicate
+        </button>
+      )}
+      {onReplace && (
+        <button type="button" className={`${b} text-[#f5c84c]`} onClick={onReplace} title="Replace this image">
+          Replace
+        </button>
+      )}
+      <span className="mx-0.5 h-4 w-px bg-white/15" />
+      <button type="button" className={b} onClick={onFront} title="Bring in front of everything">
+        ↑ Front
+      </button>
+      <button type="button" className={b} onClick={onBack} title="Send behind the section's content">
+        ↓ Back
+      </button>
+      {onReset && (
+        <button type="button" className={b} onClick={onReset} title="Put back where it was">
+          ↺
+        </button>
+      )}
+      <span className="mx-0.5 h-4 w-px bg-white/15" />
+      <button type="button" className={`${b} text-[#ff8a8a]`} onClick={onDelete} title="Remove (Delete key)">
+        {isCustom ? "Delete" : "Remove"}
+      </button>
+    </div>
+  );
+}
+
+function newElId() {
+  return `e${Math.random().toString(36).slice(2, 8)}`;
+}
+
+const ELEMENT_DEFAULTS: Record<"text" | "button" | "shape", Omit<El, "id">> = {
+  text: { kind: "text", x: 12, y: 80, w: 40, z: 10, text: "New text — double-click to edit", size: 2.6, weight: 700, font: "display", upper: true },
+  button: { kind: "button", x: 12, y: 80, w: 20, z: 10, text: "Click me", size: 1.2, weight: 700, font: "sans", radius: 999, href: "/#quote" },
+  shape: { kind: "shape", x: 12, y: 80, w: 24, h: 120, z: 2, fill: "#8e1b3a", radius: 16, opacity: 0.9 },
+};
+
 /* ---------- the editor ---------- */
 
 export function SiteEditor({ initial, published, slots }: { initial: HomeLayout; published: HomeLayout; slots: Slots }) {
@@ -183,23 +339,32 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
   const [liveJson, setLiveJson] = useState(JSON.stringify(published));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [moveMode, setMoveMode] = useState(false);
-  const [tab, setTab] = useState<"section" | "site" | "versions">("section");
+  const [tab, setTab] = useState<"section" | "element" | "site" | "versions">("section");
+  const [sel, setSel] = useState<Sel>(null);
+  const [clip, setClip] = useState<Omit<El, "id"> | null>(null);
+  const [addingEl, setAddingEl] = useState(false);
   const [showLayers, setShowLayers] = useState(true);
   const [showPanel, setShowPanel] = useState(true);
   const [device, setDevice] = useState<"desktop" | "tablet" | "phone">("desktop");
   const [status, setStatus] = useState("All changes saved as draft");
-  const [picker, setPicker] = useState<{ sectionId: string; slot: string } | null>(null);
+  const [picker, setPicker] = useState<
+    { mode: "slot"; sectionId: string; slot: string } | { mode: "new"; sectionId: string } | { mode: "replace"; sectionId: string; id: string } | null
+  >(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [adding, setAdding] = useState(false);
   const dragIndex = useRef<number | null>(null);
   const firstRender = useRef(true);
   const unpublished = JSON.stringify(layout) !== liveJson;
 
+  // Changes less than half a second apart (a drag, a slider) count as one undo step.
+  const lastCommit = useRef(0);
   const commit = useCallback((fn: (l: HomeLayout) => HomeLayout) => {
     setLayout((prev) => {
       const next = fn(prev);
       if (next === prev) return prev;
-      setPast((p) => [...p.slice(-79), prev]);
+      const now = Date.now();
+      if (now - lastCommit.current > 500) setPast((p) => [...p.slice(-79), prev]);
+      lastCommit.current = now;
       setFuture([]);
       return next;
     });
@@ -261,6 +426,102 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
     if (res?.ok) setHistory(((await res.json()) as { history: HistoryRow[] }).history);
   }, []);
 
+  /* ----- elements: add, copy, paste, duplicate, layers, delete ----- */
+  const targetSectionId = () => sel?.sectionId ?? selectedId ?? layout.sections.find((s) => !s.hidden)?.id ?? null;
+  const findEl = (sectionId: string, id: string) => layout.sections.find((s) => s.id === sectionId)?.els?.find((e) => e.id === id);
+
+  const addEl = (sectionId: string, partial: Omit<El, "id">) => {
+    const id = newElId();
+    updateSection(sectionId, (s) => ({ ...s, els: [...(s.els ?? []), { ...partial, id }] }));
+    setSelectedId(sectionId);
+    setSel({ sectionId, id, builtin: false });
+    setTab("element");
+    setShowPanel(true);
+    setAddingEl(false);
+  };
+  const addElement = (kind: "text" | "button" | "shape" | "image") => {
+    const sectionId = targetSectionId();
+    if (!sectionId) return;
+    if (kind === "image") setPicker({ mode: "new", sectionId });
+    else addEl(sectionId, ELEMENT_DEFAULTS[kind]);
+  };
+  const updateEl = useCallback(
+    (sectionId: string, id: string, patch: Partial<El>) =>
+      updateSection(sectionId, (s) => ({ ...s, els: (s.els ?? []).map((e) => (e.id === id ? { ...e, ...patch } : e)) })),
+    [updateSection]
+  );
+  const copySel = () => {
+    if (!sel) return;
+    if (sel.builtin) {
+      const el = elementFromDom(sel.sectionId, sel.id);
+      if (el) {
+        setClip(el);
+        setStatus("Copied — press Ctrl+V or Paste to place a copy");
+      } else setStatus("That piece can't be copied");
+    } else {
+      const el = findEl(sel.sectionId, sel.id);
+      if (el) {
+        const { id: _id, ...rest } = el;
+        void _id;
+        setClip(rest);
+        setStatus("Copied — press Ctrl+V or Paste to place a copy");
+      }
+    }
+  };
+  const pasteEl = () => {
+    const sectionId = targetSectionId();
+    if (!clip || !sectionId) return;
+    const samePlace = sel?.sectionId === sectionId;
+    addEl(sectionId, { ...clip, x: Math.min(95, clip.x + (samePlace ? 3 : 0)), y: clip.y + (samePlace ? 32 : 0) });
+  };
+  const duplicateSel = () => {
+    if (!sel || sel.builtin) return;
+    const el = findEl(sel.sectionId, sel.id);
+    if (!el) return;
+    const { id: _id, ...rest } = el;
+    void _id;
+    addEl(sel.sectionId, { ...rest, x: Math.min(95, el.x + 3), y: el.y + 32 });
+  };
+  const deleteSel = () => {
+    if (!sel) return;
+    if (sel.builtin) {
+      updateSection(sel.sectionId, (s) => ({
+        ...s,
+        place: { ...(s.place ?? {}), [sel.id]: { x: 0, y: 0, scale: 1, ...(s.place?.[sel.id] ?? {}), hidden: true } },
+      }));
+    } else {
+      updateSection(sel.sectionId, (s) => {
+        const els = (s.els ?? []).filter((e) => e.id !== sel.id);
+        return { ...s, els: els.length ? els : undefined };
+      });
+    }
+    setSel(null);
+  };
+  const setLayer = (where: "front" | "back") => {
+    if (!sel) return;
+    if (sel.builtin) {
+      updateSection(sel.sectionId, (s) => ({
+        ...s,
+        place: {
+          ...(s.place ?? {}),
+          [sel.id]: { x: 0, y: 0, scale: 1, ...(s.place?.[sel.id] ?? {}), z: where === "front" ? 20 : 1 },
+        },
+      }));
+    } else {
+      const sec = layout.sections.find((s) => s.id === sel.sectionId);
+      const top = Math.max(10, ...(sec?.els ?? []).map((e) => e.z));
+      updateEl(sel.sectionId, sel.id, { z: where === "front" ? Math.min(99, top + 1) : 1 });
+    }
+  };
+  const resetBuiltin = () => {
+    if (!sel?.builtin) return;
+    updateSection(sel.sectionId, (s) => {
+      const place = { ...(s.place ?? {}) };
+      delete place[sel.id];
+      return { ...s, place: Object.keys(place).length ? place : undefined };
+    });
+  };
+
   // Keyboard shortcuts (text fields keep their own undo).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -279,16 +540,32 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
       } else if (mod && (e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey))) {
         e.preventDefault();
         redo();
+      } else if (mod && e.key.toLowerCase() === "c" && sel) {
+        e.preventDefault();
+        copySel();
+      } else if (mod && e.key.toLowerCase() === "v" && clip) {
+        e.preventDefault();
+        pasteEl();
+      } else if (mod && e.key.toLowerCase() === "d" && sel && !sel.builtin) {
+        e.preventDefault();
+        duplicateSel();
+      } else if ((e.key === "Delete" || e.key === "Backspace") && sel) {
+        e.preventDefault();
+        deleteSel();
       } else if (e.key === "m" && !mod) {
         setMoveMode((m) => !m);
       } else if (e.key === "Escape") {
-        setMoveMode(false);
-        setSelectedId(null);
+        if (sel) setSel(null);
+        else {
+          setMoveMode(false);
+          setSelectedId(null);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [layout, saveDraft, undo, redo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, saveDraft, undo, redo, sel, clip, selectedId]);
 
   // Warn before leaving with unpublished work.
   useEffect(() => {
@@ -302,6 +579,24 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
     () => ({
       editing: true,
       moveMode,
+      sel,
+      selSection: selectedId,
+      selectEl: (next: Sel) => {
+        setSel(next);
+        if (next) {
+          setSelectedId(next.sectionId);
+          setTab("element");
+          setShowPanel(true);
+        }
+      },
+      updateEl,
+      setFixedH: (sectionId: string, h: number | null) =>
+        updateSection(sectionId, (s) => {
+          const style = { ...(s.style ?? {}) };
+          if (h === null) delete style.fixedH;
+          else style.fixedH = h;
+          return { ...s, style: Object.keys(style).length ? style : undefined };
+        }),
       setText: (sectionId: string, key: string, value: string) =>
         updateSection(sectionId, (s) => ({ ...s, text: { ...s.text, [key]: value } })),
       setPlace: (sectionId: string, elId: string, place: Placement | null) =>
@@ -312,12 +607,13 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
           return { ...s, place: Object.keys(nextPlace).length ? nextPlace : undefined };
         }),
     }),
-    [moveMode, updateSection]
+    [moveMode, sel, selectedId, updateEl, updateSection]
   );
 
   /* ----- section actions ----- */
   const select = (id: string) => {
     setSelectedId(id);
+    setSel(null);
     setTab("section");
     setShowPanel(true);
   };
@@ -510,7 +806,8 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
             {(
               [
                 ["section", "Section"],
-                ["site", "Site look"],
+                ["element", "Element"],
+                ["site", "Look"],
                 ["versions", "Versions"],
               ] as const
             ).map(([k, text]) => (
@@ -608,6 +905,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                   <Seg<Height>
                     value={selectedStyle.height ?? "normal"}
                     options={[
+                      ["flat", "Minimal"],
                       ["tight", "Shorter"],
                       ["normal", "Normal"],
                       ["roomy", "Taller"],
@@ -615,6 +913,61 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                     ]}
                     onChange={(height) => setStyle(selected.id, { height })}
                   />
+                  <div className="flex items-center gap-2 text-xs text-[#b3a5a2]">
+                    <span>Exact height</span>
+                    <input
+                      key={`${selected.id}-${selectedStyle.fixedH ?? "auto"}`}
+                      type="number"
+                      min={16}
+                      max={3000}
+                      step={8}
+                      placeholder="auto"
+                      defaultValue={selectedStyle.fixedH ?? ""}
+                      onBlur={(e) => {
+                        const raw = e.currentTarget.value.trim();
+                        editApi.setFixedH(selected.id, raw === "" ? null : Math.max(16, Math.min(3000, Number(raw) || 16)));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                      className="w-20 rounded-md border border-[#3a2a2d] bg-black/30 px-2 py-1 text-sm text-[#f4efe9]"
+                    />
+                    <span>px</span>
+                  </div>
+                  <label className="block text-xs text-[#b3a5a2]">
+                    <input
+                      type="range"
+                      min={16}
+                      max={1600}
+                      step={8}
+                      value={selectedStyle.fixedH ?? 600}
+                      onChange={(e) => editApi.setFixedH(selected.id, Number(e.target.value))}
+                      className="mt-1 w-full accent-[#f5c84c]"
+                    />
+                  </label>
+                  {selectedStyle.fixedH && (
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedStyle.spill}
+                        onChange={(e) => setStyle(selected.id, { spill: e.target.checked })}
+                        className="accent-[#f5c84c]"
+                      />
+                      Let things spill outside (otherwise anything taller is cropped)
+                    </label>
+                  )}
+                  <div className="flex gap-2">
+                    {selectedStyle.fixedH && (
+                      <button
+                        type="button"
+                        onClick={() => editApi.setFixedH(selected.id, null)}
+                        className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10"
+                      >
+                        Automatic height
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#b3a5a2]">Tip: hover any section on the page and drag the yellow bar at its bottom edge.</p>
                 </div>
 
                 <div className="space-y-2">
@@ -657,7 +1010,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                             <span className="text-xs font-bold">{def.label}</span>
                             <button
                               type="button"
-                              onClick={() => setPicker({ sectionId: selected.id, slot })}
+                              onClick={() => setPicker({ mode: "slot", sectionId: selected.id, slot })}
                               className="rounded-full bg-[#f5c84c] px-3 py-1 text-[10px] font-bold uppercase text-black"
                             >
                               Choose
@@ -674,6 +1027,51 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                     })}
                   </div>
                 )}
+
+                <div className="space-y-2">
+                  <p className={label}>Add to this section</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(
+                      [
+                        ["text", "Text"],
+                        ["image", "Image"],
+                        ["button", "Button"],
+                        ["shape", "Shape"],
+                      ] as const
+                    ).map(([k, t]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => addElement(k)}
+                        className="rounded-lg bg-white/5 py-2 text-[11px] font-bold hover:bg-[#f5c84c] hover:text-black"
+                      >
+                        + {t}
+                      </button>
+                    ))}
+                  </div>
+                  {clip && (
+                    <button type="button" onClick={pasteEl} className="w-full rounded-lg bg-white/5 py-2 text-[11px] font-bold hover:bg-white/10">
+                      Paste copied {clip.kind} here
+                    </button>
+                  )}
+                  {(selected.els?.length ?? 0) > 0 && (
+                    <ul className="space-y-1">
+                      {selected.els!.map((el) => (
+                        <li key={el.id}>
+                          <button
+                            type="button"
+                            onClick={() => editApi.selectEl({ sectionId: selected.id, id: el.id, builtin: false })}
+                            className="flex w-full items-center gap-2 rounded-md bg-white/5 px-2 py-1.5 text-left text-[11px] hover:bg-white/10"
+                          >
+                            <span className="font-bold capitalize">{el.kind}</span>
+                            <span className="flex-1 truncate text-[#b3a5a2]">{el.text ?? ""}</span>
+                            <span className="text-[#b3a5a2]">layer {el.z}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <p className={label}>Position & size</p>
@@ -722,6 +1120,238 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                 </div>
               </>
             )}
+
+            {tab === "element" && !sel && (
+              <p className="text-sm text-[#b3a5a2]">
+                Click an element you added (or turn on Move &amp; resize and click a built-in piece) to edit it here.
+              </p>
+            )}
+
+            {tab === "element" &&
+              sel &&
+              (() => {
+                if (sel.builtin) {
+                  const p = layout.sections.find((s) => s.id === sel.sectionId)?.place?.[sel.id];
+                  const node = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-el="${sel.sectionId}:${sel.id}"]`) : null;
+                  return (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-base font-black">{node?.dataset.label ?? "Piece"}</p>
+                        <p className="text-xs text-[#b3a5a2]">Built-in piece of this section.</p>
+                      </div>
+                      <p className="text-xs text-[#b3a5a2]">
+                        Drag it on the page to move, pull the corner to resize. Size: {Math.round((p?.scale ?? 1) * 100)}% · layer {p?.z ?? "normal"}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={copySel} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Copy as free element
+                        </button>
+                        <button type="button" onClick={() => setLayer("front")} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Bring to front
+                        </button>
+                        <button type="button" onClick={() => setLayer("back")} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Send back
+                        </button>
+                        <button type="button" onClick={resetBuiltin} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Reset
+                        </button>
+                        <button type="button" onClick={deleteSel} className="rounded-full bg-[#8e1b3a] px-3 py-1.5 text-[11px] font-bold">
+                          Remove from page
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[#b3a5a2]">Removed pieces show a “Restore” button where they were.</p>
+                    </div>
+                  );
+                }
+                const el = findEl(sel.sectionId, sel.id);
+                if (!el) return <p className="text-sm text-[#b3a5a2]">That element no longer exists.</p>;
+                const up = (patch: Partial<El>) => updateEl(sel.sectionId, el.id, patch);
+                const isWords = el.kind === "text" || el.kind === "button";
+                return (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-base font-black capitalize">{el.kind}</p>
+                      <p className="text-xs text-[#b3a5a2]">
+                        Drag to move · corner to resize{isWords ? " · double-click to type" : ""}. Hold Alt for no snapping.
+                      </p>
+                    </div>
+
+                    {isWords && (
+                      <>
+                        <label className="block text-xs">
+                          <span className={label}>Words</span>
+                          <textarea
+                            value={el.text ?? ""}
+                            rows={3}
+                            onChange={(e) => up({ text: e.target.value })}
+                            className="mt-1 w-full rounded-md border border-[#3a2a2d] bg-black/30 p-2 text-sm"
+                          />
+                        </label>
+                        <label className="block text-xs text-[#b3a5a2]">
+                          Text size {el.size ?? (el.kind === "button" ? 1.2 : 2.6)}
+                          <input
+                            type="range"
+                            min={0.6}
+                            max={14}
+                            step={0.1}
+                            value={el.size ?? (el.kind === "button" ? 1.2 : 2.6)}
+                            onChange={(e) => up({ size: Number(e.target.value) })}
+                            className="mt-1 w-full accent-[#f5c84c]"
+                          />
+                        </label>
+                        <div className="space-y-1.5">
+                          <p className={label}>Font</p>
+                          <Seg<"display" | "sans" | "script">
+                            value={el.font ?? "sans"}
+                            options={[
+                              ["display", "Bold display"],
+                              ["sans", "Clean"],
+                              ["script", "Handwritten"],
+                            ]}
+                            onChange={(font) => up({ font })}
+                          />
+                          <Seg<"400" | "700" | "900">
+                            value={String(el.weight ?? 700) as "400" | "700" | "900"}
+                            options={[
+                              ["400", "Regular"],
+                              ["700", "Bold"],
+                              ["900", "Black"],
+                            ]}
+                            onChange={(w) => up({ weight: Number(w) as 400 | 700 | 900 })}
+                          />
+                          <Seg<"left" | "center" | "right">
+                            value={el.align ?? "left"}
+                            options={[
+                              ["left", "Left"],
+                              ["center", "Centre"],
+                              ["right", "Right"],
+                            ]}
+                            onChange={(align) => up({ align })}
+                          />
+                          <label className="flex items-center gap-2 text-xs">
+                            <input type="checkbox" checked={!!el.upper} onChange={(e) => up({ upper: e.target.checked })} className="accent-[#f5c84c]" />
+                            CAPITALS
+                          </label>
+                        </div>
+                        <Color title="Text colour" value={el.color ?? "#1a0f10"} onChange={(v) => up({ color: v })} />
+                      </>
+                    )}
+
+                    {(el.kind === "button" || el.kind === "shape") && (
+                      <Color title="Fill colour" value={el.fill ?? (el.kind === "button" ? "#f5c84c" : "#8e1b3a")} onChange={(v) => up({ fill: v })} />
+                    )}
+
+                    {(el.kind === "button" || el.kind === "text" || el.kind === "image") && (
+                      <label className="block text-xs">
+                        <span className={label}>Link (optional)</span>
+                        <input
+                          value={el.href ?? ""}
+                          placeholder="/#quote or https://…"
+                          onChange={(e) => up({ href: e.target.value || undefined })}
+                          className="mt-1 w-full rounded-md border border-[#3a2a2d] bg-black/30 p-2 text-sm"
+                        />
+                      </label>
+                    )}
+
+                    {el.kind === "image" && (
+                      <div className="space-y-2">
+                        {el.src && <img src={el.src} alt="" className="h-24 w-full rounded-md object-cover" />}
+                        <button
+                          type="button"
+                          onClick={() => setPicker({ mode: "replace", sectionId: sel.sectionId, id: el.id })}
+                          className="w-full rounded-full bg-[#f5c84c] py-2 text-[11px] font-bold uppercase text-black"
+                        >
+                          Replace image
+                        </button>
+                        <Seg<"cover" | "contain">
+                          value={el.fit ?? "cover"}
+                          options={[
+                            ["cover", "Fill the box"],
+                            ["contain", "Show whole image"],
+                          ]}
+                          onChange={(fit) => up({ fit })}
+                        />
+                      </div>
+                    )}
+
+                    {(el.kind === "image" || el.kind === "shape") && (
+                      <label className="block text-xs text-[#b3a5a2]">
+                        Height {el.h ?? 240}
+                        <input type="range" min={8} max={1400} value={el.h ?? 240} onChange={(e) => up({ h: Number(e.target.value) })} className="mt-1 w-full accent-[#f5c84c]" />
+                      </label>
+                    )}
+
+                    <label className="block text-xs text-[#b3a5a2]">
+                      Width {el.w}% of the section
+                      <input type="range" min={2} max={120} step={0.5} value={el.w} onChange={(e) => up({ w: Number(e.target.value) })} className="mt-1 w-full accent-[#f5c84c]" />
+                    </label>
+                    {el.kind !== "text" && (
+                      <label className="block text-xs text-[#b3a5a2]">
+                        Rounded corners {el.radius ?? 0}px
+                        <input type="range" min={0} max={200} value={el.radius ?? 0} onChange={(e) => up({ radius: Number(e.target.value) })} className="mt-1 w-full accent-[#f5c84c]" />
+                      </label>
+                    )}
+                    <label className="block text-xs text-[#b3a5a2]">
+                      See-through {Math.round((1 - (el.opacity ?? 1)) * 100)}%
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={Math.round((1 - (el.opacity ?? 1)) * 100)}
+                        onChange={(e) => up({ opacity: 1 - Number(e.target.value) / 100 })}
+                        className="mt-1 w-full accent-[#f5c84c]"
+                      />
+                    </label>
+                    <label className="block text-xs text-[#b3a5a2]">
+                      Rotate {el.rotate ?? 0}°
+                      <input type="range" min={-180} max={180} value={el.rotate ?? 0} onChange={(e) => up({ rotate: Number(e.target.value) })} className="mt-1 w-full accent-[#f5c84c]" />
+                    </label>
+
+                    <div className="space-y-1.5">
+                      <p className={label}>Layer {el.z} {el.z <= 2 ? "· behind the section's content" : "· in front"}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button type="button" onClick={() => setLayer("front")} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Bring to front
+                        </button>
+                        <button type="button" onClick={() => up({ z: Math.min(99, el.z + 1) })} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Forward
+                        </button>
+                        <button type="button" onClick={() => up({ z: Math.max(1, el.z - 1) })} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Backward
+                        </button>
+                        <button type="button" onClick={() => setLayer("back")} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                          Send to back
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <p className={label}>Show on</p>
+                      <Seg<"all" | "desktop" | "phone">
+                        value={el.on ?? "all"}
+                        options={[
+                          ["all", "All screens"],
+                          ["desktop", "Computer & tablet"],
+                          ["phone", "Phone only"],
+                        ]}
+                        onChange={(on) => up({ on })}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 border-t border-[#3a2a2d] pt-4">
+                      <button type="button" onClick={copySel} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                        Copy
+                      </button>
+                      <button type="button" onClick={duplicateSel} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold hover:bg-white/10">
+                        Duplicate
+                      </button>
+                      <button type="button" onClick={deleteSel} className="rounded-full bg-[#8e1b3a] px-3 py-1.5 text-[11px] font-bold">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
             {tab === "site" && (
               <>
@@ -825,19 +1455,38 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
       {picker &&
         (() => {
           const s = layout.sections.find((x) => x.id === picker.sectionId);
-          const def = s && SECTION_LIBRARY[s.type].slots?.[picker.slot];
-          if (!s || !def) return null;
+          if (!s) return null;
+          if (picker.mode === "new" || picker.mode === "replace") {
+            const existing = picker.mode === "replace" ? findEl(s.id, picker.id) : undefined;
+            return (
+              <ImagePicker
+                title={picker.mode === "new" ? "Add an image" : "Replace image"}
+                max={1}
+                current={existing?.src ? [existing.src] : []}
+                onClose={() => setPicker(null)}
+                onSave={(urls) => {
+                  const url = urls?.[0] ?? PHOTOS[0].thumb;
+                  if (picker.mode === "new") addEl(s.id, { kind: "image", x: 10, y: 60, w: 26, h: 300, z: 10, src: url, fit: "cover", radius: 6 });
+                  else updateEl(s.id, picker.id, { src: url });
+                  setPicker(null);
+                }}
+              />
+            );
+          }
+          const slot = picker.slot;
+          const def = SECTION_LIBRARY[s.type].slots?.[slot];
+          if (!def) return null;
           return (
             <ImagePicker
               title={`${SECTION_LIBRARY[s.type].label} · ${def.label}`}
               max={def.max}
-              current={s.images?.[picker.slot] ?? []}
+              current={s.images?.[slot] ?? []}
               onClose={() => setPicker(null)}
               onSave={(urls) => {
                 updateSection(s.id, (x) => {
                   const images = { ...(x.images ?? {}) };
-                  if (urls && urls.length) images[picker.slot] = urls;
-                  else delete images[picker.slot];
+                  if (urls && urls.length) images[slot] = urls;
+                  else delete images[slot];
                   return { ...x, images: Object.keys(images).length ? images : undefined };
                 });
                 setPicker(null);
@@ -845,6 +1494,47 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
             />
           );
         })()}
+
+      {/* ----- Selected element toolbar ----- */}
+      {sel && (
+        <ElementToolbar
+          sel={sel}
+          isCustom={!sel.builtin}
+          hasClip={!!clip}
+          removed={!!(sel.builtin && layout.sections.find((s) => s.id === sel.sectionId)?.place?.[sel.id]?.hidden)}
+          onCopy={copySel}
+          onPaste={pasteEl}
+          onDuplicate={duplicateSel}
+          onFront={() => setLayer("front")}
+          onBack={() => setLayer("back")}
+          onDelete={deleteSel}
+          onReplace={
+            !sel.builtin && findEl(sel.sectionId, sel.id)?.kind === "image"
+              ? () => setPicker({ mode: "replace", sectionId: sel.sectionId, id: sel.id })
+              : undefined
+          }
+          onReset={sel.builtin ? resetBuiltin : undefined}
+          layoutKey={JSON.stringify(layout.sections.find((s) => s.id === sel.sectionId)?.els ?? "") + JSON.stringify(layout.sections.find((s) => s.id === sel.sectionId)?.place ?? "")}
+        />
+      )}
+
+      {/* ----- Add element menu ----- */}
+      {addingEl && (
+        <div data-mode="dark" className={`${panel} fixed bottom-20 left-1/2 z-[97] grid -translate-x-1/2 grid-cols-4 gap-1.5 p-2`}>
+          {(
+            [
+              ["text", "Text"],
+              ["image", "Image"],
+              ["button", "Button"],
+              ["shape", "Shape"],
+            ] as const
+          ).map(([k, t]) => (
+            <button key={k} type="button" onClick={() => addElement(k)} className="rounded-lg px-4 py-2 text-xs font-bold hover:bg-[#f5c84c] hover:text-black">
+              + {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ----- Toolbar ----- */}
       <div className="fixed inset-x-0 bottom-3 z-[96] flex justify-center px-3" data-mode="dark">
@@ -866,6 +1556,14 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
           >
             ✥ Move &amp; resize
           </button>
+          <button type="button" className={`${btn} ${addingEl ? "bg-white/15" : "hover:bg-white/10"}`} onClick={() => setAddingEl((v) => !v)} title="Add text, image, button or shape">
+            ＋ Element
+          </button>
+          {clip && (
+            <button type="button" className={`${btn} hover:bg-white/10`} onClick={pasteEl} title="Paste (Ctrl+V)">
+              Paste
+            </button>
+          )}
           <span className="mx-1 hidden h-5 w-px bg-white/15 sm:block" />
           {(
             [
