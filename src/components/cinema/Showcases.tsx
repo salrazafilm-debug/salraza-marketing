@@ -249,13 +249,21 @@ export function Showcases({ s }: { s: Section }) {
   const brand = imagesOf(s, "brand");
   return (
     <section id="services" className="relative">
-      <div className="mx-auto max-w-[1200px] px-4 pb-8 pt-16 text-center sm:px-6 sm:pb-12 sm:pt-24">
+      <div className="mx-auto max-w-[1200px] px-4 pb-4 pt-14 text-center sm:px-6 sm:pb-8 sm:pt-24">
         <Movable s={s} id="heading" label="Heading">
-          <Reveal as="p" className="text-[10px] uppercase tracking-[0.3em] text-warm-text sm:text-xs">
-            <Txt s={s} k="eyebrow" />
-          </Reveal>
+          {textOf(s, "eyebrow").trim() && (
+            <Reveal as="p" className="text-[10px] uppercase tracking-[0.3em] text-warm-text sm:text-xs">
+              <Txt s={s} k="eyebrow" />
+            </Reveal>
+          )}
           <Reveal delay={80}>
-            <Txt s={s} k="title" as="h2" className="title-lit mx-auto mt-3 block max-w-4xl font-display text-[clamp(1.75rem,4.6vw,3.5rem)] font-black uppercase leading-[1.02]" />
+            {/* Bigger than the four service titles below it, smaller than SALRAZA. */}
+            <Txt
+              s={s}
+              k="title"
+              as="h2"
+              className="title-lit mx-auto mt-3 block max-w-5xl font-display text-[clamp(2.4rem,9vw,6.5rem)] font-black uppercase leading-[0.98]"
+            />
           </Reveal>
         </Movable>
       </div>
@@ -270,11 +278,6 @@ export function Showcases({ s }: { s: Section }) {
           return (
             // Photography: a dark band so the photos pop.
             <div key={id} data-mode="dark" className="relative text-ink">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse 70% 40% at 50% 10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%)" }}
-              />
               <div className="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6 sm:py-24">
                 {title}
                 <Movable s={s} id="photos" label="Photos" className="mt-6 sm:mt-12">

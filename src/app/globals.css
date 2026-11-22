@@ -316,7 +316,9 @@ body {
 .sec-flat section,
 .sec-flat section > div { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; min-height: 0 !important; }
 /* A fixed height wins over the content's own minimum height. */
-.sec-fixed section { min-height: 0 !important; }
+@media (min-width: 768px) {
+  .sec-fixed section { min-height: 0 !important; }
+}
 .sec-roomy { padding-top: 5rem; padding-bottom: 5rem; }
 .sec-screen { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
 

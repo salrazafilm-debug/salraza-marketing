@@ -28,12 +28,6 @@ function Corners() {
 export function Hero({ s }: { s: Section }) {
   return (
     <section id="hero" className="relative flex min-h-[100svh] flex-col items-center justify-center pb-24 pt-24 sm:pb-20 sm:pt-28">
-      {/* soft burgundy at the frame edges only */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(ellipse at center, transparent 55%, color-mix(in srgb, var(--accent) 12%, transparent) 100%)" }}
-      />
       <Corners />
 
       <div className="relative z-10 w-full max-w-5xl px-4">
@@ -44,7 +38,7 @@ export function Hero({ s }: { s: Section }) {
               s={s}
               k="title"
               as="h1"
-              className="hero-word relative text-center font-display text-[17vw] font-black leading-none tracking-tight sm:text-[9.5rem] lg:text-[11.5rem]"
+              className="hero-word relative text-center font-display text-[15vw] font-black leading-none tracking-tight sm:text-[9.5rem] lg:text-[11.5rem]"
             />
           </div>
         </Movable>

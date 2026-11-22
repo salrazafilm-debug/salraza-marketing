@@ -85,10 +85,13 @@ export function SectionFrame({
   if (st.height === "tight") cls.push("sec-tight");
   if (st.height === "roomy") cls.push("sec-roomy");
   if (st.height === "screen") cls.push("sec-screen");
-  if (st.fixedH) cls.push("sec-fixed");
+  // An exact height is a desktop layout tool; phones always size to their content.
+  if (st.fixedH) cls.push("sec-fixed md:h-[var(--fixed-h)]");
   // A set height crops whatever doesn't fit (unless "let things spill out" is on),
   // so a shortened section never runs into the next one.
-  const crop = !!st.fixedH && !st.spill;
+  // Nothing is cropped any more: cropping made text that reached past the
+  // edge look as if it were hidden behind the next section.
+  const crop = false;
   if (st.hover && st.hover !== "none") cls.push(`fx-${st.hover}`);
 
   // Drag the bottom edge to set an exact height (editor only).
@@ -106,7 +109,7 @@ export function SectionFrame({
       data-mode={mode}
       data-sec={s.id}
       className={`group/sec relative ${cls.join(" ")}`}
-      style={{ containerType: "inline-size", ...(st.fixedH ? { height: st.fixedH } : {}) }}
+      style={{ containerType: "inline-size", ...(st.fixedH ? { ["--fixed-h" as string]: `${st.fixedH}px` } : {}) } as CSSProperties}
     >
       {background && (
         // Auto blend: the background reaches up over the section above and fades
@@ -173,11 +176,6 @@ function Eyebrow({ s, k = "eyebrow" }: { s: Section; k?: string }) {
 function Statement({ s }: { s: Section }) {
   return (
     <section className="relative">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(ellipse 60% 80% at 50% 120%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70%)" }}
-      />
       <div className="relative mx-auto max-w-5xl px-6 py-24 text-center sm:py-32">
         <Movable s={s} id="eyebrow" label="Small label">
           <Reveal>
@@ -198,11 +196,6 @@ function Statement({ s }: { s: Section }) {
 function About({ s }: { s: Section }) {
   return (
     <section id="about" className="relative px-4 py-24 sm:px-6 sm:py-28">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-1/2 h-[70%] -translate-y-1/2"
-        style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%)" }}
-      />
       <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
         <Movable s={s} id="heading" label="Heading">
           <Reveal>

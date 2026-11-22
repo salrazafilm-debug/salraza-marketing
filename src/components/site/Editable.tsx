@@ -455,7 +455,11 @@ export function ElementsLayer({ s }: { s: Section }) {
   };
 
   return (
-    <div ref={layerRef} className="pointer-events-none absolute inset-0" style={{ containerType: "inline-size" }}>
+    <div
+      ref={layerRef}
+      className="pointer-events-none max-md:relative max-md:flex max-md:flex-col max-md:items-center max-md:gap-5 max-md:px-4 max-md:pb-10 max-md:empty:hidden md:absolute md:inset-0"
+      style={{ containerType: "inline-size" }}
+    >
       {els.map((el) => {
         const isSel = !!sel && sel.sectionId === s.id && sel.id === el.id && !sel.builtin;
         const vis = el.on === "desktop" ? "max-md:hidden" : el.on === "phone" ? "md:hidden" : "";
@@ -464,7 +468,7 @@ export function ElementsLayer({ s }: { s: Section }) {
             key={el.id}
             data-el={`${s.id}:${el.id}`}
             data-label={`${el.kind[0].toUpperCase()}${el.kind.slice(1)}`}
-            className={`pointer-events-auto absolute ${vis} ${editing ? "cursor-move touch-none" : ""} ${
+            className={`pointer-events-auto absolute max-md:!static max-md:!w-[min(88%,420px)] max-md:![transform:none] ${vis} ${editing ? "cursor-move touch-none" : ""} ${
               isSel ? "outline-dashed outline-2 outline-offset-2 outline-[#f5c84c]" : editing ? "hover:outline hover:outline-1 hover:outline-offset-2 hover:outline-[#f5c84c]/60" : ""
             }`}
             style={{
@@ -472,6 +476,8 @@ export function ElementsLayer({ s }: { s: Section }) {
               top: `calc(${el.y} * 100cqw / 1000)`,
               width: `${el.w}%`,
               zIndex: el.z,
+              // Phone stacking order follows the desktop top-to-bottom order.
+              order: Math.round(el.y),
               opacity: el.opacity ?? 1,
               transform: el.rotate ? `rotate(${el.rotate}deg)` : undefined,
             }}

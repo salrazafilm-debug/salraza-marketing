@@ -99,7 +99,7 @@ export type El = {
 export type Section = {
   id: string;
   /** 1 = an older hand-placed "What we do" has been folded into the design. */
-  tidy?: 1 | 2;
+  tidy?: 1 | 2 | 3;
   type: SectionType;
   hidden?: boolean;
   text: Record<string, string>;
@@ -184,8 +184,8 @@ export const SECTION_LIBRARY: Record<SectionType, LibraryEntry> = {
     description: "The four service showcases.",
     single: true,
     defaults: {
-      eyebrow: "What we do",
-      title: "Four ways we make you shine",
+      eyebrow: "",
+      title: "What we do",
       s1title: "Website creation",
       s1line: "Sites that show off your name and work — and make it easy to book you.",
       s2title: "Photography",
@@ -524,8 +524,17 @@ export function parseLayout(value: unknown): HomeLayout | null {
     if (sec.type === "showcases") {
       if (tidy !== 1 && tidy !== 2) tidyShowcases(sec);
       // v2: the website screenshots were cleared on request, to be re-added later.
-      if (tidy !== 2) sec.images = { ...(sec.images ?? {}), site: [] };
-      sec.tidy = 2;
+      if (tidy !== 2 && tidy !== 3) sec.images = { ...(sec.images ?? {}), site: [] };
+      // v3: the big "What we do" heading comes back if it was emptied.
+      if (tidy !== 3 && !sec.text.title?.trim()) sec.text.title = "What we do";
+      // v3: loose images left floating in this section are cleared (website
+      // screenshots belong in the Websites photo spot).
+      if (tidy !== 3 && sec.els) {
+        const kept = sec.els.filter((e) => e.kind !== "image");
+        if (kept.length) sec.els = kept;
+        else delete sec.els;
+      }
+      sec.tidy = 3;
     }
     sections.push(sec);
   }
