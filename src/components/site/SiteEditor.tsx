@@ -787,7 +787,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
   const setStyle = (id: string, patch: Partial<SectionStyle>) =>
     updateSection(id, (s) => ({ ...s, style: { ...(s.style ?? {}), ...patch } }));
   const setTheme = (t: Theme | undefined) => commit((l) => ({ ...l, theme: t }));
-  const setOwnBgs = (on: boolean) => commit((l) => ({ ...l, ownBgs: on || undefined }));
+  const setSmoothBg = (on: boolean) => commit((l) => ({ ...l, smoothBg: on || undefined }));
   const setFmt = (sectionId: string, key: string, patch: Partial<TextFmt> | null) =>
     updateSection(sectionId, (s) => {
       const fmt = { ...(s.fmt ?? {}) };
@@ -1018,7 +1018,7 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
 
                 <div className="space-y-2">
                   <p className={label}>Background</p>
-                  {!layout.ownBgs && (
+                  {layout.smoothBg && (
                     <p className="rounded-md bg-white/5 p-2 text-[11px] text-[#b3a5a2]">
                       The page uses one smooth background, so section colours are off. Switch to “Section colours” in the Look tab to use them.
                     </p>
@@ -1596,15 +1596,15 @@ export function SiteEditor({ initial, published, slots }: { initial: HomeLayout;
                 <div className="space-y-2">
                   <p className={label}>Page background</p>
                   <Seg<"smooth" | "own">
-                    value={layout.ownBgs ? "own" : "smooth"}
+                    value={layout.smoothBg ? "smooth" : "own"}
                     options={[
-                      ["smooth", "One smooth background"],
                       ["own", "Section colours"],
+                      ["smooth", "One smooth background"],
                     ]}
-                    onChange={(v) => setOwnBgs(v === "own")}
+                    onChange={(v) => setSmoothBg(v === "smooth")}
                   />
                   <p className="text-[11px] text-[#b3a5a2]">
-                    Smooth: the whole page shares one even backdrop (recommended). Section colours: each section uses the background set on it.
+                    Section colours: a section shows the background you pick for it (Section tab → Background); sections left on “Page” use the purple-to-gold base. One smooth background: ignores section colours.
                   </p>
                 </div>
                 <div className="space-y-2">

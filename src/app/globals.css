@@ -603,35 +603,24 @@ body {
    transparent (so it melts out of the dark hero), passes through wine, rose and
    peach, settles into warm cream, then dims again before the dark footer. */
 .dawn {
-  --paper: #f6e9d4;
-  --paper-raised: #fbf1e2;
-  --cream: #f8ecd9;
-  --ink: #2a0d18;
-  --ink-muted: #7a4a52;
-  --line: #ecc9bd;
-  --warm-text: #b8456b;
-  --title-from: #2a0d18;
-  --title-to: #b8456b;
   --accent: #d4537e;
-  --accent-bright: #c0466f;
+  --accent-bright: #e07a9c;
   isolation: isolate;
-  /* Old book paper: warm cream, soft blotches, fine fibres and tea-stained edges. */
+  /* Vintage fade: dusky purple on the left warming to soft gold on the right,
+     slightly washed out like old film stock. */
   background:
-    radial-gradient(ellipse 120% 60% at 50% 50%, transparent 55%, rgba(150, 95, 55, 0.14) 100%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.36  0 0 0 0 0.2  0 0 0 0.45 -0.12'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>"),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='9'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.28  0 0 0 0 0.16  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
-    linear-gradient(180deg, #fbe4d2 0, #f8ecd9 700px, #f6e9d4 100%);
-  background-size: 100% 100%, 600px 600px, 300px 300px, 100% 100%;
+    linear-gradient(180deg, rgba(20, 8, 16, 0.25) 0%, rgba(20, 8, 16, 0) 18%, rgba(20, 8, 16, 0) 82%, rgba(20, 8, 16, 0.3) 100%),
+    linear-gradient(100deg, #48263f 0%, #6b3a4d 32%, #9a6158 62%, #c99260 100%);
 }
-/* The fade from the dark top into the light half starts above it, so the
-   change is gradual and the first heading already sits on light colour. */
+/* The fade from the dark top into the coloured half starts above it, so the
+   change is gradual. */
 .dawn::before {
   content: "";
   position: absolute;
-  inset: -340px 0 auto 0;
-  height: 340px;
+  inset: -300px 0 auto 0;
+  height: 300px;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(120, 52, 66, 0.75) 40%, #d98f88 72%, #fbe4d2 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(72, 38, 63, 0.55) 55%, rgba(110, 65, 80, 0.92) 100%);
 }
 .dawn::after {
   content: "";
@@ -639,16 +628,52 @@ body {
   inset: auto 0 0 0;
   height: 260px;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent, #2a0d18);
+  background: linear-gradient(180deg, transparent, #1a0b10);
 }
 
-/* Vintage film grain over the whole site, for an older, filmic look. */
+/* Old camera look laid over the whole site: grain, scratches, dust, a faded
+   (lifted) tone and gentle flicker. */
+.film-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 43;
+  pointer-events: none;
+  background: rgba(70, 45, 40, 0.1);
+  mix-blend-mode: screen;
+  animation: film-flicker 0.24s steps(2) infinite;
+}
+.film-scratches {
+  position: fixed;
+  inset: -10% 0;
+  z-index: 46;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='800'><g fill='none' stroke='%23fff6e8' stroke-linecap='round'><path d='M140 0 L148 800' stroke-width='0.9' opacity='.55'/><path d='M612 0 L604 460' stroke-width='0.6' opacity='.4'/><path d='M832 260 L840 800' stroke-width='1.1' opacity='.45'/><path d='M402 0 L399 800' stroke-width='0.5' opacity='.25'/><path d='M300 90 q40 30 90 18' stroke-width='0.9' opacity='.5'/><path d='M720 640 q-30 22 -70 12' stroke-width='0.8' opacity='.45'/></g><g fill='%23fff6e8'><circle cx='210' cy='330' r='1.6' opacity='.6'/><circle cx='560' cy='190' r='1.1' opacity='.5'/><circle cx='760' cy='470' r='2' opacity='.45'/><circle cx='380' cy='640' r='1.2' opacity='.55'/><circle cx='90' cy='120' r='1.4' opacity='.45'/><circle cx='900' cy='720' r='1.6' opacity='.5'/></g><g fill='%23140a0a'><circle cx='470' cy='410' r='1.8' opacity='.5'/><circle cx='660' cy='90' r='1.2' opacity='.45'/><circle cx='120' cy='560' r='1.5' opacity='.4'/></g></svg>");
+  background-size: 1000px 800px;
+  animation: film-scratch 0.5s steps(3) infinite;
+}
+@keyframes film-scratch {
+  0% { transform: translate(0, 0); opacity: 0.5; }
+  33% { transform: translate(-37px, 120px); opacity: 0.35; }
+  66% { transform: translate(23px, -80px); opacity: 0.55; }
+  100% { transform: translate(0, 0); opacity: 0.5; }
+}
+@keyframes film-flicker {
+  0% { opacity: 1; }
+  50% { opacity: 0.82; }
+  100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-scratches,
+  .film-fade { animation: none; }
+}
 .film-grain {
   position: fixed;
   inset: -50%;
   z-index: 45;
   pointer-events: none;
-  opacity: 0.16;
+  opacity: 0.22;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.4 -0.2'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   animation: film-grain 0.9s steps(6) infinite;
@@ -692,14 +717,14 @@ body {
   text-shadow: none !important;
 }
 .dawn .title-lit {
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)) drop-shadow(0 0 12px rgba(255, 244, 234, 0.55));
+  filter: drop-shadow(0 2px 10px rgba(20, 6, 14, 0.45));
 }
 
 /* Dark bands inside the light half: deep wine with feathered top and bottom
    edges, so dark and paper blend into each other instead of meeting in a line. */
 .band-dark {
-  --paper: #241016;
-  --paper-raised: #321520;
+  --paper: #22101e;
+  --paper-raised: #301829;
   --ink: #f6ece2;
   --ink-muted: #d9c4bd;
   --line: #4a2532;
@@ -717,7 +742,7 @@ body {
   background:
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 0.85  0 0 0 0 0.75  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>"),
     radial-gradient(ellipse 70% 60% at 50% 30%, rgba(142, 27, 58, 0.45), transparent 70%),
-    linear-gradient(180deg, #2c1019, #1d0b11);
+    linear-gradient(180deg, #2a1428, #1a0c18);
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 120px, #000 calc(100% - 120px), transparent 100%);
   mask-image: linear-gradient(180deg, transparent 0, #000 120px, #000 calc(100% - 120px), transparent 100%);
 }

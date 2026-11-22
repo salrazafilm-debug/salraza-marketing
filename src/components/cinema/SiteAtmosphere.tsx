@@ -21,7 +21,9 @@ export function FilmGrain() {
   return (
     <>
       <div aria-hidden className="film-grain-warm" />
+      <div aria-hidden className="film-fade" />
       <div aria-hidden className="film-grain" />
+      <div aria-hidden className="film-scratches" />
     </>
   );
 }

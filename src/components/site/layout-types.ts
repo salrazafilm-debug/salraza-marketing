@@ -126,15 +126,15 @@ export function showOrderOf(s: Section): number[] {
 
 export type Theme = { preset?: string; accent?: string; accentBright?: string; spark?: string };
 
-/** ownBgs: true = each section paints its own background colour; otherwise the
- * whole page shares one smooth backdrop (the default). */
+/** smoothBg: true = ignore section colours and use one smooth backdrop. By
+ * default each section shows the background chosen for it in the editor. */
 export type HomeLayout = {
   version: 1;
   sections: Section[];
   theme?: Theme;
-  ownBgs?: boolean;
+  smoothBg?: boolean;
   /** 1 = the page order has been set to: ... What we do, Media Vault, ..., About us last. */
-  arranged?: 1 | 2;
+  arranged?: 1 | 2 | 3;
 };
 
 export type SlotDef = { label: string; max: number; defaults: string[] };
@@ -548,7 +548,7 @@ export function parseLayout(value: unknown): HomeLayout | null {
   }
   const theme = parseTheme((value as { theme?: unknown }).theme);
   const out: HomeLayout = theme ? { version: 1, sections, theme } : { version: 1, sections };
-  if ((value as { ownBgs?: unknown }).ownBgs === true) out.ownBgs = true;
+  if ((value as { smoothBg?: unknown }).smoothBg === true) out.smoothBg = true;
   // One-time page order: the Media Vault follows "What we do", About us comes last.
   if ((value as { arranged?: unknown }).arranged !== 1) {
     const list = out.sections;
@@ -580,7 +580,22 @@ export function parseLayout(value: unknown): HomeLayout | null {
       }
     }
   }
-  out.arranged = 2;
+  if ((value as { arranged?: unknown }).arranged !== 3) {
+    // v3: start everyone on the purple-to-gold base. Old section colours (set
+    // while they were being ignored) are cleared once; from now on colours
+    // picked in the editor show on the site again.
+    for (const s of out.sections) {
+      if (!s.style) continue;
+      const st = { ...s.style };
+      delete st.bg;
+      delete st.color1;
+      delete st.color2;
+      delete st.angle;
+      if (Object.keys(st).length) s.style = st;
+      else delete s.style;
+    }
+  }
+  out.arranged = 3;
   return out;
 }
 

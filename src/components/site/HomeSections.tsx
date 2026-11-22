@@ -542,7 +542,7 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
   const list = canvas ? layout.sections : layout.sections.filter((s) => !s.hidden);
   const nodes = list.map((s, i) => {
         const next = list.slice(i + 1).find((n) => canvas || !n.hidden);
-        const plain = !layout.ownBgs;
+        const plain = !!layout.smoothBg;
         const fadeOut = !plain && hasOwnBg(s) && (!next || !hasOwnBg(next));
         return canvas ? (
           <div
@@ -581,7 +581,7 @@ export function HomeSections({ layout, slots, canvas }: { layout: HomeLayout; sl
     <ThemeScope theme={layout.theme}>
       {nodes.slice(0, at)}
       {nodes.length > at && (
-        <div data-mode="light" className="dawn relative text-ink">
+        <div className="dawn relative text-ink">
           {nodes.slice(at).map((node, i) => {
             // After "What we do": the next section sits on paper, the one after
             // on a dark band, and so on, so the page alternates like an oreo.
